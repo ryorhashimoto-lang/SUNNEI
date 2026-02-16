@@ -25,15 +25,26 @@ const Logo = ({ className = "h-8" }: { className?: string }) => (
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.LOGIN);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  
+  // 元の素材
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  
+  // 編集フローの中間状態
   const [originalCropped, setOriginalCropped] = useState<string | null>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [appliedBg, setAppliedBg] = useState<EditAction | null>(null);
+  const [appliedClothing, setAppliedClothing] = useState<EditAction | null>(null);
+  
+  // トリミング設定
   const [cropConfig, setCropConfig] = useState<CropConfig | null>(null);
+  const [finalCropConfig, setFinalCropConfig] = useState<CropConfig | null>(null);
+  const [isFinalCropping, setIsFinalCropping] = useState(false);
+  const [compositePreview, setCompositePreview] = useState<string | null>(null);
+
+  // その他
   const [deceasedName, setDeceasedName] = useState<string>('');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [usageCount, setUsageCount] = useState<number>(0);
-  const [appliedBg, setAppliedBg] = useState<EditAction | null>(null);
-  const [appliedClothing, setAppliedClothing] = useState<EditAction | null>(null);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [errorModal, setErrorModal] = useState({ isOpen: false, title: '', message: '' });
   const [status, setStatus] = useState<ProcessingStatus>({ isProcessing: false, message: '' });
@@ -58,25 +69,64 @@ const App: React.FC = () => {
   const executeLogout = useCallback(() => {
     authService.logout();
     setCompanyInfo(null); setPersonImage(null); setUploadedImage(null); setOriginalCropped(null); setDeceasedName('');
-    setCropConfig(null);
+    setCropConfig(null); setFinalCropConfig(null);
     setIsAdminMode(false); setAppState(AppState.LOGIN); setIsLogoutConfirmOpen(false);
   }, []);
 
   const handleImageSelected = useCallback((base64: string) => {
     setUploadedImage(base64); 
-    setCropConfig(null); // 新しい画像の場合はリセット
+    setCropConfig(null);
+    setFinalCropConfig(null);
+    setIsFinalCropping(false);
     setAppState(AppState.CROPPING);
   }, []);
 
   const handleCropConfirm = useCallback((croppedImage: string, config: CropConfig) => {
-    setOriginalCropped(croppedImage); 
-    setCropConfig(config);
-    setAppState(AppState.EDITING); 
+    if (isFinalCropping) {
+      // 最終調整（加工後）の確定
+      setFinalCropConfig(config);
+      setIsFinalCropping(false);
+      setAppState(AppState.EDITING);
+    } else {
+      // 初期調整（加工前）の確定
+      setOriginalCropped(croppedImage); 
+      setCropConfig(config);
+      setFinalCropConfig(null); // 初期構成が変わったので最終トリミングはリセット
+      setPersonImage(null); 
+      setAppliedClothing(null);
+      setAppState(AppState.EDITING); 
+    }
+  }, [isFinalCropping]);
+
+  const handleStartFinalCrop = useCallback(async () => {
+    if (!originalCropped) return;
     
-    // トリミングが変更されたらAI生成物はリセットが必要（構図が変わるため）
-    setPersonImage(null); 
-    setAppliedClothing(null);
-  }, []);
+    // 現在の合成結果（加工後）を一枚の絵としてキャプチャする
+    setStatus({ isProcessing: true, message: '調整用プレビューを生成中...' });
+    try {
+      const canvas = document.createElement('canvas');
+      const width = 1200; // トリミング画面用の十分な解像度
+      const height = 1600;
+      await drawMemorialPhoto({ 
+        canvas, 
+        originalCropped, 
+        personImage, 
+        appliedBg, 
+        width, 
+        height, 
+        isHighRes: false,
+        finalCropConfig: null // 調整「前」の状態をベースにする
+      });
+      
+      setCompositePreview(canvas.toDataURL('image/jpeg', 0.9));
+      setIsFinalCropping(true);
+      setAppState(AppState.CROPPING);
+    } catch (e) {
+      setErrorModal({ isOpen: true, title: 'エラー', message: 'プレビューの生成に失敗しました。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
+    }
+  }, [originalCropped, personImage, appliedBg]);
 
   const handleEditAction = useCallback(async (action: EditAction | null) => {
     if (!originalCropped) return;
@@ -120,9 +170,19 @@ const App: React.FC = () => {
     setStatus({ isProcessing: true, message: '高品質(2700x3600)で画像を合成中...' });
     try {
       const canvas = document.createElement('canvas');
-      const width = 2700; // 3:4
+      const width = 2700;
       const height = 3600;
-      await drawMemorialPhoto({ canvas, originalCropped, personImage, appliedBg, width, height, isHighRes: true });
+      await drawMemorialPhoto({ 
+        canvas, 
+        originalCropped, 
+        personImage, 
+        appliedBg, 
+        width, 
+        height, 
+        isHighRes: true,
+        finalCropConfig // 最終調整を適用
+      });
+      
       const newCount = await usageService.incrementUsage(companyInfo.id);
       setUsageCount(newCount);
       const link = document.createElement('a');
@@ -134,7 +194,7 @@ const App: React.FC = () => {
       setStatus({ isProcessing: false, message: '' });
       setErrorModal({ isOpen: true, title: '保存失敗', message: 'エラーが発生しました。' });
     }
-  }, [originalCropped, personImage, appliedBg, companyInfo, deceasedName]);
+  }, [originalCropped, personImage, appliedBg, companyInfo, deceasedName, finalCropConfig]);
 
   return (
     <div className="h-screen bg-[#f8f9fa] text-gray-800 font-serif flex flex-col overflow-hidden">
@@ -163,21 +223,43 @@ const App: React.FC = () => {
                   <UploadArea onImageSelected={handleImageSelected} />
                 </div>
               )}
-              {appState === AppState.CROPPING && uploadedImage && (
+              {appState === AppState.CROPPING && (isFinalCropping ? compositePreview : uploadedImage) && (
                 <CropTool 
-                  imageSrc={uploadedImage} 
-                  initialConfig={cropConfig}
+                  imageSrc={isFinalCropping ? compositePreview! : uploadedImage!} 
+                  initialConfig={isFinalCropping ? finalCropConfig : cropConfig}
                   onConfirm={handleCropConfirm} 
-                  onCancel={() => setAppState(originalCropped ? AppState.EDITING : AppState.UPLOAD)} 
+                  onCancel={() => {
+                    setIsFinalCropping(false);
+                    setAppState(originalCropped ? AppState.EDITING : AppState.UPLOAD);
+                  }} 
                 />
               )}
               {appState === AppState.EDITING && companyInfo && (
                 <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-12 gap-6 p-6 h-full max-h-[92vh]">
                   <div className="md:col-span-7 lg:col-span-8 flex items-center justify-center bg-gray-100 rounded-2xl p-4 overflow-hidden shadow-inner relative">
-                    <PhotoCanvas originalCropped={originalCropped} personImage={personImage} appliedBg={appliedBg} isLoading={status.isProcessing} loadingMessage={status.message} />
+                    <PhotoCanvas 
+                      originalCropped={originalCropped} 
+                      personImage={personImage} 
+                      appliedBg={appliedBg} 
+                      isLoading={status.isProcessing} 
+                      loadingMessage={status.message}
+                      finalCropConfig={finalCropConfig}
+                    />
                   </div>
                   <div className="md:col-span-5 lg:col-span-4 h-full overflow-hidden">
-                    <ActionPanel onAction={handleEditAction} disabled={status.isProcessing} onDownload={handleDownload} onReset={() => setAppState(AppState.UPLOAD)} onStartCrop={() => setAppState(AppState.CROPPING)} appliedBg={appliedBg} appliedClothing={appliedClothing} userPlan={companyInfo.plan} usageCount={usageCount} deceasedName={deceasedName} onDeceasedNameChange={setDeceasedName} />
+                    <ActionPanel 
+                      onAction={handleEditAction} 
+                      disabled={status.isProcessing} 
+                      onDownload={handleDownload} 
+                      onReset={() => setAppState(AppState.UPLOAD)} 
+                      onStartCrop={handleStartFinalCrop} // 最終調整フローへ 
+                      appliedBg={appliedBg} 
+                      appliedClothing={appliedClothing} 
+                      userPlan={companyInfo.plan} 
+                      usageCount={usageCount} 
+                      deceasedName={deceasedName} 
+                      onDeceasedNameChange={setDeceasedName} 
+                    />
                   </div>
                 </div>
               )}

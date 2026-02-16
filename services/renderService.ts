@@ -1,5 +1,5 @@
 
-import { EditAction } from '../types';
+import { EditAction, CropConfig } from '../types';
 
 interface RenderOptions {
   canvas: HTMLCanvasElement;
@@ -9,6 +9,7 @@ interface RenderOptions {
   width: number;
   height: number;
   isHighRes?: boolean;
+  finalCropConfig?: CropConfig | null;
 }
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -23,7 +24,6 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 /**
  * AIが生成した画像から背景の緑色(#00FF00)を透過させる処理。
- * エッジのジャギーを抑えるため、クロマキー合成のアルゴリズムを使用。
  */
 const createTransparentCanvas = (img: HTMLImageElement): HTMLCanvasElement => {
   const canvas = document.createElement('canvas');
@@ -41,15 +41,12 @@ const createTransparentCanvas = (img: HTMLImageElement): HTMLCanvasElement => {
     const g = data[i + 1];
     const b = data[i + 2];
     
-    // 緑色の判定基準（#00FF00付近を検出し、アルファ値を操作）
     const maxRB = Math.max(r, b);
     if (g > maxRB + 45) {
-      data[i + 3] = 0; // 完全透過
+      data[i + 3] = 0;
     } else if (g > maxRB + 15) {
-      // 境界線のソフト処理
       const alpha = 1 - (g - (maxRB + 15)) / 30;
       data[i + 3] = 255 * Math.max(0, alpha);
-      // 残った緑かぶりを抑制（グレースケール化に近い処理で肌色を保護）
       data[i + 1] = maxRB; 
     }
   }
@@ -59,7 +56,7 @@ const createTransparentCanvas = (img: HTMLImageElement): HTMLCanvasElement => {
 
 /**
  * 遺影をレンダリングするメイン関数。
- * 「背景レイヤー」の上に「人物レイヤー」を重ねるだけのシンプルで堅牢な構造。
+ * 背景、人物、そして「最終トリミング（finalCropConfig）」を順に適用します。
  */
 export const drawMemorialPhoto = async ({
   canvas,
@@ -68,32 +65,35 @@ export const drawMemorialPhoto = async ({
   appliedBg,
   width,
   height,
-  isHighRes = false
+  isHighRes = false,
+  finalCropConfig = null
 }: RenderOptions) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  canvas.width = width;
-  canvas.height = height;
+  // 一時的なバッファ用キャンバスを作成（トリミング前のフルサイズ描画用）
+  const buffer = document.createElement('canvas');
+  buffer.width = width;
+  buffer.height = height;
+  const bCtx = buffer.getContext('2d');
+  if (!bCtx) return;
 
-  // --- 1. 背景レイヤーの描画 ---
+  // --- 1. 背景レイヤー ---
   if (!appliedBg) {
-    // 背景加工なしの場合は元のトリミング画像をそのまま使用
     if (originalCropped) {
       const img = await loadImage(originalCropped);
-      ctx.drawImage(img, 0, 0, width, height);
+      bCtx.drawImage(img, 0, 0, width, height);
     }
   } else {
-    // 指定された背景色またはグラデーションを描画
     const centerX = width / 2;
     const centerY = height / 2;
     const radius = Math.sqrt(centerX ** 2 + centerY ** 2);
     
     if (appliedBg === EditAction.REMOVE_BG_WHITE) {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, width, height);
+      bCtx.fillStyle = '#ffffff';
+      bCtx.fillRect(0, 0, width, height);
     } else {
-      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+      const gradient = bCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
       gradient.addColorStop(0, '#ffffff');
       switch (appliedBg) {
         case EditAction.REMOVE_BG_BLUE: gradient.addColorStop(1, '#bfdbfe'); break;
@@ -102,25 +102,44 @@ export const drawMemorialPhoto = async ({
         case EditAction.REMOVE_BG_YELLOW: gradient.addColorStop(1, '#fef3c7'); break;
         case EditAction.REMOVE_BG_PURPLE: gradient.addColorStop(1, '#e9d5ff'); break;
       }
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
+      bCtx.fillStyle = gradient;
+      bCtx.fillRect(0, 0, width, height);
     }
   }
 
-  // --- 2. 人物レイヤーの描画 ---
+  // --- 2. 人物レイヤー ---
   if (personImage) {
-    // AI処理済みの画像がある場合（背景除去後、または着せ替え後）
     const personImg = await loadImage(personImage);
     const transparentPerson = createTransparentCanvas(personImg);
-    
-    // AIの出力をそのまま描画（位置合わせはAIのプロンプト制御に任せる）
-    ctx.drawImage(transparentPerson, 0, 0, width, height);
-  } else if (!appliedBg && originalCropped) {
-    // AI処理前で、背景も変更していない場合（初期状態）
-    // すでに手順1で描画済みのため何もしない
+    bCtx.drawImage(transparentPerson, 0, 0, width, height);
   }
 
-  // --- 3. 装飾フレーム（遺影らしさの演出） ---
+  // --- 3. 最終トリミングの適用と出力キャンバスへの描画 ---
+  canvas.width = width;
+  canvas.height = height;
+  ctx.clearRect(0, 0, width, height);
+
+  if (finalCropConfig) {
+    ctx.save();
+    // 中心を基準に変換を適用
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate((finalCropConfig.rotation * Math.PI) / 180);
+    
+    // CropToolでの座標系をレンダリングサイズにスケール
+    // CropToolのプレビュー窓（aperture）が高さ85%だったことを考慮した座標変換
+    const drawW = width * finalCropConfig.scale;
+    const drawH = height * finalCropConfig.scale;
+    const dx = finalCropConfig.offsetX * (width / 800); // プレビュー時の基準幅800px
+    const dy = finalCropConfig.offsetY * (height / 1066);
+
+    ctx.drawImage(buffer, dx - drawW / 2, dy - drawH / 2, drawW, drawH);
+    ctx.restore();
+  } else {
+    // 最終トリミングがない場合はそのまま描画
+    ctx.drawImage(buffer, 0, 0, width, height);
+  }
+
+  // --- 4. 装飾フレーム ---
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.1)';
   ctx.shadowBlur = isHighRes ? 60 : 10;

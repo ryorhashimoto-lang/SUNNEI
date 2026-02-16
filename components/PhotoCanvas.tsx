@@ -1,7 +1,8 @@
 
+// Add missing React import
 import React, { useEffect, useRef } from 'react';
 import LoadingSpinner from './LoadingSpinner';
-import { EditAction } from '../types';
+import { EditAction, CropConfig } from '../types';
 import { drawMemorialPhoto } from '../services/renderService';
 
 interface PhotoCanvasProps {
@@ -10,6 +11,7 @@ interface PhotoCanvasProps {
   appliedBg: EditAction | null;
   isLoading: boolean;
   loadingMessage: string;
+  finalCropConfig?: CropConfig | null;
 }
 
 const PhotoCanvas: React.FC<PhotoCanvasProps> = ({ 
@@ -17,7 +19,8 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
   personImage,
   appliedBg,
   isLoading, 
-  loadingMessage
+  loadingMessage,
+  finalCropConfig = null
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -25,9 +28,8 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
     const render = async () => {
       if (!canvasRef.current || !originalCropped) return;
       
-      // 3:4のアスペクト比でプレビューサイズを計算
       const width = 800;
-      const height = 1066; // 800 * (4/3)
+      const height = 1066;
       
       await drawMemorialPhoto({
         canvas: canvasRef.current,
@@ -36,12 +38,13 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
         appliedBg,
         width,
         height,
-        isHighRes: false
+        isHighRes: false,
+        finalCropConfig
       });
     };
 
     render();
-  }, [originalCropped, personImage, appliedBg]);
+  }, [originalCropped, personImage, appliedBg, finalCropConfig]);
 
   if (!originalCropped) return null;
 
