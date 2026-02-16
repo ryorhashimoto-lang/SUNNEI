@@ -46,8 +46,9 @@ export interface ProcessingStatus {
   message: string;
 }
 
-export interface ImageState {
-  original: string | null;
-  current: string | null;
-  history: string[];
+export interface CropConfig {
+  scale: number;
+  offsetX: number;
+  offsetY: number;
+  rotation: number;
 }

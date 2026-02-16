@@ -90,7 +90,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     setSelectedClothing(appliedClothing);
   }, [appliedBg, appliedClothing]);
 
-  // 背景選択時は即時実行
   const handleBgSelect = (action: EditAction | null) => {
     setSelectedBg(action);
     onAction(action);
@@ -101,9 +100,14 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   };
 
   const isClothingPending = selectedClothing !== "" && selectedClothing !== appliedClothing;
-
   const limit = PLAN_LIMITS[userPlan];
   const remaining = limit === Infinity ? '無制限' : Math.max(0, limit - usageCount);
+
+  const isWomen = clothingTab === 'womens';
+  const themeColor = isWomen ? 'rose-500' : 'blue-600';
+  const themeHover = isWomen ? 'rose-600' : 'blue-700';
+  const themeBorder = isWomen ? 'border-rose-500' : 'border-blue-600';
+  const themeBg = isWomen ? 'bg-rose-50' : 'bg-blue-50';
 
   const bgItems = [
     { 
@@ -260,7 +264,9 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                   type="button"
                   onClick={() => setClothingTab(t as any)}
                   className={`flex-1 py-3 text-xs font-bold rounded-md transition-all ${
-                    clothingTab === t ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-200'
+                    clothingTab === t 
+                    ? (t === 'womens' ? 'bg-rose-500 text-white shadow-sm' : 'bg-blue-600 text-white shadow-sm') 
+                    : 'text-gray-500 hover:bg-gray-200'
                   }`}
                 >
                   {t === 'mens' ? '男性用' : '女性用'}
@@ -281,11 +287,15 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                 <button 
                   key={item.a}
                   onClick={() => setSelectedClothing(item.a)} 
-                  className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 h-24 ${selectedClothing === item.a ? 'border-blue-600 bg-blue-50 shadow-md' : 'border-gray-100 bg-white hover:border-blue-200'}`}
+                  className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 h-24 ${
+                    selectedClothing === item.a 
+                    ? `${themeBorder} ${themeBg} shadow-md` 
+                    : `border-gray-100 bg-white ${isWomen ? 'hover:border-rose-200' : 'hover:border-blue-200'}`
+                  }`}
                 >
                   <ClothingThumbnail type={item.l.includes('和装') ? 'kimono' : 'suit'} gender={clothingTab} color="bg-gray-800" />
                   <span className="font-bold text-[11px] whitespace-nowrap">{item.l}</span>
-                  {appliedClothing === item.a && <div className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full"></div>}
+                  {appliedClothing === item.a && <div className={`absolute top-1 right-1 w-2 h-2 ${isWomen ? 'bg-rose-500' : 'bg-emerald-500'} rounded-full`}></div>}
                 </button>
               ))}
             </div>
@@ -293,7 +303,9 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               onClick={handleClothingAction}
               disabled={disabled || !isClothingPending}
               className={`w-full py-4 font-bold rounded-lg transition-all text-sm shadow-sm ${
-                isClothingPending ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-400'
+                isClothingPending 
+                ? `bg-${themeColor} text-white hover:bg-${themeHover}` 
+                : 'bg-gray-100 text-gray-400'
               }`}
             >
               {appliedClothing === selectedClothing ? '服装適用済み' : '服装変更を実行（AI）'}
