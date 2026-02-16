@@ -52,19 +52,28 @@ export const changeClothing = async (base64Image: string, action: EditAction): P
 
   let clothText = "";
   switch (action) {
-    case EditAction.SUIT_MENS: clothText = "男性用のフォーマルな黒の礼服、白いシャツ、黒いネクタイ"; break;
-    case EditAction.KIMONO_MENS: clothText = "男性用の黒紋付羽織袴（和装）"; break;
-    case EditAction.SUIT_WOMENS: clothText = "女性用の黒の喪服、パールのネックレス、黒いブラウス"; break;
-    case EditAction.KIMONO_WOMENS: clothText = "女性用の黒紋付喪服（和装）、白い半襟"; break;
+    case EditAction.SUIT_MENS: 
+      clothText = "男性用のフォーマルな黒の礼服、白いシャツ、黒いネクタイ。胸から上の近接構図。"; 
+      break;
+    case EditAction.KIMONO_MENS: 
+      clothText = "男性用の黒紋付羽織。胸から上の襟元のみを描写し、袴（はかま）は絶対に描かないでください。"; 
+      break;
+    case EditAction.SUIT_WOMENS: 
+      clothText = "女性用の黒の喪服、パールのネックレス。胸から上の近接構図。"; 
+      break;
+    case EditAction.KIMONO_WOMENS: 
+      clothText = "女性用の黒紋付喪服、白い半襟。胸から上の襟元のみを描写し、帯や下半身は絶対に描かないでください。"; 
+      break;
   }
 
-  const prompt = `顔のパーツ位置と表情を完全に維持したまま、服装のみを「${clothText}」に変更してください。
+  const prompt = `元画像の「人物の大きさ（ズーム率）」「顔の位置」「表情」を完全に維持したまま、服装のみを「${clothText}」に変更してください。
 
-【最重要】
-1. 顔（目、鼻、口）は1ピクセルも描き直したり動かしたりしないでください。
-2. 背景は一切の影やムラがない「#00FF00 (純粋な緑)」で塗りつぶしてください。
-3. 服の生地は写真として自然な質感（布の織り目など）を表現し、不自然な光沢を避けてください。
-4. 首元の境界を自然に繋げてください。`;
+【最重要・厳守事項】
+1. 構図の維持: 袴（はかま）や帯を描くために人物を小さくして「引きの構図」にすることは絶対に禁止です。元画像がアップであれば、そのアップのまま首から下だけを差し替えてください。
+2. 顔の保存: 目、鼻、口、髪型、シワなどの特徴を1ピクセルも描き直したり動かしたりしないでください。
+3. 背景: 一切の影やムラがない「#00FF00 (純粋な緑)」で塗りつぶしてください。
+4. 質感: 写真として自然な布地の質感（落ち着いたマットな黒）を表現してください。
+5. 接続: 首元と衣服の境界を、不自然な隙間や段差がないよう滑らかに繋げてください。`;
 
   try {
     const response = await ai.models.generateContent({
