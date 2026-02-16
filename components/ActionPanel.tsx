@@ -122,7 +122,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     { 
       action: EditAction.REMOVE_BG_BLUE, 
       label: 'ブルー', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #bfdbfe 100%)' },
+      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #BFEFFF 100%)' },
       borderClass: 'border-blue-100',
       selectedClass: 'border-blue-600 bg-blue-50 text-blue-800',
       hoverClass: 'hover:border-blue-300'
@@ -130,7 +130,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     { 
       action: EditAction.REMOVE_BG_GRAY, 
       label: 'グレー', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #d1d5db 100%)' },
+      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #D9D9D9 100%)' },
       borderClass: 'border-gray-200',
       selectedClass: 'border-gray-600 bg-gray-50 text-gray-800',
       hoverClass: 'hover:border-gray-400'
@@ -138,7 +138,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     { 
       action: EditAction.REMOVE_BG_PINK, 
       label: 'ピンク', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #fbcfe8 100%)' },
+      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #FFE4E8 100%)' },
       borderClass: 'border-pink-100',
       selectedClass: 'border-pink-600 bg-pink-50 text-pink-800',
       hoverClass: 'hover:border-pink-300'
@@ -146,7 +146,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     { 
       action: EditAction.REMOVE_BG_YELLOW, 
       label: 'イエロー', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #fef3c7 100%)' },
+      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #FEF3D1 100%)' },
       borderClass: 'border-amber-100',
       selectedClass: 'border-amber-600 bg-amber-50 text-amber-800',
       hoverClass: 'hover:border-amber-300'
@@ -154,7 +154,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     { 
       action: EditAction.REMOVE_BG_PURPLE, 
       label: 'パープル', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #e9d5ff 100%)' },
+      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #F3E5F5 100%)' },
       borderClass: 'border-purple-100',
       selectedClass: 'border-purple-600 bg-purple-50 text-purple-800',
       hoverClass: 'hover:border-purple-300'
@@ -162,7 +162,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     { 
       action: EditAction.REMOVE_BG_WHITE, 
       label: 'ホワイト', 
-      style: { background: '#ffffff' },
+      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #F2F2F2 100%)' },
       borderClass: 'border-gray-200',
       selectedClass: 'border-gray-900 bg-gray-50 text-gray-900',
       hoverClass: 'hover:border-gray-400'

@@ -89,22 +89,21 @@ export const drawMemorialPhoto = async ({
     const centerY = height / 2;
     const radius = Math.sqrt(centerX ** 2 + centerY ** 2);
     
-    if (appliedBg === EditAction.REMOVE_BG_WHITE) {
-      bCtx.fillStyle = '#ffffff';
-      bCtx.fillRect(0, 0, width, height);
-    } else {
-      const gradient = bCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-      gradient.addColorStop(0, '#ffffff');
-      switch (appliedBg) {
-        case EditAction.REMOVE_BG_BLUE: gradient.addColorStop(1, '#bfdbfe'); break;
-        case EditAction.REMOVE_BG_GRAY: gradient.addColorStop(1, '#d1d5db'); break;
-        case EditAction.REMOVE_BG_PINK: gradient.addColorStop(1, '#fbcfe8'); break;
-        case EditAction.REMOVE_BG_YELLOW: gradient.addColorStop(1, '#fef3c7'); break;
-        case EditAction.REMOVE_BG_PURPLE: gradient.addColorStop(1, '#e9d5ff'); break;
-      }
-      bCtx.fillStyle = gradient;
-      bCtx.fillRect(0, 0, width, height);
+    const gradient = bCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+    gradient.addColorStop(0, '#FFFFFF'); // 中心は常に白
+
+    switch (appliedBg) {
+      case EditAction.REMOVE_BG_BLUE: gradient.addColorStop(1, '#BFEFFF'); break;
+      case EditAction.REMOVE_BG_GRAY: gradient.addColorStop(1, '#D9D9D9'); break;
+      case EditAction.REMOVE_BG_PINK: gradient.addColorStop(1, '#FFE4E8'); break;
+      case EditAction.REMOVE_BG_YELLOW: gradient.addColorStop(1, '#FEF3D1'); break;
+      case EditAction.REMOVE_BG_PURPLE: gradient.addColorStop(1, '#F3E5F5'); break;
+      case EditAction.REMOVE_BG_WHITE: gradient.addColorStop(1, '#F2F2F2'); break; // シルキーホワイト
+      default: gradient.addColorStop(1, '#FFFFFF'); break;
     }
+    
+    bCtx.fillStyle = gradient;
+    bCtx.fillRect(0, 0, width, height);
   }
 
   // --- 2. 人物レイヤー ---
@@ -126,10 +125,9 @@ export const drawMemorialPhoto = async ({
     ctx.rotate((finalCropConfig.rotation * Math.PI) / 180);
     
     // CropToolでの座標系をレンダリングサイズにスケール
-    // CropToolのプレビュー窓（aperture）が高さ85%だったことを考慮した座標変換
     const drawW = width * finalCropConfig.scale;
     const drawH = height * finalCropConfig.scale;
-    const dx = finalCropConfig.offsetX * (width / 800); // プレビュー時の基準幅800px
+    const dx = finalCropConfig.offsetX * (width / 800); 
     const dy = finalCropConfig.offsetY * (height / 1066);
 
     ctx.drawImage(buffer, dx - drawW / 2, dy - drawH / 2, drawW, drawH);
