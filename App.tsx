@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { AppState, EditAction, ProcessingStatus, PLAN_LIMITS, CompanyInfo, CropConfig } from './types';
+import { AppState, EditAction, ProcessingStatus, PLAN_LIMITS, CompanyInfo } from './types';
 import UploadArea from './components/UploadArea';
 import ActionPanel from './components/ActionPanel';
 import PhotoCanvas from './components/PhotoCanvas';
@@ -28,7 +28,6 @@ const App: React.FC = () => {
   const [originalCropped, setOriginalCropped] = useState<string | null>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [cropConfig, setCropConfig] = useState<CropConfig | null>(null);
   const [deceasedName, setDeceasedName] = useState<string>('');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [usageCount, setUsageCount] = useState<number>(0);
@@ -59,24 +58,14 @@ const App: React.FC = () => {
     authService.logout();
     setCompanyInfo(null); setPersonImage(null); setUploadedImage(null); setOriginalCropped(null); setDeceasedName('');
     setIsAdminMode(false); setAppState(AppState.LOGIN); setIsLogoutConfirmOpen(false);
-    setCropConfig(null);
   }, []);
 
   const handleImageSelected = useCallback((base64: string) => {
-    setUploadedImage(base64); 
-    setCropConfig(null); // 新しい画像の場合は設定リセット
-    setAppState(AppState.CROPPING);
+    setUploadedImage(base64); setAppState(AppState.CROPPING);
   }, []);
 
-  const handleCropConfirm = useCallback((croppedImage: string, config: CropConfig) => {
-    setOriginalCropped(croppedImage); 
-    setCropConfig(config);
-    setAppState(AppState.EDITING); 
-    
-    // トリミングが変更されたらAI生成物はリセットが必要（構図が変わるため）
-    setPersonImage(null); 
-    setAppliedClothing(null);
-    // 背景設定は引き継いでもOK（レンダリング時に再適用されるため）
+  const handleCropConfirm = useCallback((croppedImage: string) => {
+    setOriginalCropped(croppedImage); setAppState(AppState.EDITING); setPersonImage(null); setAppliedBg(null); setAppliedClothing(null);
   }, []);
 
   const handleEditAction = useCallback(async (action: EditAction | null) => {
@@ -164,14 +153,7 @@ const App: React.FC = () => {
                   <UploadArea onImageSelected={handleImageSelected} />
                 </div>
               )}
-              {appState === AppState.CROPPING && uploadedImage && (
-                <CropTool 
-                  imageSrc={uploadedImage} 
-                  initialConfig={cropConfig || undefined}
-                  onConfirm={handleCropConfirm} 
-                  onCancel={() => setAppState(originalCropped ? AppState.EDITING : AppState.UPLOAD)} 
-                />
-              )}
+              {appState === AppState.CROPPING && uploadedImage && <CropTool imageSrc={uploadedImage} onConfirm={handleCropConfirm} onCancel={() => setAppState(AppState.UPLOAD)} />}
               {appState === AppState.EDITING && companyInfo && (
                 <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-12 gap-6 p-6 h-full max-h-[92vh]">
                   <div className="md:col-span-7 lg:col-span-8 flex items-center justify-center bg-gray-100 rounded-2xl p-4 overflow-hidden shadow-inner relative">

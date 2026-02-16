@@ -1,11 +1,9 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { CropConfig } from '../types';
 
 interface CropToolProps {
   imageSrc: string;
-  initialConfig?: CropConfig;
-  onConfirm: (croppedImage: string, config: CropConfig) => void;
+  onConfirm: (croppedImage: string) => void;
   onCancel: () => void;
 }
 
@@ -18,26 +16,18 @@ interface Rect {
 
 const ASPECT_RATIO = 3 / 4; // Gemini APIのサポート比率に合わせる（歪み防止）
 
-const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm, onCancel }) => {
+const CropTool: React.FC<CropToolProps> = ({ imageSrc, onConfirm, onCancel }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   
-  const [crop, setCrop] = useState<Rect>(initialConfig ? {
-    x: initialConfig.x,
-    y: initialConfig.y,
-    width: initialConfig.width,
-    height: initialConfig.height
-  } : { x: 0.15, y: 0.1, width: 0.7, height: 0.93 });
-  
-  const [rotation, setRotation] = useState<number>(initialConfig?.rotation ?? 0);
+  const [crop, setCrop] = useState<Rect>({ x: 0.15, y: 0.1, width: 0.7, height: 0.93 });
+  const [rotation, setRotation] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [startCrop, setStartCrop] = useState<Rect>({ x: 0, y: 0, width: 0, height: 0 });
 
   const onImageLoad = () => {
-    if (initialConfig) return; // 既存の設定がある場合は自動計算しない
-
     if (imageRef.current && containerRef.current) {
       const containerW = containerRef.current.clientWidth;
       const containerH = containerRef.current.clientHeight;
@@ -166,11 +156,7 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
     const dy = (offsetY + visualH / 2 - (pixelCrop.y + pixelCrop.height / 2)) * scale;
 
     ctx.drawImage(img, dx - naturalWidth / 2, dy - naturalHeight / 2, naturalWidth, naturalHeight);
-    
-    onConfirm(canvas.toDataURL('image/png'), {
-      ...crop,
-      rotation
-    });
+    onConfirm(canvas.toDataURL('image/png'));
   };
 
   return (
@@ -217,15 +203,15 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
                 onClick={() => setRotation(0)}
                 className={`text-[11px] font-bold px-2 py-1 rounded transition-all flex items-center gap-1 ${
                   rotation === 0 
-                  ? 'text-gray-300 cursor-default shadow-none pointer-events-none opacity-50' 
-                  : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50 cursor-pointer shadow-sm border border-gray-100'
+                  ? 'text-gray-300 cursor-default' 
+                  : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50 cursor-pointer'
                 }`}
                 title="角度をリセット"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
                 </svg>
-                角度リセット
+                リセット
               </button>
             </div>
           </div>
