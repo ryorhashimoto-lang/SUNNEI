@@ -69,7 +69,7 @@ const App: React.FC = () => {
   const executeLogout = useCallback(() => {
     authService.logout();
     setCompanyInfo(null); setPersonImage(null); setUploadedImage(null); setOriginalCropped(null); setDeceasedName('');
-    setCropConfig(null); setFinalCropConfig(null);
+    setCropConfig(null); setFinalCropConfig(null); setAppliedBg(null); setAppliedClothing(null);
     setIsAdminMode(false); setAppState(AppState.LOGIN); setIsLogoutConfirmOpen(false);
   }, []);
 
@@ -77,6 +77,9 @@ const App: React.FC = () => {
     setUploadedImage(base64); 
     setCropConfig(null);
     setFinalCropConfig(null);
+    setAppliedBg(null); // 新規画像選択時に背景をリセット
+    setAppliedClothing(null); // 新規画像選択時に服装をリセット
+    setPersonImage(null);
     setIsFinalCropping(false);
     setAppState(AppState.CROPPING);
   }, []);
@@ -94,6 +97,7 @@ const App: React.FC = () => {
       setFinalCropConfig(null); // 初期構成が変わったので最終トリミングはリセット
       setPersonImage(null); 
       setAppliedClothing(null);
+      setAppliedBg(null); // 重要：再トリミング時に背景選択をリセットして元の写真が見えるようにする
       setAppState(AppState.EDITING); 
     }
   }, [isFinalCropping]);
