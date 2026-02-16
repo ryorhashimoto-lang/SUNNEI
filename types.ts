@@ -51,3 +51,11 @@ export interface ImageState {
   current: string | null;
   history: string[];
 }
+
+export interface CropConfig {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+}
