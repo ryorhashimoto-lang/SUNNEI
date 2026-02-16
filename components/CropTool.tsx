@@ -22,7 +22,6 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, onConfirm, onCancel }) =>
   
   const [crop, setCrop] = useState<Rect>({ x: 0.15, y: 0.1, width: 0.7, height: 0.93 });
   const [rotation, setRotation] = useState<number>(0);
-  const [isRotating, setIsRotating] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -197,7 +196,24 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, onConfirm, onCancel }) =>
         <div className="w-full max-w-lg mt-8 space-y-5 px-2">
           <div className="flex items-center justify-between text-sm font-bold text-gray-700">
             <span className="flex items-center gap-2 text-gray-500">傾きの微調整</span>
-            <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-mono">{rotation.toFixed(1)}°</span>
+            <div className="flex items-center gap-2">
+              <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-mono">{rotation.toFixed(1)}°</span>
+              <button 
+                type="button"
+                onClick={() => setRotation(0)}
+                className={`text-[11px] font-bold px-2 py-1 rounded transition-all flex items-center gap-1 ${
+                  rotation === 0 
+                  ? 'text-gray-300 cursor-default' 
+                  : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50 cursor-pointer'
+                }`}
+                title="角度をリセット"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+                リセット
+              </button>
+            </div>
           </div>
           <input type="range" min="-15" max="15" step="0.1" value={rotation} onChange={(e) => setRotation(parseFloat(e.target.value))} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
         </div>
