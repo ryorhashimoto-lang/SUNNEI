@@ -27,50 +27,65 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 };
 
 /**
- * 画像内の「瞳」の推定中心座標を検出する
- * 3:4の構文において、瞳は顔の特定エリアにある最も暗い領域であることを利用する
+ * 画像内の「瞳」の推定中心座標をより堅牢に検出する
+ * 単純な暗点探索ではなく、領域内の「輝度重み付き重心（Centroid）」を計算することでノイズ耐性を高める
  */
 const findEyeCenters = (img: HTMLImageElement, width: number, height: number): { left: Point, right: Point } => {
   const canvas = document.createElement('canvas');
-  canvas.width = 200; // 高速化のため縮小して解析
-  canvas.height = 266;
+  const internalWidth = 200;
+  const internalHeight = 266;
+  canvas.width = internalWidth;
+  canvas.height = internalHeight;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return { left: { x: width * 0.4, y: height * 0.4 }, right: { x: width * 0.6, y: height * 0.4 } };
+  
+  const defaultLeft = { x: width * 0.4, y: height * 0.4 };
+  const defaultRight = { x: width * 0.6, y: height * 0.4 };
+  
+  if (!ctx) return { left: defaultLeft, right: defaultRight };
 
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  ctx.drawImage(img, 0, 0, internalWidth, internalHeight);
+  const data = ctx.getImageData(0, 0, internalWidth, internalHeight).data;
 
-  const findDarkestInRect = (rx: number, ry: number, rw: number, rh: number): Point => {
-    let minBrightness = Infinity;
-    let bestX = rx + rw / 2;
-    let bestY = ry + rh / 2;
+  const findCentroidInRect = (rx: number, ry: number, rw: number, rh: number): Point => {
+    let sumX = 0;
+    let sumY = 0;
+    let totalWeight = 0;
 
-    for (let y = ry; y < ry + rh; y++) {
-      for (let x = rx; x < rx + rw; x++) {
-        const idx = (y * canvas.width + x) * 4;
-        const brightness = data[idx] + data[idx + 1] + data[idx + 2];
-        if (brightness < minBrightness) {
-          minBrightness = brightness;
-          bestX = x;
-          bestY = y;
+    for (let y = Math.floor(ry); y < Math.floor(ry + rh); y++) {
+      for (let x = Math.floor(rx); x < Math.floor(rx + rw); x++) {
+        const idx = (y * internalWidth + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const brightness = (r + g + b) / 3;
+        
+        // 瞳らしい「暗いピクセル」を重視
+        if (brightness < 90) {
+          const weight = (255 - brightness) ** 2; // 暗いほど指数関数的に重みを付ける
+          sumX += x * weight;
+          sumY += y * weight;
+          totalWeight += weight;
         }
       }
     }
+
+    if (totalWeight === 0) return { x: (rx + rw / 2) / internalWidth * width, y: (ry + rh / 2) / internalHeight * height };
+    
     return { 
-      x: (bestX / canvas.width) * width, 
-      y: (bestY / canvas.height) * height 
+      x: (sumX / totalWeight) / internalWidth * width, 
+      y: (sumY / totalWeight) / internalHeight * height 
     };
   };
 
-  // 3:4比率における一般的な目の位置範囲 (左目: 30-48%, 33-45% | 右目: 52-70%, 33-45%)
-  const leftEye = findDarkestInRect(canvas.width * 0.3, canvas.height * 0.33, canvas.width * 0.18, canvas.height * 0.12);
-  const rightEye = findDarkestInRect(canvas.width * 0.52, canvas.height * 0.33, canvas.width * 0.18, canvas.height * 0.12);
+  // 3:4比率の一般的な顔の位置範囲で重心を計算
+  const leftEye = findCentroidInRect(internalWidth * 0.3, internalHeight * 0.33, internalWidth * 0.2, internalHeight * 0.14);
+  const rightEye = findCentroidInRect(internalWidth * 0.5, internalHeight * 0.33, internalWidth * 0.2, internalHeight * 0.14);
 
   return { left: leftEye, right: rightEye };
 };
 
 /**
- * 検出された瞳の位置に基づき、動的なパーツマスクを作成する
+ * 瞳の位置に基づき、動的なパーツマスクを作成する（フェザリングを強化）
  */
 const createDynamicPartsMask = (width: number, height: number, leftEye: Point, rightEye: Point): HTMLCanvasElement => {
   const maskCanvas = document.createElement('canvas');
@@ -84,7 +99,7 @@ const createDynamicPartsMask = (width: number, height: number, leftEye: Point, r
     mctx.translate(pt.x, pt.y);
     const grad = mctx.createRadialGradient(0, 0, 0, 0, 0, rx);
     grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.8)');
+    grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)');
     grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
     mctx.scale(1, ry / rx);
     mctx.fillStyle = grad;
@@ -94,20 +109,18 @@ const createDynamicPartsMask = (width: number, height: number, leftEye: Point, r
     mctx.restore();
   };
 
-  // 瞳の距離からスケールを計算し、マスクサイズを調整
   const eyeDist = Math.sqrt((rightEye.x - leftEye.x) ** 2 + (rightEye.y - leftEye.y) ** 2);
-  const eyeRadiusX = eyeDist * 0.25;
-  const eyeRadiusY = eyeRadiusX * 0.6;
+  const eyeRadiusX = eyeDist * 0.28;
+  const eyeRadiusY = eyeRadiusX * 0.65;
 
   drawPart(leftEye, eyeRadiusX, eyeRadiusY);
   drawPart(rightEye, eyeRadiusX, eyeRadiusY);
 
-  // 口の位置を瞳の中間から推定
   const mouthPos = {
     x: (leftEye.x + rightEye.x) / 2,
-    y: (leftEye.y + rightEye.y) / 2 + (eyeDist * 0.75)
+    y: (leftEye.y + rightEye.y) / 2 + (eyeDist * 0.8)
   };
-  drawPart(mouthPos, eyeDist * 0.35, eyeDist * 0.2);
+  drawPart(mouthPos, eyeDist * 0.4, eyeDist * 0.25);
 
   return maskCanvas;
 };
@@ -187,24 +200,41 @@ export const drawMemorialPhoto = async ({
     }
   }
 
-  // 2. AI人物レイヤーの描画 (生成画像を「正」とする)
+  // 2. 合成処理 (生成画像=AIを正とする「逆転アライメント」)
   if (personImage && originalCropped) {
     const personImg = await loadImage(personImage);
     const originalImg = await loadImage(originalCropped);
     
-    // AI画像（生成後）の瞳の位置を特定（これが「正」の座標になる）
+    // AI画像の瞳位置（これが「正」のターゲット）
     const aiEyes = findEyeCenters(personImg, width, height);
-    // オリジナル画像の瞳の位置を特定
+    // 元画像の瞳位置（ここからターゲットへ移動させる）
     const origEyes = findEyeCenters(originalImg, width, height);
     
     // AI画像を先に描画
     const transparentPerson = createTransparentCanvas(personImg);
     ctx.drawImage(transparentPerson, 0, 0, width, height);
 
-    // 3. 逆転アライメント・ヒーリング
-    // AIの瞳位置に合わせて、オリジナル画像をアフィン変換（平行移動・拡大縮小・回転）して重ねる
-    const partsMask = createDynamicPartsMask(width, height, aiEyes.left, aiEyes.right);
+    // 3. 安全装置付きアライメント
+    const aiMid = { x: (aiEyes.left.x + aiEyes.right.x) / 2, y: (aiEyes.left.y + aiEyes.right.y) / 2 };
+    const origMid = { x: (origEyes.left.x + origEyes.right.x) / 2, y: (origEyes.left.y + origEyes.right.y) / 2 };
     
+    const aiDist = Math.sqrt((aiEyes.right.x - aiEyes.left.x) ** 2 + (aiEyes.right.y - aiEyes.left.y) ** 2);
+    const origDist = Math.sqrt((origEyes.right.x - origEyes.left.x) ** 2 + (origEyes.right.y - origEyes.left.y) ** 2);
+    
+    // --- セーフティガード (暴走防止) ---
+    // 1. スケールの制限 (±5%以内)
+    let scale = aiDist / origDist;
+    scale = Math.max(0.95, Math.min(1.05, scale));
+    
+    // 2. 回転角の制限 (±3度以内)
+    const aiAngle = Math.atan2(aiEyes.right.y - aiEyes.left.y, aiEyes.right.x - aiEyes.left.x);
+    const origAngle = Math.atan2(origEyes.right.y - origEyes.left.y, origEyes.right.x - origEyes.left.x);
+    let rotation = aiAngle - origAngle;
+    const maxRot = 3 * (Math.PI / 180);
+    rotation = Math.max(-maxRot, Math.min(maxRot, rotation));
+
+    // 元の顔パーツをAIの顔に吸着させる
+    const partsMask = createDynamicPartsMask(width, height, aiEyes.left, aiEyes.right);
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = width;
     tempCanvas.height = height;
@@ -214,24 +244,12 @@ export const drawMemorialPhoto = async ({
       tctx.drawImage(partsMask, 0, 0);
       tctx.globalCompositeOperation = 'source-in';
       
-      // オリジナルをAIの顔に吸着させるための行列計算
-      const aiMid = { x: (aiEyes.left.x + aiEyes.right.x) / 2, y: (aiEyes.left.y + aiEyes.right.y) / 2 };
-      const origMid = { x: (origEyes.left.x + origEyes.right.x) / 2, y: (origEyes.left.y + origEyes.right.y) / 2 };
-      
-      const aiDist = Math.sqrt((aiEyes.right.x - aiEyes.left.x) ** 2 + (aiEyes.right.y - aiEyes.left.y) ** 2);
-      const origDist = Math.sqrt((origEyes.right.x - origEyes.left.x) ** 2 + (origEyes.right.y - origEyes.left.y) ** 2);
-      const scale = aiDist / origDist;
-      
-      const aiAngle = Math.atan2(aiEyes.right.y - aiEyes.left.y, aiEyes.right.x - aiEyes.left.x);
-      const origAngle = Math.atan2(origEyes.right.y - origEyes.left.y, origEyes.right.x - origEyes.left.x);
-      const rotation = aiAngle - origAngle;
-
       tctx.save();
-      // AIの瞳の中心に原点を移動
+      // AIの座標系に移動
       tctx.translate(aiMid.x, aiMid.y);
       tctx.rotate(rotation);
       tctx.scale(scale, scale);
-      // オリジナルの瞳の中心を原点に合わせて描画
+      // オリジナルの中心を合わせる
       tctx.drawImage(originalImg, -origMid.x, -origMid.y, width, height);
       tctx.restore();
       
