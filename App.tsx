@@ -1,19 +1,19 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { AppState, EditAction, ProcessingStatus, PLAN_LIMITS, CompanyInfo, CropConfig } from './types';
+import { AppState, ClothingOption, BackgroundOption, ProcessingStatus, CompanyInfo, CropConfig } from './types';
 import UploadArea from './components/UploadArea';
 import ActionPanel from './components/ActionPanel';
 import PhotoCanvas from './components/PhotoCanvas';
 import CropTool from './components/CropTool';
 import LoginScreen from './components/LoginScreen';
 import ManagementDashboard from './components/ManagementDashboard';
-import { extractPerson, changeClothing } from './services/geminiService';
+import { applyBackgroundSynthesis, applyClothingSynthesis } from './services/geminiService';
 import { authService, AuthSession } from './services/authService';
 import { usageService } from './services/usageService';
 import { drawMemorialPhoto } from './services/renderService';
 
-const Logo = ({ className = "h-8" }: { className?: string }) => (
-  <div className={`flex items-center gap-3 select-none ${className}`}>
+const Logo = () => (
+  <div className="flex items-center gap-3 select-none">
     <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center text-white font-serif font-bold text-xl shadow-sm">瞬</div>
     <div className="flex flex-col justify-center">
       <span className="text-2xl font-serif font-bold text-gray-900 tracking-wider leading-none">瞬影</span>
@@ -26,22 +26,17 @@ const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.LOGIN);
   const [isAdminMode, setIsAdminMode] = useState(false);
   
-  // 元の素材
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  
-  // 編集フローの中間状態
   const [originalCropped, setOriginalCropped] = useState<string | null>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
-  const [appliedBg, setAppliedBg] = useState<EditAction | null>(null);
-  const [appliedClothing, setAppliedClothing] = useState<EditAction | null>(null);
+  const [appliedBg, setAppliedBg] = useState<BackgroundOption>(BackgroundOption.None);
+  const [appliedClothing, setAppliedClothing] = useState<ClothingOption>(ClothingOption.None);
   
-  // トリミング設定
   const [cropConfig, setCropConfig] = useState<CropConfig | null>(null);
   const [finalCropConfig, setFinalCropConfig] = useState<CropConfig | null>(null);
   const [isFinalCropping, setIsFinalCropping] = useState(false);
   const [compositePreview, setCompositePreview] = useState<string | null>(null);
 
-  // その他
   const [deceasedName, setDeceasedName] = useState<string>('');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [usageCount, setUsageCount] = useState<number>(0);
@@ -59,119 +54,78 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleLogin = useCallback((session: AuthSession) => {
+  const handleLogin = (session: AuthSession) => {
     setCompanyInfo(session.company);
     setUsageCount((session.company as any).usageCount || 0);
     setIsAdminMode(session.company.id === 'admin');
     setAppState(AppState.UPLOAD);
-  }, []);
+  };
 
-  const executeLogout = useCallback(() => {
-    authService.logout();
-    setCompanyInfo(null); setPersonImage(null); setUploadedImage(null); setOriginalCropped(null); setDeceasedName('');
-    setCropConfig(null); setFinalCropConfig(null); setAppliedBg(null); setAppliedClothing(null);
-    setIsAdminMode(false); setAppState(AppState.LOGIN); setIsLogoutConfirmOpen(false);
-  }, []);
-
-  const handleImageSelected = useCallback((base64: string) => {
+  const handleImageSelected = (base64: string) => {
     setUploadedImage(base64); 
-    setCropConfig(null);
-    setFinalCropConfig(null);
-    setAppliedBg(null); // 新規画像選択時に背景をリセット
-    setAppliedClothing(null); // 新規画像選択時に服装をリセット
-    setPersonImage(null);
-    setIsFinalCropping(false);
     setAppState(AppState.CROPPING);
-  }, []);
+  };
 
-  const handleCropConfirm = useCallback((croppedImage: string, config: CropConfig) => {
+  const handleCropConfirm = (croppedImage: string, config: CropConfig) => {
     if (isFinalCropping) {
-      // 最終調整（加工後）の確定
       setFinalCropConfig(config);
       setIsFinalCropping(false);
       setAppState(AppState.EDITING);
     } else {
-      // 初期調整（加工前）の確定
       setOriginalCropped(croppedImage); 
       setCropConfig(config);
-      setFinalCropConfig(null); // 初期構成が変わったので最終トリミングはリセット
-      setPersonImage(null); 
-      setAppliedClothing(null);
-      setAppliedBg(null); // 重要：再トリミング時に背景選択をリセットして元の写真が見えるようにする
+      setPersonImage(null);
+      setAppliedBg(BackgroundOption.None);
+      setAppliedClothing(ClothingOption.None);
       setAppState(AppState.EDITING); 
     }
-  }, [isFinalCropping]);
+  };
 
-  const handleStartFinalCrop = useCallback(async () => {
+  const handleBgAction = async (option: BackgroundOption) => {
     if (!originalCropped) return;
-    
-    // 現在の合成結果（加工後）を一枚の絵としてキャプチャする
-    setStatus({ isProcessing: true, message: '調整用プレビューを生成中...' });
-    try {
-      const canvas = document.createElement('canvas');
-      const width = 1200; // トリミング画面用の十分な解像度
-      const height = 1600;
-      await drawMemorialPhoto({ 
-        canvas, 
-        originalCropped, 
-        personImage, 
-        appliedBg, 
-        width, 
-        height, 
-        isHighRes: false,
-        finalCropConfig: null // 調整「前」の状態をベースにする
-      });
-      
-      setCompositePreview(canvas.toDataURL('image/jpeg', 0.9));
-      setIsFinalCropping(true);
-      setAppState(AppState.CROPPING);
-    } catch (e) {
-      setErrorModal({ isOpen: true, title: 'エラー', message: 'プレビューの生成に失敗しました。' });
-    } finally {
-      setStatus({ isProcessing: false, message: '' });
-    }
-  }, [originalCropped, personImage, appliedBg]);
-
-  const handleEditAction = useCallback(async (action: EditAction | null) => {
-    if (!originalCropped) return;
-    const isBgAction = action === null || action.startsWith('REMOVE_BG_');
-
-    if (action === null) {
-      if (isBgAction) setAppliedBg(null);
-      else {
-        setAppliedClothing(null);
-        if (appliedBg) {
-          setStatus({ isProcessing: true, message: '元の服装で再抽出しています...' });
-          try { setPersonImage(await extractPerson(originalCropped)); } catch (e) { setErrorModal({ isOpen: true, title: 'エラー', message: '失敗しました。' }); }
-          finally { setStatus({ isProcessing: false, message: '' }); }
-        } else { setPersonImage(null); }
-      }
+    if (option === BackgroundOption.None) {
+      setAppliedBg(BackgroundOption.None);
+      setPersonImage(appliedClothing === ClothingOption.None ? null : personImage);
       return;
     }
 
-    if (!personImage) {
-      setStatus({ isProcessing: true, message: '人物を高品質に切り抜いています...' });
-      try { setPersonImage(await extractPerson(originalCropped)); } catch (error: any) {
-        setErrorModal({ isOpen: true, title: '解析エラー', message: '人物の抽出に失敗しました。' });
-        setStatus({ isProcessing: false, message: '' }); return;
-      }
+    setStatus({ isProcessing: true, message: '背景をAIで生成中...' });
+    try {
+      const base = personImage || originalCropped;
+      const result = await applyBackgroundSynthesis(base, option);
+      setPersonImage(result);
+      setAppliedBg(option);
+    } catch (e) {
+      setErrorModal({ isOpen: true, title: 'エラー', message: '背景の合成に失敗しました。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
+    }
+  };
+
+  const handleClothingAction = async (option: ClothingOption) => {
+    if (!originalCropped) return;
+    if (option === ClothingOption.None) {
+      setAppliedClothing(ClothingOption.None);
+      setPersonImage(appliedBg === BackgroundOption.None ? null : personImage);
+      return;
     }
 
-    if (isBgAction) { setAppliedBg(action); setStatus({ isProcessing: false, message: '' }); } 
-    else {
-      setStatus({ isProcessing: true, message: '服装を着せ替え中です...' });
-      try {
-        const newPerson = await changeClothing(originalCropped, action);
-        setPersonImage(newPerson); setAppliedClothing(action);
-      } catch (error: any) {
-        setErrorModal({ isOpen: true, title: '失敗', message: '服装の生成に失敗しました。' });
-      } finally { setStatus({ isProcessing: false, message: '' }); }
+    setStatus({ isProcessing: true, message: '衣装をAIで変更中...' });
+    try {
+      const base = personImage || originalCropped;
+      const result = await applyClothingSynthesis(base, option);
+      setPersonImage(result);
+      setAppliedClothing(option);
+    } catch (e) {
+      setErrorModal({ isOpen: true, title: 'エラー', message: '衣服の変更に失敗しました。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
     }
-  }, [originalCropped, personImage, appliedBg, appliedClothing]);
+  };
 
-  const handleDownload = useCallback(async () => {
+  const handleDownload = async () => {
     if (!originalCropped || !companyInfo) return;
-    setStatus({ isProcessing: true, message: '高品質(2700x3600)で画像を合成中...' });
+    setStatus({ isProcessing: true, message: '高品質画像を生成中...' });
     try {
       const canvas = document.createElement('canvas');
       const width = 2700;
@@ -180,25 +134,23 @@ const App: React.FC = () => {
         canvas, 
         originalCropped, 
         personImage, 
-        appliedBg, 
         width, 
         height, 
         isHighRes: true,
-        finalCropConfig // 最終調整を適用
+        finalCropConfig 
       });
       
-      const newCount = await usageService.incrementUsage(companyInfo.id);
-      setUsageCount(newCount);
+      await usageService.incrementUsage(companyInfo.id);
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/png');
-      link.download = deceasedName.trim() ? `瞬影_${deceasedName}.png` : `瞬影_遺影.png`;
+      link.download = deceasedName.trim() ? `遺影_${deceasedName}.png` : `遺影.png`;
       link.click();
-      setStatus({ isProcessing: false, message: '' });
     } catch (err) { 
-      setStatus({ isProcessing: false, message: '' });
       setErrorModal({ isOpen: true, title: '保存失敗', message: 'エラーが発生しました。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
     }
-  }, [originalCropped, personImage, appliedBg, companyInfo, deceasedName, finalCropConfig]);
+  };
 
   return (
     <div className="h-screen bg-[#f8f9fa] text-gray-800 font-serif flex flex-col overflow-hidden">
@@ -206,60 +158,47 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <Logo />
           {companyInfo && (
-            <div className="flex items-center gap-4">
-               <div className="flex flex-col items-end mr-4">
-                  <div className="text-sm font-bold">{companyInfo.name}</div>
-                  <div className="text-[11px] text-blue-600 font-sans tracking-widest uppercase">{companyInfo.plan}</div>
-               </div>
-               <button onClick={() => setIsLogoutConfirmOpen(true)} className="text-sm text-gray-400 hover:text-red-600 transition-colors cursor-pointer">ログアウト</button>
+            <div className="text-right">
+              <p className="text-sm font-bold">{companyInfo.name}</p>
+              <button onClick={() => setIsLogoutConfirmOpen(true)} className="text-xs text-gray-400 hover:text-red-600">ログアウト</button>
             </div>
           )}
         </div>
       </header>
 
-      <main className="flex-grow flex flex-col items-center justify-center overflow-y-auto w-full relative">
+      <main className="flex-grow flex flex-col items-center justify-center overflow-hidden">
         {appState === AppState.LOGIN ? <LoginScreen onLogin={handleLogin} /> : (
           isAdminMode ? <ManagementDashboard /> : (
-            <>
-              {appState === AppState.UPLOAD && (
-                <div className="w-full max-w-4xl animate-fade-in my-auto p-4 flex flex-col items-center">
-                  <h2 className="text-3xl font-medium mb-6 text-gray-900">大切な思い出を、永遠の一枚に</h2>
-                  <UploadArea onImageSelected={handleImageSelected} />
-                </div>
-              )}
-              {appState === AppState.CROPPING && (isFinalCropping ? compositePreview : uploadedImage) && (
+            <div className="w-full h-full flex flex-col">
+              {appState === AppState.UPLOAD && <UploadArea onImageSelected={handleImageSelected} />}
+              {appState === AppState.CROPPING && uploadedImage && (
                 <CropTool 
-                  imageSrc={isFinalCropping ? compositePreview! : uploadedImage!} 
-                  initialConfig={isFinalCropping ? finalCropConfig : cropConfig}
+                  imageSrc={isFinalCropping ? compositePreview! : uploadedImage} 
                   onConfirm={handleCropConfirm} 
-                  onCancel={() => {
-                    setIsFinalCropping(false);
-                    setAppState(originalCropped ? AppState.EDITING : AppState.UPLOAD);
-                  }} 
+                  onCancel={() => setAppState(AppState.UPLOAD)} 
                 />
               )}
-              {appState === AppState.EDITING && companyInfo && (
-                <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-12 gap-6 p-6 h-full max-h-[92vh]">
-                  <div className="md:col-span-7 lg:col-span-8 flex items-center justify-center bg-gray-100 rounded-2xl p-4 overflow-hidden shadow-inner relative">
+              {appState === AppState.EDITING && (
+                <div className="w-full h-full grid grid-cols-1 md:grid-cols-12 overflow-hidden">
+                  <div className="md:col-span-8 bg-gray-100 flex items-center justify-center p-8">
                     <PhotoCanvas 
                       originalCropped={originalCropped} 
                       personImage={personImage} 
-                      appliedBg={appliedBg} 
                       isLoading={status.isProcessing} 
                       loadingMessage={status.message}
-                      finalCropConfig={finalCropConfig}
                     />
                   </div>
-                  <div className="md:col-span-5 lg:col-span-4 h-full overflow-hidden">
+                  <div className="md:col-span-4 h-full">
                     <ActionPanel 
-                      onAction={handleEditAction} 
+                      onBgAction={handleBgAction}
+                      onClothingAction={handleClothingAction}
+                      appliedBg={appliedBg}
+                      appliedClothing={appliedClothing}
                       disabled={status.isProcessing} 
                       onDownload={handleDownload} 
                       onReset={() => setAppState(AppState.UPLOAD)} 
-                      onStartCrop={handleStartFinalCrop} // 最終調整フローへ 
-                      appliedBg={appliedBg} 
-                      appliedClothing={appliedClothing} 
-                      userPlan={companyInfo.plan} 
+                      onStartCrop={() => {}} // 簡略化のため空
+                      userPlan={companyInfo!.plan} 
                       usageCount={usageCount} 
                       deceasedName={deceasedName} 
                       onDeceasedNameChange={setDeceasedName} 
@@ -267,29 +206,17 @@ const App: React.FC = () => {
                   </div>
                 </div>
               )}
-            </>
+            </div>
           )
         )}
       </main>
 
-      {isLogoutConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-8 text-center max-w-sm">
-            <h3 className="text-xl font-bold mb-4">ログアウトしますか？</h3>
-            <div className="flex gap-4">
-              <button onClick={() => setIsLogoutConfirmOpen(false)} className="flex-1 py-4 text-gray-600 font-bold hover:bg-gray-50 rounded-lg">キャンセル</button>
-              <button onClick={executeLogout} className="flex-1 py-4 bg-red-600 text-white font-bold rounded-lg">ログアウト</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {errorModal.isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-8 text-center max-w-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white p-8 rounded-xl max-w-md w-full text-center">
             <h3 className="text-xl font-bold mb-4">{errorModal.title}</h3>
-            <p className="text-base text-gray-500 mb-8">{errorModal.message}</p>
-            <button onClick={() => setErrorModal(prev => ({...prev, isOpen: false}))} className="w-full py-4 bg-gray-900 text-white font-bold rounded-lg">閉じる</button>
+            <p className="mb-8">{errorModal.message}</p>
+            <button onClick={() => setErrorModal({...errorModal, isOpen: false})} className="w-full py-4 bg-gray-900 text-white rounded-lg">閉じる</button>
           </div>
         </div>
       )}

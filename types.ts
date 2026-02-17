@@ -7,18 +7,27 @@ export enum AppState {
   RESULT = 'RESULT',
 }
 
-export enum EditAction {
-  REMOVE_BG_BLUE = 'REMOVE_BG_BLUE',
-  REMOVE_BG_GRAY = 'REMOVE_BG_GRAY',
-  REMOVE_BG_PINK = 'REMOVE_BG_PINK',
-  REMOVE_BG_YELLOW = 'REMOVE_BG_YELLOW',
-  REMOVE_BG_PURPLE = 'REMOVE_BG_PURPLE',
-  REMOVE_BG_WHITE = 'REMOVE_BG_WHITE',
-  SUIT_MENS = 'SUIT_MENS',
-  SUIT_WOMENS = 'SUIT_WOMENS',
-  KIMONO_MENS = 'KIMONO_MENS',
-  KIMONO_WOMENS = 'KIMONO_WOMENS',
-  MANUAL_EDIT = 'MANUAL_EDIT',
+export enum ClothingOption {
+  None = 'none',
+  MensSuitBlack = 'mens_suit_black',
+  MensKimono = 'mens_kimono',
+  MensSuitNavy = 'mens_suit_navy',
+  WomensSuitBlack = 'womens_suit_black',
+  WomensKimonoBlack = 'womens_kimono_black',
+  WomensKimonoColor = 'womens_kimono_color'
+}
+
+export enum BackgroundOption {
+  None = 'none',
+  SoftBlue = 'soft_blue',
+  SoftPink = 'soft_pink',
+  WisteriaPurple = 'wisteria_purple',
+  FreshGreen = 'fresh_green',
+  WarmBeige = 'warm_beige',
+  WhiteGrey = 'white_grey',
+  CloudyGrey = 'cloudy_grey',
+  Floral = 'floral',
+  SolidBlack = 'solid_black'
 }
 
 export enum UserPlan {

@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { EditAction } from "../types";
+import { ClothingOption, BackgroundOption } from "../types";
 
 const MODEL_NAME = 'gemini-2.5-flash-image';
 
@@ -11,20 +11,43 @@ const cleanBase64 = (dataUrl: string): string => {
 };
 
 /**
- * 人物抽出プロンプト
+ * 背景の直接合成
  */
-export const extractPerson = async (base64Image: string): Promise<string> => {
+export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const mimeType = base64Image.match(/data:([^;]+);/)?.[1] || "image/png";
 
-  const prompt = `遺影作成のための人物分離タスクです。
-背景を完全に除去し、ムラのない均一な「#00FF00 (純粋な緑)」で塗りつぶしてください。
+  let bgDesc = "";
+  switch (option) {
+    case BackgroundOption.SoftBlue: bgDesc = "淡いブルーのラジアルグラデーション。中心を明るく。"; break;
+    case BackgroundOption.SoftPink: bgDesc = "淡いピンク（桜色）のラジアルグラデーション。"; break;
+    case BackgroundOption.WisteriaPurple: bgDesc = "上品な藤色（ラベンダー）のグラデーション。"; break;
+    case BackgroundOption.FreshGreen: bgDesc = "爽やかな若草色のグラデーション。"; break;
+    case BackgroundOption.WarmBeige: bgDesc = "落ち着いた温かみのあるベージュの背景。"; break;
+    case BackgroundOption.WhiteGrey: bgDesc = "清潔感のある明るいグレーの背景。"; break;
+    case BackgroundOption.CloudyGrey: bgDesc = "伝統的な遺影用の高級感のある雲模様のグレー背景。"; break;
+    case BackgroundOption.Floral: bgDesc = "背後に薄く上品な菊の花を配置した、葬儀・祭壇用の背景。"; break;
+    case BackgroundOption.SolidBlack: bgDesc = "格式高い漆黒の背景。"; break;
+    default: return base64Image;
+  }
 
-【注意】
-1. 顔の微細なディテール（瞳の中の光、皮膚の質感、シワ）を絶対に滑らかにしないでください。
-2. 背景との境界線付近に元の背景色を残さないでください。
-3. 背景には影や照明効果を一切入れず、フラットなベタ塗りにしてください。
-4. 出力サイズとアスペクト比(3:4)を厳守してください。`;
+  const prompt = `
+[ROLE: PROFESSIONAL PHOTO RETOUCHER]
+遺影写真として、人物の同一性を完全に保ったまま、背景をプロフェッショナルな品質で合成してください。
+
+[1. IDENTITY PRESERVATION]
+- 被写体の顔（目、鼻、口、表情、シワ、髪型）は一切変更しないでください。これらは保護対象です。
+
+[2. BACKGROUND SPECIFICATION: ${bgDesc}]
+- 既存の背景を削除し、指定の背景を生成してください。
+- スタジオ撮影のような、被写体の背後から柔らかい光が当たっているようなラジアルライティング（中心が明るい）を表現してください。
+
+[3. REFINEMENT]
+- 人物の輪郭をシャープに保ちつつ、背景との境目に不自然な浮きがないよう、光を馴染ませてください。
+- 肩に他人の手などが写り込んでいる場合は、除去して人物の衣服を補完してください。
+
+[OUTPUT]
+- 3:4 Aspect Ratio, High Resolution.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -35,7 +58,7 @@ export const extractPerson = async (base64Image: string): Promise<string> => {
       config: { imageConfig: { aspectRatio: "3:4" } }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-    if (!part?.inlineData) throw new Error("抽出失敗");
+    if (!part?.inlineData) throw new Error("背景生成失敗");
     return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
   } catch (error) {
     console.error(error);
@@ -44,36 +67,39 @@ export const extractPerson = async (base64Image: string): Promise<string> => {
 };
 
 /**
- * 服装着せ替えプロンプト
+ * 衣装の着せ替え合成
  */
-export const changeClothing = async (base64Image: string, action: EditAction): Promise<string> => {
+export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const mimeType = base64Image.match(/data:([^;]+);/)?.[1] || "image/png";
 
-  let clothText = "";
-  switch (action) {
-    case EditAction.SUIT_MENS: 
-      clothText = "男性用のフォーマルな黒の礼服、白いシャツ、黒いネクタイ。胸から上の近接構図。"; 
-      break;
-    case EditAction.KIMONO_MENS: 
-      clothText = "男性用の黒紋付羽織。胸から上の襟元のみを描写し、袴（はかま）は絶対に描かないでください。"; 
-      break;
-    case EditAction.SUIT_WOMENS: 
-      clothText = "女性用の黒の喪服、パールのネックレス。胸から上の近接構図。"; 
-      break;
-    case EditAction.KIMONO_WOMENS: 
-      clothText = "女性用の黒紋付喪服、白い半襟。胸から上の襟元のみを描写し、帯や下半身は絶対に描かないでください。"; 
-      break;
+  let clothSpec = "";
+  switch (option) {
+    case ClothingOption.MensSuitBlack: clothSpec = "男性用の高級な黒礼服（ブラックスーツ）、白いワイシャツ、黒いネクタイ。"; break;
+    case ClothingOption.MensKimono: clothSpec = "男性用の格式高い黒紋付羽織。胸に白い紋。"; break;
+    case ClothingOption.MensSuitNavy: clothSpec = "落ち着いた紺色のスーツ。"; break;
+    case ClothingOption.WomensSuitBlack: clothSpec = "女性用の黒い喪服アンサンブル。一連の白いパールのネックレス。"; break;
+    case ClothingOption.WomensKimonoBlack: clothSpec = "女性用の伝統的な黒喪服（着物）、白い半襟。"; break;
+    case ClothingOption.WomensKimonoColor: clothSpec = "上品な淡い色合いの色無地または訪問着。"; break;
+    default: return base64Image;
   }
 
-  const prompt = `元画像の「人物の大きさ（ズーム率）」「顔の位置」「表情」を完全に維持したまま、服装のみを「${clothText}」に変更してください。
+  const prompt = `
+[ROLE: DIGITAL TAILOR]
+現在の写真の「顔」と「背景」を維持したまま、服装のみを高品質なフォーマルウェアに変更してください。
 
-【最重要・厳守事項】
-1. 構図の維持: 袴（はかま）や帯を描くために人物を小さくして「引きの構図」にすることは絶対に禁止です。元画像がアップであれば、そのアップのまま首から下だけを差し替えてください。
-2. 顔の保存: 目、鼻、口、髪型、シワなどの特徴を1ピクセルも描き直したり動かしたりしないでください。
-3. 背景: 一切の影やムラがない「#00FF00 (純粋な緑)」で塗りつぶしてください。
-4. 質感: 写真として自然な布地の質感（落ち着いたマットな黒）を表現してください。
-5. 接続: 首元と衣服の境界を、不自然な隙間や段差がないよう滑らかに繋げてください。`;
+[1. IDENTITY]
+- 顔、表情、髪型、視線は1ピクセルも変更しないでください。
+
+[2. ATTIRE: ${clothSpec}]
+- 人物の骨格（肩幅、首の太さ）に合わせて、衣装を自然にフィットさせてください。
+- 着せ替え特有の不自然さを無くし、実際にその服を着てスタジオで撮影したような質感にしてください。
+
+[3. COMPOSITION]
+- 元の人物の頭部の位置とサイズを維持してください。引きの構図にするのは厳禁です。
+
+[OUTPUT]
+- 3:4 Aspect Ratio.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -96,7 +122,7 @@ export const repairHeicImage = async (base64Heic: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: MODEL_NAME,
-        contents: { parts: [{ text: "Convert to high quality 3:4 JPEG." }, { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }] },
+        contents: { parts: [{ text: "Convert to high quality 3:4 JPEG portrait." }, { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }] },
         config: { imageConfig: { aspectRatio: "3:4" } }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
