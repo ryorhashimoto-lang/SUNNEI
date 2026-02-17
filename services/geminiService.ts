@@ -22,7 +22,7 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
     case BackgroundOption.SoftBlue: bgDesc = "淡いブルーのラジアルグラデーション。中心を明るく。"; break;
     case BackgroundOption.SoftPink: bgDesc = "淡いピンク（桜色）のラジアルグラデーション。"; break;
     case BackgroundOption.WisteriaPurple: bgDesc = "上品な藤色（ラベンダー）のグラデーション。"; break;
-    case BackgroundOption.FreshGreen: bgDesc = "爽やかな若草色のグラデーション。"; break;
+    case BackgroundOption.FreshGreen: bgDesc = "薄い若草色のグラデーション。"; break;
     case BackgroundOption.WhiteGrey: bgDesc = "清潔感のある明るいグレーの背景。"; break;
     default: return base64Image;
   }
