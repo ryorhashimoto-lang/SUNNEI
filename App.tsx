@@ -81,27 +81,6 @@ const App: React.FC = () => {
     }
   };
 
-  const handleBgAction = async (option: BackgroundOption) => {
-    if (!originalCropped) return;
-    if (option === BackgroundOption.None && appliedClothing === ClothingOption.None) {
-        setPersonImage(null);
-        setAppliedBg(BackgroundOption.None);
-        return;
-    }
-    
-    setStatus({ isProcessing: true, message: '背景の質感を調整しています...' });
-    try {
-      const base = personImage || originalCropped;
-      const result = await applyBackgroundSynthesis(base, option);
-      setPersonImage(result);
-      setAppliedBg(option);
-    } catch (e) {
-      setErrorModal({ isOpen: true, title: '生成エラー', message: '背景の合成に失敗しました。' });
-    } finally {
-      setStatus({ isProcessing: false, message: '' });
-    }
-  };
-
   const handleClothingAction = async (option: ClothingOption) => {
     if (!originalCropped) return;
     if (option === ClothingOption.None && appliedBg === BackgroundOption.None) {
@@ -255,9 +234,7 @@ const App: React.FC = () => {
                     />
                   </div>
                   <ActionPanel 
-                    onBgAction={handleBgAction}
                     onClothingAction={handleClothingAction}
-                    appliedBg={appliedBg}
                     appliedClothing={appliedClothing}
                     disabled={status.isProcessing} 
                     onDownload={handleDownload} 

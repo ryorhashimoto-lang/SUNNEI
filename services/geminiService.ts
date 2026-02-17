@@ -19,11 +19,11 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
 
   let bgDesc = "";
   switch (option) {
-    case BackgroundOption.SoftBlue: bgDesc = "淡いブルーのラジアルグラデーション。中心を明るく。"; break;
+    case BackgroundOption.SoftBlue: bgDesc = "淡いブルー（浅葱色）のラジアルグラデーション。中心を明るく。"; break;
     case BackgroundOption.SoftPink: bgDesc = "淡いピンク（桜色）のラジアルグラデーション。"; break;
     case BackgroundOption.WisteriaPurple: bgDesc = "上品な藤色（ラベンダー）のグラデーション。"; break;
     case BackgroundOption.FreshGreen: bgDesc = "薄い若草色のグラデーション。"; break;
-    case BackgroundOption.WhiteGrey: bgDesc = "清潔感のある明るいグレーの背景。"; break;
+    case BackgroundOption.WhiteGrey: bgDesc = "清潔感のある明るいグレー（白磁）の背景。"; break;
     default: return base64Image;
   }
 
@@ -115,11 +115,3 @@ export const applyClothingSynthesis = async (base64Image: string, option: Clothi
 
 export const repairHeicImage = async (base64Heic: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: { parts: [{ text: "Convert to high quality 3:4 JPEG portrait." }, { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }] },
-        config: { imageConfig: { aspectRatio: "3:4" } }
-    });
-    const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-    return `data:${part!.inlineData!.mimeType};base64,${part!.inlineData!.data}`;
-};
