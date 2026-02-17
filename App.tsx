@@ -81,6 +81,30 @@ const App: React.FC = () => {
     }
   };
 
+  const handleBgAction = async (option: BackgroundOption) => {
+    if (!originalCropped) return;
+    if (option === BackgroundOption.None) {
+      // 背景変更なし（リセット）
+      setPersonImage(null); // 現在の合成をクリアして元画像に戻す（衣装も消える仕様）
+      setAppliedBg(BackgroundOption.None);
+      setAppliedClothing(ClothingOption.None);
+      return;
+    }
+
+    setStatus({ isProcessing: true, message: '背景をスタジオ品質で合成中...' });
+    try {
+      // 衣装が適用済みの場合はその画像をベースにする
+      const base = personImage || originalCropped;
+      const result = await applyBackgroundSynthesis(base, option);
+      setPersonImage(result);
+      setAppliedBg(option);
+    } catch (e) {
+      setErrorModal({ isOpen: true, title: '背景合成エラー', message: '背景の生成に失敗しました。時間をおいて再度お試しください。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
+    }
+  };
+
   const handleClothingAction = async (option: ClothingOption) => {
     if (!originalCropped) return;
     if (option === ClothingOption.None && appliedBg === BackgroundOption.None) {
@@ -91,6 +115,7 @@ const App: React.FC = () => {
 
     setStatus({ isProcessing: true, message: 'お召し物のフィッティング中...' });
     try {
+      // 背景が適用済みの場合はその画像をベースにする
       const base = personImage || originalCropped;
       const result = await applyClothingSynthesis(base, option);
       setPersonImage(result);
@@ -168,7 +193,6 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen bg-[#f8f9fb] text-gray-800 font-serif flex flex-col overflow-hidden">
-      {/* Refined Minimal Header */}
       <header className="bg-white border-b border-gray-100 shrink-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
         <div className="max-w-[1800px] mx-auto px-8 py-3.5 flex items-center justify-between">
           <Logo />
@@ -178,7 +202,7 @@ const App: React.FC = () => {
                 <p className="text-sm font-bold text-gray-900 leading-none">{companyInfo.name}</p>
                 <div className="flex items-center justify-end gap-1.5 mt-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]"></span>
-                  <span className="text-[9px] text-gray-400 font-sans tracking-widest uppercase font-bold">Standard Member</span>
+                  <span className="text-[9px] text-gray-400 font-sans tracking-widest uppercase font-bold">{companyInfo.plan} 会員</span>
                 </div>
               </div>
               <button 
@@ -224,7 +248,6 @@ const App: React.FC = () => {
               {appState === AppState.EDITING && (
                 <div className="w-full h-full grid grid-cols-1 md:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px] overflow-hidden">
                   <div className="flex items-center justify-center p-6 md:p-16 lg:p-24 overflow-y-auto bg-[#e9ebed] relative">
-                    {/* Background Texture */}
                     <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
                     <PhotoCanvas 
                       originalCropped={originalCropped} 
@@ -234,7 +257,9 @@ const App: React.FC = () => {
                     />
                   </div>
                   <ActionPanel 
+                    onBgAction={handleBgAction}
                     onClothingAction={handleClothingAction}
+                    appliedBg={appliedBg}
                     appliedClothing={appliedClothing}
                     disabled={status.isProcessing} 
                     onDownload={handleDownload} 
@@ -252,7 +277,6 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Logout Dialog */}
       {isLogoutConfirmOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-[2px] animate-fade-in">
           <div className="bg-white rounded-3xl p-10 text-center max-w-sm shadow-2xl border border-gray-100">
@@ -271,7 +295,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Simplified Error Modal */}
       {errorModal.isOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-fade-in">
           <div className="bg-white p-10 rounded-3xl max-w-md w-full text-center shadow-2xl">

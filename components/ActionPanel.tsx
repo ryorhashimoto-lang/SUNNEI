@@ -1,13 +1,15 @@
 
 import React, { useState } from 'react';
-import { ClothingOption, UserPlan, PLAN_LIMITS } from '../types';
+import { ClothingOption, BackgroundOption, UserPlan, PLAN_LIMITS } from '../types';
 
 interface ActionPanelProps {
+  onBgAction: (option: BackgroundOption) => void;
   onClothingAction: (option: ClothingOption) => void;
   disabled: boolean;
   onDownload: () => void;
   onReset: () => void;
   onStartCrop: () => void;
+  appliedBg: BackgroundOption;
   appliedClothing: ClothingOption;
   userPlan: UserPlan;
   usageCount: number;
@@ -16,11 +18,13 @@ interface ActionPanelProps {
 }
 
 const ActionPanel: React.FC<ActionPanelProps> = ({ 
+  onBgAction,
   onClothingAction,
   disabled, 
   onDownload, 
   onReset, 
   onStartCrop,
+  appliedBg,
   appliedClothing,
   userPlan,
   usageCount,
@@ -45,6 +49,15 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   ];
 
   const currentClothingOptions = gender === 'men' ? menOptions : womenOptions;
+
+  // 背景色のタイル定義
+  const bgItems = [
+    { id: BackgroundOption.SoftBlue, label: '浅葱 (青)', color: 'bg-[#e3f2fd]', text: 'text-gray-900' },
+    { id: BackgroundOption.SoftPink, label: '桜色 (桃)', color: 'bg-[#fce4ec]', text: 'text-gray-900' },
+    { id: BackgroundOption.WisteriaPurple, label: '藤色 (紫)', color: 'bg-[#f3e5f5]', text: 'text-gray-900' },
+    { id: BackgroundOption.FreshGreen, label: '若草 (緑)', color: 'bg-[#f1f8e9]', text: 'text-gray-900' },
+    { id: BackgroundOption.WhiteGrey, label: '白磁 (灰)', color: 'bg-[#fafafa]', text: 'text-gray-900' },
+  ];
 
   const StepBadge = ({ num, text }: { num: string, text: string }) => (
     <div className="flex items-center gap-3 mb-5">
@@ -79,9 +92,47 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 
       <div className="flex-1 overflow-y-auto px-6 py-8 space-y-12 custom-scrollbar">
         
-        {/* Step 1: Clothing - 性別色分けUI */}
+        {/* Step 1: Background - 全面タイルUI */}
         <section className="animate-fade-in translate-y-2 opacity-0 [animation-fill-mode:forwards] [animation-delay:100ms]">
-          <StepBadge num="1" text="服装の着せ替え" />
+          <StepBadge num="1" text="背景の選択" />
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => onBgAction(BackgroundOption.None)}
+              disabled={disabled}
+              className={`flex items-center justify-center p-4 rounded-2xl border-2 text-center transition-all col-span-2 min-h-[55px] relative group ${appliedBg === BackgroundOption.None ? 'border-gray-900 bg-gray-100 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-200 bg-white hover:border-gray-400 hover:shadow-sm'}`}
+            >
+              <span className="text-xs font-bold text-gray-700">元の背景（変更なし）</span>
+              {appliedBg === BackgroundOption.None && (
+                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+                    </svg>
+                 </div>
+              )}
+            </button>
+            {bgItems.map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => onBgAction(opt.id)}
+                disabled={disabled}
+                className={`flex items-center justify-center p-4 rounded-2xl border-2 transition-all min-h-[75px] relative group ${opt.color} ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
+              >
+                <span className="text-[12px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
+                {appliedBg === opt.id && (
+                  <div className="absolute top-1.5 right-1.5 bg-white/90 rounded-full p-0.5 shadow-sm backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-900">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Step 2: Clothing - 性別色分けUI */}
+        <section className="animate-fade-in translate-y-2 opacity-0 [animation-fill-mode:forwards] [animation-delay:200ms]">
+          <StepBadge num="2" text="服装の着せ替え" />
           
           <div className="flex mb-5 bg-gray-100 p-1.5 rounded-2xl gap-1">
             <button
@@ -137,9 +188,9 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
           </div>
         </section>
 
-        {/* Step 2: Finishing */}
-        <section className="animate-fade-in translate-y-2 opacity-0 [animation-fill-mode:forwards] [animation-delay:200ms]">
-          <StepBadge num="2" text="仕上げと微調整" />
+        {/* Step 3: Finishing */}
+        <section className="animate-fade-in translate-y-2 opacity-0 [animation-fill-mode:forwards] [animation-delay:300ms]">
+          <StepBadge num="3" text="仕上げと微調整" />
           
           <div className="space-y-5">
             <div className="bg-gray-50/80 p-5 rounded-[2rem] border border-gray-200/60 shadow-inner group">
