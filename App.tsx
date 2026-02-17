@@ -13,11 +13,11 @@ import { usageService } from './services/usageService';
 import { drawMemorialPhoto } from './services/renderService';
 
 const Logo = () => (
-  <div className="flex items-center gap-3 select-none">
-    <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center text-white font-serif font-bold text-xl shadow-sm">瞬</div>
+  <div className="flex items-center gap-4 select-none group">
+    <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center text-white font-serif font-bold text-2xl shadow-xl group-hover:scale-105 transition-transform duration-500">瞬</div>
     <div className="flex flex-col justify-center">
-      <span className="text-2xl font-serif font-bold text-gray-900 tracking-wider leading-none">瞬影</span>
-      <span className="text-[12px] font-sans tracking-[0.3em] text-gray-500 uppercase mt-0.5 leading-none">SHUNNEI</span>
+      <span className="text-3xl font-serif font-bold text-gray-900 tracking-[0.1em] leading-none">瞬影</span>
+      <span className="text-[10px] font-sans tracking-[0.5em] text-gray-400 uppercase mt-1 leading-none">SHUNNEI STUDIO</span>
     </div>
   </div>
 );
@@ -83,20 +83,20 @@ const App: React.FC = () => {
 
   const handleBgAction = async (option: BackgroundOption) => {
     if (!originalCropped) return;
-    if (option === BackgroundOption.None) {
-      setAppliedBg(BackgroundOption.None);
-      setPersonImage(appliedClothing === ClothingOption.None ? null : personImage);
-      return;
+    if (option === BackgroundOption.None && appliedClothing === ClothingOption.None) {
+        setPersonImage(null);
+        setAppliedBg(BackgroundOption.None);
+        return;
     }
-
-    setStatus({ isProcessing: true, message: '背景をAIで生成中...' });
+    
+    setStatus({ isProcessing: true, message: '背景の質感を調整しています...' });
     try {
       const base = personImage || originalCropped;
       const result = await applyBackgroundSynthesis(base, option);
       setPersonImage(result);
       setAppliedBg(option);
     } catch (e) {
-      setErrorModal({ isOpen: true, title: 'エラー', message: '背景の合成に失敗しました。' });
+      setErrorModal({ isOpen: true, title: '生成エラー', message: '背景の合成に失敗しました。' });
     } finally {
       setStatus({ isProcessing: false, message: '' });
     }
@@ -104,20 +104,46 @@ const App: React.FC = () => {
 
   const handleClothingAction = async (option: ClothingOption) => {
     if (!originalCropped) return;
-    if (option === ClothingOption.None) {
-      setAppliedClothing(ClothingOption.None);
-      setPersonImage(appliedBg === BackgroundOption.None ? null : personImage);
-      return;
+    if (option === ClothingOption.None && appliedBg === BackgroundOption.None) {
+        setPersonImage(null);
+        setAppliedClothing(ClothingOption.None);
+        return;
     }
 
-    setStatus({ isProcessing: true, message: '衣装をAIで変更中...' });
+    setStatus({ isProcessing: true, message: 'お召し物のフィッティング中...' });
     try {
       const base = personImage || originalCropped;
       const result = await applyClothingSynthesis(base, option);
       setPersonImage(result);
       setAppliedClothing(option);
     } catch (e) {
-      setErrorModal({ isOpen: true, title: 'エラー', message: '衣服の変更に失敗しました。' });
+      setErrorModal({ isOpen: true, title: '生成エラー', message: '衣装の変更に失敗しました。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
+    }
+  };
+
+  const handleStartFinalCrop = async () => {
+    if (!originalCropped) return;
+    setStatus({ isProcessing: true, message: '調整用データを準備しています...' });
+    try {
+      const canvas = document.createElement('canvas');
+      const width = 1200;
+      const height = 1600;
+      await drawMemorialPhoto({ 
+        canvas, 
+        originalCropped, 
+        personImage, 
+        width, 
+        height, 
+        isHighRes: false,
+        finalCropConfig: null 
+      });
+      setCompositePreview(canvas.toDataURL('image/jpeg', 0.9));
+      setIsFinalCropping(true);
+      setAppState(AppState.CROPPING);
+    } catch (e) {
+      setErrorModal({ isOpen: true, title: 'エラー', message: 'プレビューの生成に失敗しました。' });
     } finally {
       setStatus({ isProcessing: false, message: '' });
     }
@@ -125,7 +151,7 @@ const App: React.FC = () => {
 
   const handleDownload = async () => {
     if (!originalCropped || !companyInfo) return;
-    setStatus({ isProcessing: true, message: '高品質画像を生成中...' });
+    setStatus({ isProcessing: true, message: '最高画質で画像を生成しています...' });
     try {
       const canvas = document.createElement('canvas');
       const width = 2700;
@@ -140,47 +166,87 @@ const App: React.FC = () => {
         finalCropConfig 
       });
       
-      await usageService.incrementUsage(companyInfo.id);
+      const newCount = await usageService.incrementUsage(companyInfo.id);
+      setUsageCount(newCount);
+      
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/png');
-      link.download = deceasedName.trim() ? `遺影_${deceasedName}.png` : `遺影.png`;
+      link.download = deceasedName.trim() ? `瞬影_${deceasedName}.png` : `瞬影_遺影.png`;
       link.click();
     } catch (err) { 
-      setErrorModal({ isOpen: true, title: '保存失敗', message: 'エラーが発生しました。' });
+      setErrorModal({ isOpen: true, title: '保存失敗', message: '画像の生成中にエラーが発生しました。' });
     } finally {
       setStatus({ isProcessing: false, message: '' });
     }
   };
 
+  const handleLogout = () => {
+    authService.logout();
+    setAppState(AppState.LOGIN);
+    setCompanyInfo(null);
+    setIsLogoutConfirmOpen(false);
+  };
+
   return (
-    <div className="h-screen bg-[#f8f9fa] text-gray-800 font-serif flex flex-col overflow-hidden">
-      <header className="bg-white shadow-sm border-b border-gray-200 shrink-0 z-20">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+    <div className="h-screen bg-[#f8f9fb] text-gray-800 font-serif flex flex-col overflow-hidden">
+      {/* Refined Minimal Header */}
+      <header className="bg-white border-b border-gray-100 shrink-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <div className="max-w-[1800px] mx-auto px-8 py-3.5 flex items-center justify-between">
           <Logo />
           {companyInfo && (
-            <div className="text-right">
-              <p className="text-sm font-bold">{companyInfo.name}</p>
-              <button onClick={() => setIsLogoutConfirmOpen(true)} className="text-xs text-gray-400 hover:text-red-600">ログアウト</button>
+            <div className="flex items-center gap-6 group">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-bold text-gray-900 leading-none">{companyInfo.name}</p>
+                <div className="flex items-center justify-end gap-1.5 mt-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]"></span>
+                  <span className="text-[9px] text-gray-400 font-sans tracking-widest uppercase font-bold">Standard Member</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsLogoutConfirmOpen(true)} 
+                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100 shadow-sm md:shadow-none"
+                title="ログアウト"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                </svg>
+              </button>
             </div>
           )}
         </div>
       </header>
 
-      <main className="flex-grow flex flex-col items-center justify-center overflow-hidden">
+      <main className="flex-grow flex flex-col items-center justify-center overflow-hidden relative">
         {appState === AppState.LOGIN ? <LoginScreen onLogin={handleLogin} /> : (
           isAdminMode ? <ManagementDashboard /> : (
-            <div className="w-full h-full flex flex-col">
-              {appState === AppState.UPLOAD && <UploadArea onImageSelected={handleImageSelected} />}
+            <div className="w-full h-full flex flex-col overflow-hidden">
+              {appState === AppState.UPLOAD && (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#fdfdfd]">
+                  <div className="text-center mb-16 animate-fade-in">
+                    <h2 className="text-5xl font-serif font-bold text-gray-900 mb-6 tracking-tight leading-tight">大切な思い出を、<br/>永遠の一枚に</h2>
+                    <p className="text-gray-400 font-sans tracking-[0.4em] uppercase text-[10px] font-bold">Digital Photo Studio Experience</p>
+                  </div>
+                  <UploadArea onImageSelected={handleImageSelected} />
+                </div>
+              )}
+              
               {appState === AppState.CROPPING && uploadedImage && (
                 <CropTool 
                   imageSrc={isFinalCropping ? compositePreview! : uploadedImage} 
+                  initialConfig={isFinalCropping ? finalCropConfig : cropConfig}
                   onConfirm={handleCropConfirm} 
-                  onCancel={() => setAppState(AppState.UPLOAD)} 
+                  onCancel={() => {
+                    setIsFinalCropping(false);
+                    setAppState(originalCropped ? AppState.EDITING : AppState.UPLOAD);
+                  }} 
                 />
               )}
+              
               {appState === AppState.EDITING && (
-                <div className="w-full h-full grid grid-cols-1 md:grid-cols-12 overflow-hidden">
-                  <div className="md:col-span-8 bg-gray-100 flex items-center justify-center p-8">
+                <div className="w-full h-full grid grid-cols-1 md:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px] overflow-hidden">
+                  <div className="flex items-center justify-center p-6 md:p-16 lg:p-24 overflow-y-auto bg-[#e9ebed] relative">
+                    {/* Background Texture */}
+                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
                     <PhotoCanvas 
                       originalCropped={originalCropped} 
                       personImage={personImage} 
@@ -188,22 +254,20 @@ const App: React.FC = () => {
                       loadingMessage={status.message}
                     />
                   </div>
-                  <div className="md:col-span-4 h-full">
-                    <ActionPanel 
-                      onBgAction={handleBgAction}
-                      onClothingAction={handleClothingAction}
-                      appliedBg={appliedBg}
-                      appliedClothing={appliedClothing}
-                      disabled={status.isProcessing} 
-                      onDownload={handleDownload} 
-                      onReset={() => setAppState(AppState.UPLOAD)} 
-                      onStartCrop={() => {}} // 簡略化のため空
-                      userPlan={companyInfo!.plan} 
-                      usageCount={usageCount} 
-                      deceasedName={deceasedName} 
-                      onDeceasedNameChange={setDeceasedName} 
-                    />
-                  </div>
+                  <ActionPanel 
+                    onBgAction={handleBgAction}
+                    onClothingAction={handleClothingAction}
+                    appliedBg={appliedBg}
+                    appliedClothing={appliedClothing}
+                    disabled={status.isProcessing} 
+                    onDownload={handleDownload} 
+                    onReset={() => setAppState(AppState.UPLOAD)} 
+                    onStartCrop={handleStartFinalCrop}
+                    userPlan={companyInfo!.plan} 
+                    usageCount={usageCount} 
+                    deceasedName={deceasedName} 
+                    onDeceasedNameChange={setDeceasedName} 
+                  />
                 </div>
               )}
             </div>
@@ -211,15 +275,55 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {errorModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white p-8 rounded-xl max-w-md w-full text-center">
-            <h3 className="text-xl font-bold mb-4">{errorModal.title}</h3>
-            <p className="mb-8">{errorModal.message}</p>
-            <button onClick={() => setErrorModal({...errorModal, isOpen: false})} className="w-full py-4 bg-gray-900 text-white rounded-lg">閉じる</button>
+      {/* Logout Dialog */}
+      {isLogoutConfirmOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-[2px] animate-fade-in">
+          <div className="bg-white rounded-3xl p-10 text-center max-w-sm shadow-2xl border border-gray-100">
+            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8">
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-serif font-bold mb-4 text-gray-900 leading-tight">ログアウトしても<br/>よろしいですか？</h3>
+            <p className="text-gray-400 text-[13px] font-sans mb-10 leading-relaxed px-4">編集中のデータは破棄されます。<br/>セッションを終了しますか？</p>
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => setIsLogoutConfirmOpen(false)} className="py-4 text-gray-500 font-bold hover:bg-gray-50 rounded-2xl transition-all border border-gray-100">戻る</button>
+              <button onClick={handleLogout} className="py-4 bg-red-600 text-white font-bold rounded-2xl transition-all shadow-lg hover:bg-red-700 shadow-red-200">終了する</button>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Simplified Error Modal */}
+      {errorModal.isOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-white p-10 rounded-3xl max-w-md w-full text-center shadow-2xl">
+            <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-serif font-bold mb-4 text-gray-900 tracking-tight">{errorModal.title}</h3>
+            <p className="mb-10 text-gray-500 leading-relaxed font-sans text-sm px-4">{errorModal.message}</p>
+            <button 
+              onClick={() => setErrorModal({...errorModal, isOpen: false})} 
+              className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-xl active:scale-95"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
     </div>
   );
 };
