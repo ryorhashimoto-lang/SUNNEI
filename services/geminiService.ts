@@ -23,11 +23,7 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
     case BackgroundOption.SoftPink: bgDesc = "淡いピンク（桜色）のラジアルグラデーション。"; break;
     case BackgroundOption.WisteriaPurple: bgDesc = "上品な藤色（ラベンダー）のグラデーション。"; break;
     case BackgroundOption.FreshGreen: bgDesc = "爽やかな若草色のグラデーション。"; break;
-    case BackgroundOption.WarmBeige: bgDesc = "落ち着いた温かみのあるベージュの背景。"; break;
     case BackgroundOption.WhiteGrey: bgDesc = "清潔感のある明るいグレーの背景。"; break;
-    case BackgroundOption.CloudyGrey: bgDesc = "伝統的な遺影用の高級感のある雲模様のグレー背景。"; break;
-    case BackgroundOption.Floral: bgDesc = "背後に薄く上品な菊の花を配置した、葬儀・祭壇用の背景。"; break;
-    case BackgroundOption.SolidBlack: bgDesc = "格式高い漆黒の背景。"; break;
     default: return base64Image;
   }
 
@@ -44,7 +40,6 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
 
 [3. REFINEMENT]
 - 人物の輪郭をシャープに保ちつつ、背景との境目に不自然な浮きがないよう、光を馴染ませてください。
-- 肩に他人の手などが写り込んでいる場合は、除去して人物の衣服を補完してください。
 
 [OUTPUT]
 - 3:4 Aspect Ratio, High Resolution.`;
@@ -96,7 +91,7 @@ export const applyClothingSynthesis = async (base64Image: string, option: Clothi
 - 着せ替え特有の不自然さを無くし、実際にその服を着てスタジオで撮影したような質感にしてください。
 
 [3. COMPOSITION]
-- 元の人物の頭部の位置とサイズを維持してください。引きの構図にするのは厳禁です。
+- 元の人物の頭部の位置とサイズを維持してください。
 
 [OUTPUT]
 - 3:4 Aspect Ratio.`;

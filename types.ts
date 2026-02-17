@@ -23,11 +23,7 @@ export enum BackgroundOption {
   SoftPink = 'soft_pink',
   WisteriaPurple = 'wisteria_purple',
   FreshGreen = 'fresh_green',
-  WarmBeige = 'warm_beige',
-  WhiteGrey = 'white_grey',
-  CloudyGrey = 'cloudy_grey',
-  Floral = 'floral',
-  SolidBlack = 'solid_black'
+  WhiteGrey = 'white_grey'
 }
 
 export enum UserPlan {
