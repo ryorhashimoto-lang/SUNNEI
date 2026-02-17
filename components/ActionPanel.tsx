@@ -1,15 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { EditAction, UserPlan, PLAN_LIMITS } from '../types';
 
 interface ActionPanelProps {
-  onAction: (action: EditAction | null, customPrompt?: string) => void;
+  onApplyBackground: (colorCode: string) => void;
+  onApplyClothing: (action: EditAction) => void;
   disabled: boolean;
   onDownload: () => void;
-  onReset: () => void;
+  onBack: () => void;
+  onResetToOriginal: () => void;
   onStartCrop: () => void;
-  appliedBg: EditAction | null;
-  appliedClothing: EditAction | null;
   userPlan: UserPlan;
   usageCount: number;
   deceasedName: string;
@@ -19,23 +19,12 @@ interface ActionPanelProps {
 const ClothingThumbnail = ({ 
   type, 
   gender, 
-  color = "bg-gray-900", 
-  isNone = false
+  color = "bg-gray-900"
 }: { 
-  type: 'suit' | 'kimono' | 'none', 
+  type: 'suit' | 'kimono', 
   gender?: 'mens' | 'womens', 
-  color?: string,
-  isNone?: boolean
+  color?: string
 }) => {
-  if (isNone) {
-    return (
-      <div className="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-400">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 17.772 17.772m0 0a10.446 10.446 0 0 1-2.863.395m2.863-.395a10.704 10.704 0 0 1-3.235-3.235" />
-        </svg>
-      </div>
-    );
-  }
   return (
     <div className={`w-14 h-14 rounded-lg ${color} relative overflow-hidden shadow-inner flex items-center justify-center border border-white/10`}>
       <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
@@ -69,104 +58,36 @@ const ClothingThumbnail = ({
 };
 
 const ActionPanel: React.FC<ActionPanelProps> = ({ 
-  onAction, 
+  onApplyBackground, 
+  onApplyClothing,
   disabled, 
   onDownload, 
-  onReset, 
+  onBack,
+  onResetToOriginal,
   onStartCrop,
-  appliedBg,
-  appliedClothing,
   userPlan,
   usageCount,
   deceasedName,
   onDeceasedNameChange
 }) => {
-  const [selectedBg, setSelectedBg] = useState<EditAction | null | "">("");
-  const [selectedClothing, setSelectedClothing] = useState<EditAction | null | "">("");
+  const [selectedColor, setSelectedColor] = useState<string>('#BFEFFF');
+  const [selectedClothing, setSelectedClothing] = useState<EditAction | null>(null);
   const [clothingTab, setClothingTab] = useState<'mens' | 'womens'>('mens');
   
-  useEffect(() => {
-    setSelectedBg(appliedBg);
-    setSelectedClothing(appliedClothing);
-  }, [appliedBg, appliedClothing]);
-
-  const handleBgSelect = (action: EditAction | null) => {
-    setSelectedBg(action);
-    onAction(action);
-  };
-
-  const handleClothingAction = () => {
-    if (selectedClothing !== "") onAction(selectedClothing);
-  };
-
-  const isClothingPending = selectedClothing !== "" && selectedClothing !== appliedClothing;
   const limit = PLAN_LIMITS[userPlan];
   const remaining = limit === Infinity ? '無制限' : Math.max(0, limit - usageCount);
 
   const isWomen = clothingTab === 'womens';
-  const themeColor = isWomen ? 'rose-500' : 'blue-600';
-  const themeHover = isWomen ? 'rose-600' : 'blue-700';
   const themeBorder = isWomen ? 'border-rose-500' : 'border-blue-600';
   const themeBg = isWomen ? 'bg-rose-50' : 'bg-blue-50';
 
-  const bgItems = [
-    { 
-      action: null, 
-      label: '元のまま', 
-      style: { background: 'white' },
-      isNone: true,
-      borderClass: 'border-gray-200',
-      selectedClass: 'border-gray-900 bg-gray-50 text-gray-900',
-      hoverClass: 'hover:border-gray-400'
-    },
-    { 
-      action: EditAction.REMOVE_BG_BLUE, 
-      label: 'ブルー', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #BFEFFF 100%)' },
-      borderClass: 'border-blue-100',
-      selectedClass: 'border-blue-600 bg-blue-50 text-blue-800',
-      hoverClass: 'hover:border-blue-300'
-    },
-    { 
-      action: EditAction.REMOVE_BG_GRAY, 
-      label: 'グレー', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #D9D9D9 100%)' },
-      borderClass: 'border-gray-200',
-      selectedClass: 'border-gray-600 bg-gray-50 text-gray-800',
-      hoverClass: 'hover:border-gray-400'
-    },
-    { 
-      action: EditAction.REMOVE_BG_PINK, 
-      label: 'ピンク', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #FFE4E8 100%)' },
-      borderClass: 'border-pink-100',
-      selectedClass: 'border-pink-600 bg-pink-50 text-pink-800',
-      hoverClass: 'hover:border-pink-300'
-    },
-    { 
-      action: EditAction.REMOVE_BG_YELLOW, 
-      label: 'イエロー', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #FEF3D1 100%)' },
-      borderClass: 'border-amber-100',
-      selectedClass: 'border-amber-600 bg-amber-50 text-amber-800',
-      hoverClass: 'hover:border-amber-300'
-    },
-    { 
-      action: EditAction.REMOVE_BG_PURPLE, 
-      label: 'パープル', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #F3E5F5 100%)' },
-      borderClass: 'border-purple-100',
-      selectedClass: 'border-purple-600 bg-purple-50 text-purple-800',
-      hoverClass: 'hover:border-purple-300'
-    },
-    { 
-      action: EditAction.REMOVE_BG_WHITE, 
-      label: 'ホワイト', 
-      style: { background: 'radial-gradient(circle at center, #ffffff 0%, #F2F2F2 100%)' },
-      borderClass: 'border-gray-200',
-      selectedClass: 'border-gray-900 bg-gray-50 text-gray-900',
-      hoverClass: 'hover:border-gray-400'
-    }
+  const bgColors = [
+    { code: '#BFEFFF', label: 'ブルー' },
+    { code: '#D9D9D9', label: 'グレー' },
+    { code: '#FFE4E8', label: 'ピンク' },
+    { code: '#FEF3D1', label: 'イエロー' },
+    { code: '#F3E5F5', label: 'パープル' },
+    { code: '#F2F2F2', label: 'ホワイト' },
   ];
 
   return (
@@ -175,9 +96,9 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
       <div className="flex items-center justify-between mb-6">
         <button 
           type="button"
-          onClick={onReset}
+          onClick={onBack}
           disabled={disabled}
-          className="flex items-center gap-2 text-gray-400 hover:text-gray-800 transition-colors text-sm font-bold group cursor-pointer"
+          className="flex items-center gap-2 text-gray-400 hover:text-gray-800 transition-colors text-sm font-bold group cursor-pointer disabled:opacity-30"
         >
           <div className="p-1.5 rounded-full bg-gray-50 group-hover:bg-gray-100 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
@@ -218,51 +139,53 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-[11px] font-bold">1</div>
-            <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">背景（待ち時間なし）</h3>
+            <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">背景色を選択</h3>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {bgItems.map((item) => (
+          <div className="grid grid-cols-3 gap-3">
+            {bgColors.map((item) => (
               <button 
-                key={String(item.action)}
+                key={item.code}
                 type="button" 
-                onClick={() => handleBgSelect(item.action)} 
-                className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 h-24 ${
-                  selectedBg === item.action 
-                  ? `${item.selectedClass} shadow-md` 
-                  : `bg-white text-gray-600 ${item.borderClass} ${item.hoverClass} hover:shadow-sm`
+                onClick={() => setSelectedColor(item.code)} 
+                className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 h-20 ${
+                  selectedColor === item.code 
+                  ? `border-blue-600 bg-blue-50 shadow-md` 
+                  : `bg-white text-gray-600 border-gray-100 hover:border-gray-300 hover:shadow-sm`
                 }`}
               >
-                {item.isNone ? (
-                  <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center bg-gray-50">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 17.772 17.772m0 0a10.446 10.446 0 0 1-2.863.395m2.863-.395a10.704 10.704 0 0 1-3.235-3.235" />
-                    </svg>
-                  </div>
-                ) : (
-                  <div 
-                    className={`w-10 h-10 rounded-full shadow-inner border border-black/5 transition-transform duration-300 ${selectedBg === item.action ? 'scale-110 shadow-lg' : ''}`}
-                    style={item.style}
-                  ></div>
-                )}
-                <span className="font-bold text-[11px] whitespace-nowrap">{item.label}</span>
+                <div 
+                  className={`w-8 h-8 rounded-full shadow-inner border border-black/5 transition-transform duration-300 ${selectedColor === item.code ? 'scale-110 shadow-md' : ''}`}
+                  style={{ backgroundColor: item.code }}
+                ></div>
+                <span className="font-bold text-[10px] whitespace-nowrap">{item.label}</span>
               </button>
             ))}
           </div>
+          <button
+            onClick={() => onApplyBackground(selectedColor)}
+            disabled={disabled}
+            className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition-all text-xs disabled:opacity-50"
+          >
+            背景色を確定（AI生成）
+          </button>
         </div>
 
         {/* Section 2: Clothing */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-[11px] font-bold">2</div>
-            <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">服装着せ替え（AI処理）</h3>
+            <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">着せ替えを選択</h3>
           </div>
           <div className="flex flex-col gap-3">
             <div className="bg-gray-100 p-0.5 rounded-lg flex gap-1">
-              {['mens', 'womens'].map(t => (
+              {(['mens', 'womens'] as const).map(t => (
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setClothingTab(t as any)}
+                  onClick={() => {
+                    setClothingTab(t);
+                    setSelectedClothing(null); // タブ切り替え時に選択をクリア
+                  }}
                   className={`flex-1 py-3 text-xs font-bold rounded-md transition-all ${
                     clothingTab === t 
                     ? (t === 'womens' ? 'bg-rose-500 text-white shadow-sm' : 'bg-blue-600 text-white shadow-sm') 
@@ -274,15 +197,10 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <button onClick={() => setSelectedClothing(null)} className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 h-24 ${selectedClothing === null ? 'border-gray-900 bg-gray-50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300'}`}>
-                <ClothingThumbnail type="none" isNone={true} />
-                <span className="font-bold text-[11px] whitespace-nowrap text-gray-500">元のまま</span>
-              </button>
-              
+            <div className="grid grid-cols-2 gap-3">
               {(clothingTab === 'mens' ? 
-                [{a: EditAction.SUIT_MENS, l: '礼服'}, {a: EditAction.KIMONO_MENS, l: '和装'}] : 
-                [{a: EditAction.SUIT_WOMENS, l: '洋装'}, {a: EditAction.KIMONO_WOMENS, l: '和装'}]
+                [{a: EditAction.SUIT_MENS, l: '洋装（礼服）'}, {a: EditAction.KIMONO_MENS, l: '和装（紋付）'}] : 
+                [{a: EditAction.SUIT_WOMENS, l: '洋装（喪服）'}, {a: EditAction.KIMONO_WOMENS, l: '和装（喪服）'}]
               ).map(item => (
                 <button 
                   key={item.a}
@@ -290,44 +208,48 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                   className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 h-24 ${
                     selectedClothing === item.a 
                     ? `${themeBorder} ${themeBg} shadow-md` 
-                    : `border-gray-100 bg-white ${isWomen ? 'hover:border-rose-200' : 'hover:border-blue-200'}`
+                    : `border-gray-100 bg-white hover:border-blue-200`
                   }`}
                 >
-                  <ClothingThumbnail type={item.l.includes('和装') ? 'kimono' : 'suit'} gender={clothingTab} color="bg-gray-800" />
+                  <ClothingThumbnail type={item.l.includes('和装') ? 'kimono' : 'suit'} gender={clothingTab} />
                   <span className="font-bold text-[11px] whitespace-nowrap">{item.l}</span>
-                  {appliedClothing === item.a && <div className={`absolute top-1 right-1 w-2 h-2 ${isWomen ? 'bg-rose-500' : 'bg-emerald-500'} rounded-full`}></div>}
                 </button>
               ))}
             </div>
             <button
-              onClick={handleClothingAction}
-              disabled={disabled || !isClothingPending}
-              className={`w-full py-4 font-bold rounded-lg transition-all text-sm shadow-sm ${
-                isClothingPending 
-                ? `bg-${themeColor} text-white hover:bg-${themeHover}` 
-                : 'bg-gray-100 text-gray-400'
-              }`}
+              onClick={() => selectedClothing && onApplyClothing(selectedClothing)}
+              disabled={disabled || !selectedClothing}
+              className="w-full py-3 bg-gray-900 text-white font-bold rounded-lg shadow-md hover:bg-gray-800 transition-all text-xs disabled:opacity-50"
             >
-              {appliedClothing === selectedClothing ? '服装適用済み' : '服装変更を実行（AI）'}
+              服装を確定（AI生成）
             </button>
           </div>
         </div>
 
         {/* Section 3: Final Adjustments */}
         <div className="pt-6 mt-auto border-t border-gray-100 space-y-3">
-          <button
-            onClick={onStartCrop}
-            disabled={disabled}
-            className="w-full py-4 bg-white text-gray-700 border border-gray-300 font-bold rounded-lg shadow-sm hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-[13px]"
-          >
-            トリミングを微調整
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+             <button
+               onClick={onResetToOriginal}
+               disabled={disabled}
+               className="py-3 bg-white text-gray-500 border border-gray-200 font-bold rounded-lg hover:bg-gray-50 transition-all text-[11px] disabled:opacity-50"
+             >
+               最初に戻す
+             </button>
+             <button
+               onClick={onStartCrop}
+               disabled={disabled}
+               className="py-3 bg-white text-gray-700 border border-gray-300 font-bold rounded-lg shadow-sm hover:bg-gray-50 transition-all text-[11px] disabled:opacity-50"
+             >
+               構図を微調整
+             </button>
+          </div>
           <button
             onClick={onDownload}
             disabled={disabled}
-            className="w-full py-5 bg-gray-900 text-white font-bold rounded-lg shadow-lg hover:bg-gray-800 transition-all flex items-center justify-center gap-3 text-sm"
+            className="w-full py-5 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-3 text-sm disabled:opacity-50"
           >
-            画像を合成して保存
+            完成した画像を保存
           </button>
         </div>
       </div>

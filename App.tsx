@@ -7,7 +7,7 @@ import PhotoCanvas from './components/PhotoCanvas';
 import CropTool from './components/CropTool';
 import LoginScreen from './components/LoginScreen';
 import ManagementDashboard from './components/ManagementDashboard';
-import { extractPerson, changeClothing } from './services/geminiService';
+import { applyBackgroundColor, applyClothingChange } from './services/geminiService';
 import { authService, AuthSession } from './services/authService';
 import { usageService } from './services/usageService';
 import { drawMemorialPhoto } from './services/renderService';
@@ -26,22 +26,14 @@ const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.LOGIN);
   const [isAdminMode, setIsAdminMode] = useState(false);
   
-  // 元の素材
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [currentImage, setCurrentImage] = useState<string | null>(null); // 加工履歴の最新画像
+  const [originalCropped, setOriginalCropped] = useState<string | null>(null); // リセット用の初期画像
   
-  // 編集フローの中間状態
-  const [originalCropped, setOriginalCropped] = useState<string | null>(null);
-  const [personImage, setPersonImage] = useState<string | null>(null);
-  const [appliedBg, setAppliedBg] = useState<EditAction | null>(null);
-  const [appliedClothing, setAppliedClothing] = useState<EditAction | null>(null);
-  
-  // トリミング設定
   const [cropConfig, setCropConfig] = useState<CropConfig | null>(null);
   const [finalCropConfig, setFinalCropConfig] = useState<CropConfig | null>(null);
   const [isFinalCropping, setIsFinalCropping] = useState(false);
-  const [compositePreview, setCompositePreview] = useState<string | null>(null);
 
-  // その他
   const [deceasedName, setDeceasedName] = useState<string>('');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [usageCount, setUsageCount] = useState<number>(0);
@@ -68,8 +60,8 @@ const App: React.FC = () => {
 
   const executeLogout = useCallback(() => {
     authService.logout();
-    setCompanyInfo(null); setPersonImage(null); setUploadedImage(null); setOriginalCropped(null); setDeceasedName('');
-    setCropConfig(null); setFinalCropConfig(null); setAppliedBg(null); setAppliedClothing(null);
+    setCurrentImage(null); setUploadedImage(null); setOriginalCropped(null); setDeceasedName('');
+    setCropConfig(null); setFinalCropConfig(null);
     setIsAdminMode(false); setAppState(AppState.LOGIN); setIsLogoutConfirmOpen(false);
   }, []);
 
@@ -77,114 +69,84 @@ const App: React.FC = () => {
     setUploadedImage(base64); 
     setCropConfig(null);
     setFinalCropConfig(null);
-    setAppliedBg(null); // 新規画像選択時に背景をリセット
-    setAppliedClothing(null); // 新規画像選択時に服装をリセット
-    setPersonImage(null);
+    setCurrentImage(null);
     setIsFinalCropping(false);
     setAppState(AppState.CROPPING);
   }, []);
 
   const handleCropConfirm = useCallback((croppedImage: string, config: CropConfig) => {
     if (isFinalCropping) {
-      // 最終調整（加工後）の確定
       setFinalCropConfig(config);
       setIsFinalCropping(false);
       setAppState(AppState.EDITING);
     } else {
-      // 初期調整（加工前）の確定
       setOriginalCropped(croppedImage); 
+      setCurrentImage(croppedImage);
       setCropConfig(config);
-      setFinalCropConfig(null); // 初期構成が変わったので最終トリミングはリセット
-      setPersonImage(null); 
-      setAppliedClothing(null);
-      setAppliedBg(null); // 重要：再トリミング時に背景選択をリセットして元の写真が見えるようにする
+      setFinalCropConfig(null);
       setAppState(AppState.EDITING); 
     }
   }, [isFinalCropping]);
 
+  const handleResetToOriginal = useCallback(() => {
+    if (!originalCropped || !window.confirm('AIによる加工履歴を破棄して、最初の状態に戻しますか？')) return;
+    setCurrentImage(originalCropped);
+    setFinalCropConfig(null);
+  }, [originalCropped]);
+
   const handleStartFinalCrop = useCallback(async () => {
-    if (!originalCropped) return;
-    
-    // 現在の合成結果（加工後）を一枚の絵としてキャプチャする
-    setStatus({ isProcessing: true, message: '調整用プレビューを生成中...' });
+    if (!currentImage) return;
+    setIsFinalCropping(true);
+    setAppState(AppState.CROPPING);
+  }, [currentImage]);
+
+  /**
+   * 背景変更の実行
+   */
+  const handleApplyBackground = useCallback(async (colorCode: string) => {
+    if (!currentImage) return;
+    setStatus({ isProcessing: true, message: '背景を均一な指定色で生成中...' });
     try {
-      const canvas = document.createElement('canvas');
-      const width = 1200; // トリミング画面用の十分な解像度
-      const height = 1600;
-      await drawMemorialPhoto({ 
-        canvas, 
-        originalCropped, 
-        personImage, 
-        appliedBg, 
-        width, 
-        height, 
-        isHighRes: false,
-        finalCropConfig: null // 調整「前」の状態をベースにする
-      });
-      
-      setCompositePreview(canvas.toDataURL('image/jpeg', 0.9));
-      setIsFinalCropping(true);
-      setAppState(AppState.CROPPING);
+      const result = await applyBackgroundColor(currentImage, colorCode);
+      setCurrentImage(result);
     } catch (e) {
-      setErrorModal({ isOpen: true, title: 'エラー', message: 'プレビューの生成に失敗しました。' });
+      setErrorModal({ isOpen: true, title: '生成エラー', message: '背景の合成に失敗しました。時間をおいて再度お試しください。' });
     } finally {
       setStatus({ isProcessing: false, message: '' });
     }
-  }, [originalCropped, personImage, appliedBg]);
+  }, [currentImage]);
 
-  const handleEditAction = useCallback(async (action: EditAction | null) => {
-    if (!originalCropped) return;
-    const isBgAction = action === null || action.startsWith('REMOVE_BG_');
-
-    if (action === null) {
-      if (isBgAction) setAppliedBg(null);
-      else {
-        setAppliedClothing(null);
-        if (appliedBg) {
-          setStatus({ isProcessing: true, message: '元の服装で再抽出しています...' });
-          try { setPersonImage(await extractPerson(originalCropped)); } catch (e) { setErrorModal({ isOpen: true, title: 'エラー', message: '失敗しました。' }); }
-          finally { setStatus({ isProcessing: false, message: '' }); }
-        } else { setPersonImage(null); }
-      }
-      return;
+  /**
+   * 服装着せ替えの実行
+   */
+  const handleApplyClothing = useCallback(async (action: EditAction) => {
+    if (!currentImage) return;
+    setStatus({ isProcessing: true, message: '高品質な衣装を仕立て中...' });
+    try {
+      const result = await applyClothingChange(currentImage, action);
+      setCurrentImage(result);
+    } catch (e) {
+      setErrorModal({ isOpen: true, title: '生成エラー', message: '衣装の合成に失敗しました。顔の解像度などが極端に低くないかご確認ください。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
     }
-
-    if (!personImage) {
-      setStatus({ isProcessing: true, message: '人物を高品質に切り抜いています...' });
-      try { setPersonImage(await extractPerson(originalCropped)); } catch (error: any) {
-        setErrorModal({ isOpen: true, title: '解析エラー', message: '人物の抽出に失敗しました。' });
-        setStatus({ isProcessing: false, message: '' }); return;
-      }
-    }
-
-    if (isBgAction) { setAppliedBg(action); setStatus({ isProcessing: false, message: '' }); } 
-    else {
-      setStatus({ isProcessing: true, message: '服装を着せ替え中です...' });
-      try {
-        const newPerson = await changeClothing(originalCropped, action);
-        setPersonImage(newPerson); setAppliedClothing(action);
-      } catch (error: any) {
-        setErrorModal({ isOpen: true, title: '失敗', message: '服装の生成に失敗しました。' });
-      } finally { setStatus({ isProcessing: false, message: '' }); }
-    }
-  }, [originalCropped, personImage, appliedBg, appliedClothing]);
+  }, [currentImage]);
 
   const handleDownload = useCallback(async () => {
-    if (!originalCropped || !companyInfo) return;
-    setStatus({ isProcessing: true, message: '高品質(2700x3600)で画像を合成中...' });
+    if (!currentImage || !companyInfo) return;
+    setStatus({ isProcessing: true, message: '最終保存用ファイルをレンダリング中...' });
     try {
       const canvas = document.createElement('canvas');
       const width = 2700;
       const height = 3600;
+      
       await drawMemorialPhoto({ 
         canvas, 
-        originalCropped, 
-        personImage, 
-        appliedBg, 
+        currentImage, 
         width, 
         height, 
         isHighRes: true,
-        finalCropConfig // 最終調整を適用
+        finalCropConfig
       });
       
       const newCount = await usageService.incrementUsage(companyInfo.id);
@@ -198,7 +160,7 @@ const App: React.FC = () => {
       setStatus({ isProcessing: false, message: '' });
       setErrorModal({ isOpen: true, title: '保存失敗', message: 'エラーが発生しました。' });
     }
-  }, [originalCropped, personImage, appliedBg, companyInfo, deceasedName, finalCropConfig]);
+  }, [currentImage, companyInfo, deceasedName, finalCropConfig]);
 
   return (
     <div className="h-screen bg-[#f8f9fa] text-gray-800 font-serif flex flex-col overflow-hidden">
@@ -227,9 +189,9 @@ const App: React.FC = () => {
                   <UploadArea onImageSelected={handleImageSelected} />
                 </div>
               )}
-              {appState === AppState.CROPPING && (isFinalCropping ? compositePreview : uploadedImage) && (
+              {appState === AppState.CROPPING && (isFinalCropping ? currentImage : uploadedImage) && (
                 <CropTool 
-                  imageSrc={isFinalCropping ? compositePreview! : uploadedImage!} 
+                  imageSrc={isFinalCropping ? currentImage! : uploadedImage!} 
                   initialConfig={isFinalCropping ? finalCropConfig : cropConfig}
                   onConfirm={handleCropConfirm} 
                   onCancel={() => {
@@ -242,9 +204,7 @@ const App: React.FC = () => {
                 <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-12 gap-6 p-6 h-full max-h-[92vh]">
                   <div className="md:col-span-7 lg:col-span-8 flex items-center justify-center bg-gray-100 rounded-2xl p-4 overflow-hidden shadow-inner relative">
                     <PhotoCanvas 
-                      originalCropped={originalCropped} 
-                      personImage={personImage} 
-                      appliedBg={appliedBg} 
+                      currentImage={currentImage} 
                       isLoading={status.isProcessing} 
                       loadingMessage={status.message}
                       finalCropConfig={finalCropConfig}
@@ -252,13 +212,13 @@ const App: React.FC = () => {
                   </div>
                   <div className="md:col-span-5 lg:col-span-4 h-full overflow-hidden">
                     <ActionPanel 
-                      onAction={handleEditAction} 
+                      onApplyBackground={handleApplyBackground} 
+                      onApplyClothing={handleApplyClothing}
                       disabled={status.isProcessing} 
                       onDownload={handleDownload} 
-                      onReset={() => setAppState(AppState.UPLOAD)} 
-                      onStartCrop={handleStartFinalCrop} // 最終調整フローへ 
-                      appliedBg={appliedBg} 
-                      appliedClothing={appliedClothing} 
+                      onBack={() => setAppState(AppState.UPLOAD)} 
+                      onResetToOriginal={handleResetToOriginal}
+                      onStartCrop={handleStartFinalCrop} 
                       userPlan={companyInfo.plan} 
                       usageCount={usageCount} 
                       deceasedName={deceasedName} 

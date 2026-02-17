@@ -11,20 +11,21 @@ const cleanBase64 = (dataUrl: string): string => {
 };
 
 /**
- * 人物抽出プロンプト
+ * 背景色変更（AI直接合成）
+ * カラーコードで指定された均一な色に背景を差し替える
  */
-export const extractPerson = async (base64Image: string): Promise<string> => {
+export const applyBackgroundColor = async (base64Image: string, colorCode: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const mimeType = base64Image.match(/data:([^;]+);/)?.[1] || "image/png";
 
-  const prompt = `遺影作成のための人物分離タスクです。
-背景を完全に除去し、ムラのない均一な「#00FF00 (純粋な緑)」で塗りつぶしてください。
+  const prompt = `遺影写真の背景変更タスクです。
+元画像の人物（顔・表情・服装・髪型）を一切変えずに、背景のみをカラーコード「${colorCode}」の均一なベタ塗りに変更してください。
 
-【注意】
-1. 顔の微細なディテール（瞳の中の光、皮膚の質感、シワ）を絶対に滑らかにしないでください。
-2. 背景との境界線付近に元の背景色を残さないでください。
-3. 背景には影や照明効果を一切入れず、フラットなベタ塗りにしてください。
-4. 出力サイズとアスペクト比(3:4)を厳守してください。`;
+【厳守事項】
+1. 背景色: ムラ、グラデーション、影、テクスチャを一切入れないでください。指定されたカラー「${colorCode}」だけで100%フラットに塗りつぶしてください。
+2. 境界線の馴染み: 髪の毛の一本一本や肩のラインが、新しい背景色とプロレベルで自然に馴染むように（アンチエイリアス処理）生成してください。切り抜き感を出さないでください。
+3. 同一性の維持: 本人の顔の造作（目、鼻、口、耳、肌の質感、シワ、ホクロ、表情）を1%も変更しないでください。
+4. 出力サイズ: 3:4のアスペクト比を維持してください。`;
 
   try {
     const response = await ai.models.generateContent({
@@ -35,45 +36,45 @@ export const extractPerson = async (base64Image: string): Promise<string> => {
       config: { imageConfig: { aspectRatio: "3:4" } }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-    if (!part?.inlineData) throw new Error("抽出失敗");
+    if (!part?.inlineData) throw new Error("背景生成失敗");
     return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
   } catch (error) {
-    console.error(error);
+    console.error("Apply Background Error:", error);
     throw error;
   }
 };
 
 /**
- * 服装着せ替えプロンプト
+ * 服装着せ替え（AI直接合成）
  */
-export const changeClothing = async (base64Image: string, action: EditAction): Promise<string> => {
+export const applyClothingChange = async (base64Image: string, action: EditAction): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const mimeType = base64Image.match(/data:([^;]+);/)?.[1] || "image/png";
 
   let clothText = "";
   switch (action) {
     case EditAction.SUIT_MENS: 
-      clothText = "男性用のフォーマルな黒の礼服、白いシャツ、黒いネクタイ。胸から上の近接構図。"; 
+      clothText = "男性用の高級な黒の礼服（ブラックスーツ）、白いワイシャツ、黒いネクタイ。"; 
       break;
     case EditAction.KIMONO_MENS: 
-      clothText = "男性用の黒紋付羽織。胸から上の襟元のみを描写し、袴（はかま）は絶対に描かないでください。"; 
+      clothText = "男性用の伝統的な黒紋付羽織。家紋が見える必要はありません。"; 
       break;
     case EditAction.SUIT_WOMENS: 
-      clothText = "女性用の黒の喪服、パールのネックレス。胸から上の近接構図。"; 
+      clothText = "女性用の黒の喪服（ブラックフォーマル）、首元に一連のパールのネックレス。"; 
       break;
     case EditAction.KIMONO_WOMENS: 
-      clothText = "女性用の黒紋付喪服、白い半襟。胸から上の襟元のみを描写し、帯や下半身は絶対に描かないでください。"; 
+      clothText = "女性用の伝統的な黒紋付喪服、清楚な白い半襟。"; 
       break;
   }
 
-  const prompt = `元画像の「人物の大きさ（ズーム率）」「顔の位置」「表情」を完全に維持したまま、服装のみを「${clothText}」に変更してください。
+  const prompt = `元画像の顔の表情と現在の背景色を完全に維持したまま、服装のみを「${clothText}」に高品質に差し替えてください。
 
-【最重要・厳守事項】
-1. 構図の維持: 袴（はかま）や帯を描くために人物を小さくして「引きの構図」にすることは絶対に禁止です。元画像がアップであれば、そのアップのまま首から下だけを差し替えてください。
-2. 顔の保存: 目、鼻、口、髪型、シワなどの特徴を1ピクセルも描き直したり動かしたりしないでください。
-3. 背景: 一切の影やムラがない「#00FF00 (純粋な緑)」で塗りつぶしてください。
-4. 質感: 写真として自然な布地の質感（落ち着いたマットな黒）を表現してください。
-5. 接続: 首元と衣服の境界を、不自然な隙間や段差がないよう滑らかに繋げてください。`;
+【最重要事項】
+1. 顔の保護: 顔のパーツ、肌の質感、表情、髪型を一切描き直さないでください。人物のアイデンティティを完全に維持することが必須です。
+2. 馴染ませ: 首元と新しい衣服の境界線が、物理的に自然につながるように描画してください。
+3. 背景の維持: 現在の背景色を1ピクセルも変えず、そのまま引き継いでください。
+4. 質感: 遺影として相応しい、落ち着いたマットな布の質感を表現してください。
+5. 構図: 元画像の人物のズーム率と位置を維持してください。`;
 
   try {
     const response = await ai.models.generateContent({
@@ -84,10 +85,10 @@ export const changeClothing = async (base64Image: string, action: EditAction): P
       config: { imageConfig: { aspectRatio: "3:4" } }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-    if (!part?.inlineData) throw new Error("着せ替え失敗");
+    if (!part?.inlineData) throw new Error("着せ替え生成失敗");
     return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
   } catch (error) {
-    console.error(error);
+    console.error("Apply Clothing Error:", error);
     throw error;
   }
 };
@@ -96,7 +97,7 @@ export const repairHeicImage = async (base64Heic: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: MODEL_NAME,
-        contents: { parts: [{ text: "Convert to high quality 3:4 JPEG." }, { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }] },
+        contents: { parts: [{ text: "Convert this HEIC image to high quality 3:4 JPEG." }, { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }] },
         config: { imageConfig: { aspectRatio: "3:4" } }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
