@@ -50,7 +50,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 
   const currentClothingOptions = gender === 'men' ? menOptions : womenOptions;
 
-  // 背景色の定義（漆黒、菊、雲模様、鳥の子を除外した最終リスト）
+  // 背景色の定義（タイルUI用）
   const bgItems = [
     { id: BackgroundOption.SoftBlue, label: '浅葱 (青)', color: 'bg-[#e3f2fd]', text: 'text-gray-900' },
     { id: BackgroundOption.SoftPink, label: '桜色 (桃)', color: 'bg-[#fce4ec]', text: 'text-gray-900' },
@@ -92,7 +92,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 
       <div className="flex-1 overflow-y-auto px-6 py-8 space-y-12 custom-scrollbar">
         
-        {/* Step 1: Background - 全面カラータイルUI */}
+        {/* Step 1: Background - タイルUI */}
         <section className="animate-fade-in translate-y-2 opacity-0 [animation-fill-mode:forwards] [animation-delay:100ms]">
           <StepBadge num="1" text="背景の選択" />
           <div className="grid grid-cols-2 gap-3">
@@ -103,8 +103,8 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             >
               <span className="text-xs font-bold text-gray-700">元の背景（変更なし）</span>
               {appliedBg === BackgroundOption.None && (
-                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-gray-900">
+                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
                       <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
                     </svg>
                  </div>
@@ -130,23 +130,29 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
           </div>
         </section>
 
-        {/* Step 2: Clothing */}
+        {/* Step 2: Clothing - 性別色分けUI */}
         <section className="animate-fade-in translate-y-2 opacity-0 [animation-fill-mode:forwards] [animation-delay:200ms]">
           <StepBadge num="2" text="服装の着せ替え" />
           
-          <div className="flex mb-5 bg-gray-100 p-1.5 rounded-2xl">
+          <div className="flex mb-5 bg-gray-100 p-1.5 rounded-2xl gap-1">
             <button
               onClick={() => setGender('men')}
               disabled={disabled}
-              className={`flex-1 py-2 text-[11px] font-bold rounded-xl transition-all ${gender === 'men' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 py-3 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${gender === 'men' ? 'bg-[#1e3a8a] text-white shadow-[0_4px_12px_rgba(30,58,138,0.3)] ring-1 ring-[#1e3a8a]/20' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
             >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                <path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5Zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3Zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1Z"/>
+              </svg>
               男性用
             </button>
             <button
               onClick={() => setGender('women')}
               disabled={disabled}
-              className={`flex-1 py-2 text-[11px] font-bold rounded-xl transition-all ${gender === 'women' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 py-3 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${gender === 'women' ? 'bg-[#be123c] text-white shadow-[0_4px_12px_rgba(190,18,60,0.3)] ring-1 ring-[#be123c]/20' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
             >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                <path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5Zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3Zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1Z"/>
+              </svg>
               女性用
             </button>
           </div>
