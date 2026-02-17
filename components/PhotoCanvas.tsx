@@ -1,18 +1,23 @@
 
+// Add missing React import
 import React, { useEffect, useRef } from 'react';
 import LoadingSpinner from './LoadingSpinner';
-import { CropConfig } from '../types';
+import { EditAction, CropConfig } from '../types';
 import { drawMemorialPhoto } from '../services/renderService';
 
 interface PhotoCanvasProps {
-  currentImage: string | null;
+  originalCropped: string | null;
+  personImage: string | null;
+  appliedBg: EditAction | null;
   isLoading: boolean;
   loadingMessage: string;
   finalCropConfig?: CropConfig | null;
 }
 
 const PhotoCanvas: React.FC<PhotoCanvasProps> = ({ 
-  currentImage,
+  originalCropped, 
+  personImage,
+  appliedBg,
   isLoading, 
   loadingMessage,
   finalCropConfig = null
@@ -21,14 +26,16 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
 
   useEffect(() => {
     const render = async () => {
-      if (!canvasRef.current || !currentImage) return;
+      if (!canvasRef.current || !originalCropped) return;
       
       const width = 800;
       const height = 1066;
       
       await drawMemorialPhoto({
         canvas: canvasRef.current,
-        currentImage,
+        originalCropped,
+        personImage,
+        appliedBg,
         width,
         height,
         isHighRes: false,
@@ -37,9 +44,9 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
     };
 
     render();
-  }, [currentImage, finalCropConfig]);
+  }, [originalCropped, personImage, appliedBg, finalCropConfig]);
 
-  if (!currentImage) return null;
+  if (!originalCropped) return null;
 
   return (
     <div className="relative w-full max-w-md mx-auto">

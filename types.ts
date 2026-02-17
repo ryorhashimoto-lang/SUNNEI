@@ -8,6 +8,12 @@ export enum AppState {
 }
 
 export enum EditAction {
+  REMOVE_BG_BLUE = 'REMOVE_BG_BLUE',
+  REMOVE_BG_GRAY = 'REMOVE_BG_GRAY',
+  REMOVE_BG_PINK = 'REMOVE_BG_PINK',
+  REMOVE_BG_YELLOW = 'REMOVE_BG_YELLOW',
+  REMOVE_BG_PURPLE = 'REMOVE_BG_PURPLE',
+  REMOVE_BG_WHITE = 'REMOVE_BG_WHITE',
   SUIT_MENS = 'SUIT_MENS',
   SUIT_WOMENS = 'SUIT_WOMENS',
   KIMONO_MENS = 'KIMONO_MENS',
@@ -32,6 +38,8 @@ export const PLAN_LIMITS: Record<UserPlan, number> = {
   [UserPlan.STANDARD]: 200,
   [UserPlan.ENTERPRISE]: Infinity,
 };
+
+export type FrameType = 'none' | 'black_gold' | 'pearl' | 'wood';
 
 export interface ProcessingStatus {
   isProcessing: boolean;
