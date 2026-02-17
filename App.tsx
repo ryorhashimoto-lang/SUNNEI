@@ -27,8 +27,8 @@ const App: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState(false);
   
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [currentImage, setCurrentImage] = useState<string | null>(null); // 加工履歴の最新画像
-  const [originalCropped, setOriginalCropped] = useState<string | null>(null); // リセット用の初期画像
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [originalCropped, setOriginalCropped] = useState<string | null>(null);
   
   const [cropConfig, setCropConfig] = useState<CropConfig | null>(null);
   const [finalCropConfig, setFinalCropConfig] = useState<CropConfig | null>(null);
@@ -89,9 +89,11 @@ const App: React.FC = () => {
   }, [isFinalCropping]);
 
   const handleResetToOriginal = useCallback(() => {
-    if (!originalCropped || !window.confirm('AIによる加工履歴を破棄して、最初の状態に戻しますか？')) return;
-    setCurrentImage(originalCropped);
-    setFinalCropConfig(null);
+    if (!originalCropped) return;
+    if (window.confirm('AIによる加工をすべて取り消して、最初の写真に戻しますか？')) {
+      setCurrentImage(originalCropped);
+      setFinalCropConfig(null);
+    }
   }, [originalCropped]);
 
   const handleStartFinalCrop = useCallback(async () => {
@@ -100,33 +102,27 @@ const App: React.FC = () => {
     setAppState(AppState.CROPPING);
   }, [currentImage]);
 
-  /**
-   * 背景変更の実行
-   */
   const handleApplyBackground = useCallback(async (colorCode: string) => {
     if (!currentImage) return;
-    setStatus({ isProcessing: true, message: '背景を均一な指定色で生成中...' });
+    setStatus({ isProcessing: true, message: '中心に光彩を配置し、背景を生成中...' });
     try {
       const result = await applyBackgroundColor(currentImage, colorCode);
       setCurrentImage(result);
     } catch (e) {
-      setErrorModal({ isOpen: true, title: '生成エラー', message: '背景の合成に失敗しました。時間をおいて再度お試しください。' });
+      setErrorModal({ isOpen: true, title: '生成エラー', message: '背景の合成に失敗しました。もう一度お試しください。' });
     } finally {
       setStatus({ isProcessing: false, message: '' });
     }
   }, [currentImage]);
 
-  /**
-   * 服装着せ替えの実行
-   */
   const handleApplyClothing = useCallback(async (action: EditAction) => {
     if (!currentImage) return;
-    setStatus({ isProcessing: true, message: '高品質な衣装を仕立て中...' });
+    setStatus({ isProcessing: true, message: '衣装を精巧に仕立て中...' });
     try {
       const result = await applyClothingChange(currentImage, action);
       setCurrentImage(result);
     } catch (e) {
-      setErrorModal({ isOpen: true, title: '生成エラー', message: '衣装の合成に失敗しました。顔の解像度などが極端に低くないかご確認ください。' });
+      setErrorModal({ isOpen: true, title: '生成エラー', message: '衣装の合成に失敗しました。' });
     } finally {
       setStatus({ isProcessing: false, message: '' });
     }
@@ -134,7 +130,7 @@ const App: React.FC = () => {
 
   const handleDownload = useCallback(async () => {
     if (!currentImage || !companyInfo) return;
-    setStatus({ isProcessing: true, message: '最終保存用ファイルをレンダリング中...' });
+    setStatus({ isProcessing: true, message: '高品質画像をレンダリング中...' });
     try {
       const canvas = document.createElement('canvas');
       const width = 2700;
@@ -158,7 +154,7 @@ const App: React.FC = () => {
       setStatus({ isProcessing: false, message: '' });
     } catch (err) { 
       setStatus({ isProcessing: false, message: '' });
-      setErrorModal({ isOpen: true, title: '保存失敗', message: 'エラーが発生しました。' });
+      setErrorModal({ isOpen: true, title: '保存失敗', message: '画像の出力中にエラーが発生しました。' });
     }
   }, [currentImage, companyInfo, deceasedName, finalCropConfig]);
 
