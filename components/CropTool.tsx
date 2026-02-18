@@ -99,8 +99,8 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
         y: startState.offset.y + dy
       });
     } else if (dragMode === 'resize') {
-      // 右下ハンドル操作: ドラッグした距離に応じてスケールを変更
-      // 対角線方向の移動量を基準にする
+      // 右下ハンドル操作: ドラッグした距離に応じてズームスケールを変更
+      // 右/下へ動かすほど枠が広がる（=画像は縮小されて見える）ため、感覚を合わせる
       const moveMagnitude = (dx + dy) / 2;
       const scaleSensitivity = 0.005;
       setScale(Math.min(Math.max(startState.scale - (moveMagnitude * scaleSensitivity), 0.1), 5));
@@ -166,22 +166,25 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#1a1a1a] text-white font-sans overflow-hidden animate-fade-in">
-      <header className="h-14 shrink-0 bg-[#242424] border-b border-white/5 flex items-center justify-between px-4 z-50">
-        <div className="flex items-center gap-3">
-          <button onClick={onCancel} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-400">
+    <div className="flex flex-col h-screen w-full bg-[#111] text-white font-sans overflow-hidden animate-fade-in select-none">
+      <header className="h-16 shrink-0 bg-[#1a1a1a] border-b border-white/5 flex items-center justify-between px-6 z-50">
+        <div className="flex items-center gap-4">
+          <button onClick={onCancel} className="p-2 hover:bg-white/10 rounded-full transition-all active:scale-90">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-gray-400">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
           </button>
-          <span className="font-serif font-bold text-lg tracking-tight">構図調整</span>
+          <div>
+            <h1 className="font-serif font-bold text-lg tracking-wider text-gray-100 leading-none">構図の調整</h1>
+            <p className="text-[9px] text-gray-500 font-bold tracking-[0.2em] mt-1.5 uppercase font-sans">Composition Tool</p>
+          </div>
         </div>
         <button 
           onClick={executeCrop} 
-          className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-full font-bold text-xs shadow-lg transition-all flex items-center gap-2 active:scale-95"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2.5 rounded-full font-bold text-xs shadow-lg transition-all flex items-center gap-2 active:scale-95"
         >
-          決定
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3.5 h-3.5">
+          この構図で決定
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
           </svg>
         </button>
@@ -200,7 +203,7 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
               ref={imageRef} 
               src={imageSrc} 
               alt="Adjustment" 
-              className="pointer-events-none transition-transform duration-75"
+              className="pointer-events-none transition-transform duration-75 will-change-transform"
               style={{ 
                 transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale}) rotate(${rotation}deg)`,
                 maxWidth: 'none',
@@ -208,61 +211,83 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
               }} 
             />
 
-            {/* Viewport Frame with Handle */}
+            {/* Viewport Frame with Corner Handle */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                <div 
-                  className="aperture-window relative border-2 border-white/50 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)]" 
+                  className="aperture-window relative border border-white/40 shadow-[0_0_0_9999px_rgba(0,0,0,0.8)]" 
                   style={{ aspectRatio: '3/4', height: '80%', maxWidth: '90%' }}
                >
-                  {/* Handle to Pull */}
-                  <div 
-                    className="absolute -right-3 -bottom-3 w-8 h-8 bg-blue-600 rounded-full border-4 border-white shadow-xl pointer-events-auto cursor-nwse-resize active:scale-125 transition-transform flex items-center justify-center"
-                    onMouseDown={(e) => startDrag(e, 'resize')}
-                    onTouchStart={(e) => startDrag(e, 'resize')}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 text-white">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                    </svg>
-                  </div>
+                  {/* Corner marks for aesthetic and guidance */}
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-white shadow-sm"></div>
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-white shadow-sm"></div>
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-white shadow-sm"></div>
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-white shadow-sm"></div>
 
-                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 opacity-20 pointer-events-none">
+                  {/* Rule of Thirds Guides */}
+                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-20">
                     <div className="border-r border-b border-white"></div><div className="border-r border-b border-white"></div><div className="border-b border-white"></div>
                     <div className="border-r border-b border-white"></div><div className="border-r border-b border-white"></div><div className="border-b border-white"></div>
                     <div className="border-r border-white"></div><div className="border-r border-white"></div><div></div>
                   </div>
+
+                  {/* The Resize Handle - Bottom Right Corner */}
+                  <div 
+                    className="absolute -right-4 -bottom-4 w-11 h-11 bg-blue-600 rounded-full border-[4px] border-white shadow-[0_4px_20px_rgba(0,0,0,0.5)] pointer-events-auto cursor-nwse-resize active:scale-125 transition-transform flex items-center justify-center group/handle"
+                    onMouseDown={(e) => startDrag(e, 'resize')}
+                    onTouchStart={(e) => startDrag(e, 'resize')}
+                  >
+                    <div className="w-5 h-5 text-white">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <polyline points="9 21 3 21 3 15"></polyline>
+                        <line x1="21" y1="3" x2="14" y2="10"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                      </svg>
+                    </div>
+                    {/* Visual Ripple effect when hovering handle */}
+                    <div className="absolute inset-0 rounded-full bg-blue-400/30 animate-ping opacity-0 group-hover/handle:opacity-100 transition-opacity"></div>
+                  </div>
                </div>
             </div>
 
-            <div className="absolute bottom-6 flex gap-2 z-20">
-              <button onClick={(e) => { e.stopPropagation(); handleFit(); }} className="bg-black/40 hover:bg-black/60 backdrop-blur-md px-5 py-2.5 rounded-full text-[11px] font-bold border border-white/10 transition-all pointer-events-auto">全体表示</button>
-              <button onClick={(e) => { e.stopPropagation(); handleFill(); }} className="bg-black/40 hover:bg-black/60 backdrop-blur-md px-5 py-2.5 rounded-full text-[11px] font-bold border border-white/10 transition-all pointer-events-auto">枠を埋める</button>
+            <div className="absolute bottom-10 flex gap-4 z-20">
+              <button onClick={(e) => { e.stopPropagation(); handleFit(); }} className="bg-white/10 hover:bg-white/20 backdrop-blur-xl px-7 py-3 rounded-full text-[11px] font-bold border border-white/10 transition-all pointer-events-auto active:scale-95 shadow-lg">全体を表示</button>
+              <button onClick={(e) => { e.stopPropagation(); handleFill(); }} className="bg-white/10 hover:bg-white/20 backdrop-blur-xl px-7 py-3 rounded-full text-[11px] font-bold border border-white/10 transition-all pointer-events-auto active:scale-95 shadow-lg">枠を埋める</button>
             </div>
           </div>
         </div>
 
-        <aside className="w-full md:w-80 shrink-0 bg-[#242424] border-t md:border-t-0 md:border-l border-white/5 p-6 flex flex-col justify-center gap-8 z-30">
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest block">拡大・縮小</label>
-              <input type="range" min="0.1" max="3" step="0.01" value={scale} onChange={(e) => setScale(parseFloat(e.target.value))} className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-500" />
+        <aside className="w-full md:w-80 shrink-0 bg-[#1a1a1a] border-t md:border-t-0 md:border-l border-white/5 p-8 flex flex-col justify-center gap-12 z-30 shadow-2xl">
+          <div className="space-y-10">
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">拡大・縮小 (ズーム)</label>
+                <span className="text-blue-500 font-mono text-xs font-bold">{Math.round(scale * 100)}%</span>
+              </div>
+              <input type="range" min="0.1" max="3" step="0.01" value={scale} onChange={(e) => setScale(parseFloat(e.target.value))} className="w-full h-1 bg-white/5 rounded-full appearance-none cursor-pointer accent-blue-600" />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-5">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">傾きの調整</label>
-                <span className="text-blue-400 font-mono text-[11px] font-bold">{rotation.toFixed(1)}°</span>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">水平方向の傾き</label>
+                <span className="text-blue-500 font-mono text-xs font-bold">{rotation.toFixed(1)}°</span>
               </div>
-              <input type="range" min="-30" max="30" step="0.5" value={rotation} onChange={(e) => setRotation(parseFloat(e.target.value))} className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-500" />
+              <input type="range" min="-30" max="30" step="0.5" value={rotation} onChange={(e) => setRotation(parseFloat(e.target.value))} className="w-full h-1 bg-white/5 rounded-full appearance-none cursor-pointer accent-blue-600" />
             </div>
           </div>
 
-          <div className="space-y-4">
-             <p className="text-[10px] text-gray-500 leading-relaxed italic text-center">
-              ※ 枠の右下を引っ張って直感的に調整できます。<br/>マウスホイールやピンチ操作でも拡大縮小が可能です。
-            </p>
+          <div className="space-y-6">
+             <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+               <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
+                <span className="text-blue-400 font-bold block mb-2 uppercase tracking-widest">操作のヒント</span>
+                • 枠の外をドラッグして位置を移動<br/>
+                • 枠の右下ハンドルで範囲を拡大縮小<br/>
+                • マウスホイールでズーム調整
+              </p>
+             </div>
             <button 
                 onClick={() => { setScale(DEFAULT_SCALE); setRotation(DEFAULT_ROTATION); setOffset(DEFAULT_OFFSET); }}
-                className="w-full py-4 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/5"
+                className="w-full py-4 bg-transparent hover:bg-white/5 rounded-xl text-[10px] font-bold tracking-widest transition-all border border-white/10 uppercase"
             >
                 調整をリセット
             </button>
@@ -273,9 +298,9 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
       <style>{`
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none; appearance: none;
-          width: 20px; height: 20px;
-          background: #3b82f6; border-radius: 50%; border: 3px solid white;
-          cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+          width: 22px; height: 22px;
+          background: #2563eb; border-radius: 50%; border: 3px solid white;
+          cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
       `}</style>
     </div>
