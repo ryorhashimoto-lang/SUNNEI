@@ -1,20 +1,22 @@
-
 import React, { useEffect, useRef } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 import { drawMemorialPhoto } from '../services/renderService';
+import { CropConfig } from '../types';
 
 interface PhotoCanvasProps {
   originalCropped: string | null;
   personImage: string | null;
   isLoading: boolean;
   loadingMessage: string;
+  finalCropConfig?: CropConfig | null;
 }
 
 const PhotoCanvas: React.FC<PhotoCanvasProps> = ({ 
   originalCropped, 
   personImage,
   isLoading, 
-  loadingMessage
+  loadingMessage,
+  finalCropConfig
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -31,12 +33,13 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
         personImage,
         width,
         height,
-        isHighRes: false
+        isHighRes: false,
+        finalCropConfig
       });
     };
 
     render();
-  }, [originalCropped, personImage]);
+  }, [originalCropped, personImage, finalCropConfig]);
 
   if (!originalCropped) return null;
 
