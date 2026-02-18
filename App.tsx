@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppState, ClothingOption, BackgroundOption, ProcessingStatus, CompanyInfo, CropConfig } from './types';
 import UploadArea from './components/UploadArea';
 import ActionPanel from './components/ActionPanel';
@@ -62,8 +61,32 @@ const App: React.FC = () => {
   };
 
   const handleImageSelected = (base64: string) => {
-    setUploadedImage(base64); 
+    setUploadedImage(base64);
+    // Reset all states for new image
+    setCropConfig(null);
+    setFinalCropConfig(null);
+    setOriginalCropped(null);
+    setPersonImage(null);
+    setAppliedBg(BackgroundOption.None);
+    setAppliedClothing(ClothingOption.None);
+    setCompositePreview(null);
+    setIsFinalCropping(false);
+    
     setAppState(AppState.CROPPING);
+  };
+
+  const handleReset = () => {
+    setUploadedImage(null);
+    setOriginalCropped(null);
+    setPersonImage(null);
+    setCropConfig(null);
+    setFinalCropConfig(null);
+    setCompositePreview(null);
+    setIsFinalCropping(false);
+    setAppliedBg(BackgroundOption.None);
+    setAppliedClothing(ClothingOption.None);
+    setDeceasedName('');
+    setAppState(AppState.UPLOAD);
   };
 
   const handleCropConfirm = (croppedImage: string, config: CropConfig) => {
@@ -263,7 +286,7 @@ const App: React.FC = () => {
                     appliedClothing={appliedClothing}
                     disabled={status.isProcessing} 
                     onDownload={handleDownload} 
-                    onReset={() => setAppState(AppState.UPLOAD)} 
+                    onReset={handleReset} 
                     onStartCrop={handleStartFinalCrop}
                     userPlan={companyInfo!.plan} 
                     usageCount={usageCount} 
@@ -322,6 +345,14 @@ const App: React.FC = () => {
         }
         .animate-fade-in {
           animation: fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+        .animate-shake {
+          animation: shake 0.3s ease-in-out;
         }
       `}</style>
     </div>
