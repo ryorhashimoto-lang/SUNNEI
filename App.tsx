@@ -277,6 +277,7 @@ const App: React.FC = () => {
                       personImage={personImage} 
                       isLoading={status.isProcessing} 
                       loadingMessage={status.message}
+                      finalCropConfig={finalCropConfig}
                     />
                   </div>
                   <ActionPanel 
