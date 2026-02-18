@@ -1,4 +1,3 @@
-
 import { CropConfig } from '../types';
 
 interface RenderOptions {
@@ -62,10 +61,13 @@ export const drawMemorialPhoto = async ({
     ctx.translate(width / 2, height / 2);
     ctx.rotate((finalCropConfig.rotation * Math.PI) / 180);
     
+    // finalCropConfig values are normalized relative to width/height
     const drawW = width * finalCropConfig.scale;
     const drawH = height * finalCropConfig.scale;
-    const dx = finalCropConfig.offsetX * (width / 800); 
-    const dy = finalCropConfig.offsetY * (height / 1066);
+    
+    // Offset is fraction of width/height
+    const dx = finalCropConfig.offsetX * width;
+    const dy = finalCropConfig.offsetY * height;
 
     ctx.drawImage(buffer, dx - drawW / 2, dy - drawH / 2, drawW, drawH);
     ctx.restore();
