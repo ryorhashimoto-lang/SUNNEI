@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { CropConfig } from '../types';
 
@@ -19,18 +18,43 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
   const DEFAULT_OFFSET = { x: 0, y: 0 };
   const DEFAULT_ROTATION = 0;
 
-  const [scale, setScale] = useState(initialConfig?.scale ?? DEFAULT_SCALE);
-  const [offset, setOffset] = useState({ 
-    x: initialConfig?.offsetX ?? DEFAULT_OFFSET.x, 
-    y: initialConfig?.offsetY ?? DEFAULT_OFFSET.y 
-  });
-  const [rotation, setRotation] = useState(initialConfig?.rotation ?? DEFAULT_ROTATION);
+  const [scale, setScale] = useState(DEFAULT_SCALE);
+  const [offset, setOffset] = useState(DEFAULT_OFFSET);
+  const [rotation, setRotation] = useState(DEFAULT_ROTATION);
   
   const [dragMode, setDragMode] = useState<'move' | 'resize' | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [startState, setStartState] = useState({ offset: { x: 0, y: 0 }, scale: 0 });
   
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null);
+
+  // Initialize/Restore config only after image is loaded and layout is ready
+  const handleImageLoad = () => {
+     if (initialConfig && containerRef.current && imageRef.current) {
+         const aperture = containerRef.current.querySelector('.aperture-window') as HTMLDivElement;
+         const img = imageRef.current;
+         
+         // Restore Scale: scale = normalizedScale / (imgWidth / apertureWidth)
+         const ratio = img.clientWidth / aperture.clientWidth;
+         // Avoid division by zero
+         if (ratio > 0) {
+           setScale(initialConfig.scale / ratio);
+         }
+         
+         // Restore Offset: offset = normalizedOffset * apertureDimension
+         setOffset({
+             x: initialConfig.offsetX * aperture.clientWidth,
+             y: initialConfig.offsetY * aperture.clientHeight
+         });
+         
+         setRotation(initialConfig.rotation);
+     } else {
+        // Apply defaults explicitly if no config
+        setScale(DEFAULT_SCALE);
+        setOffset(DEFAULT_OFFSET);
+        setRotation(DEFAULT_ROTATION);
+     }
+  };
 
   const handleFit = () => {
     setScale(0.7);
@@ -99,8 +123,6 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
         y: startState.offset.y + dy
       });
     } else if (dragMode === 'resize') {
-      // 右下ハンドル操作: ドラッグした距離に応じてズームスケールを変更
-      // 右/下へ動かすほど枠が広がる（=画像は縮小されて見える）ため、感覚を合わせる
       const moveMagnitude = (dx + dy) / 2;
       const scaleSensitivity = 0.005;
       setScale(Math.min(Math.max(startState.scale - (moveMagnitude * scaleSensitivity), 0.1), 5));
@@ -148,6 +170,9 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
 
     const aperture = containerRef.current.querySelector('.aperture-window') as HTMLDivElement;
     const apertureWidth = aperture.clientWidth;
+    const apertureHeight = aperture.clientHeight;
+    
+    // Scale calculation for rendering context
     const drawScale = outWidth / apertureWidth;
 
     const drawW = img.clientWidth * scale * drawScale;
@@ -157,10 +182,17 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
 
     ctx.drawImage(img, dx - drawW / 2, dy - drawH / 2, drawW, drawH);
     
+    // Calculate normalized values for resolution-independent config
+    // Normalized Scale: fraction of aperture width that the image occupies
+    const normScale = (img.clientWidth / apertureWidth) * scale;
+    // Normalized Offset: fraction of aperture dimensions
+    const normX = offset.x / apertureWidth;
+    const normY = offset.y / apertureHeight;
+
     onConfirm(canvas.toDataURL('image/png'), {
-      scale,
-      offsetX: offset.x,
-      offsetY: offset.y,
+      scale: normScale,
+      offsetX: normX,
+      offsetY: normY,
       rotation
     });
   };
@@ -202,6 +234,7 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
             <img 
               ref={imageRef} 
               src={imageSrc} 
+              onLoad={handleImageLoad}
               alt="Adjustment" 
               className="pointer-events-none transition-transform duration-75 will-change-transform"
               style={{ 
