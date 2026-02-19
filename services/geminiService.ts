@@ -19,11 +19,21 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
 
   let bgDesc = "";
   switch (option) {
-    case BackgroundOption.SoftBlue: bgDesc = "Pale blue (soft sky blue) studio background. Gentle radial gradient from center to edges."; break;
-    case BackgroundOption.SoftPink: bgDesc = "Sakura color (pale pink) studio background. Elegant and warm gradient."; break;
-    case BackgroundOption.WisteriaPurple: bgDesc = "Wisteria color (pale purple) studio background. Calm and noble impression."; break;
-    case BackgroundOption.FreshGreen: bgDesc = "Young grass color (fresh light green) studio background. Clean gradient."; break;
-    case BackgroundOption.WhiteGrey: bgDesc = "Porcelain white (very light grey) studio background. The most standard and sophisticated plain background."; break;
+    case BackgroundOption.SoftBlue: 
+      bgDesc = "Icy pale blue, bright sky. Very light and airy."; 
+      break;
+    case BackgroundOption.SoftPink: 
+      bgDesc = "Very pale shell pink. Soft, warm and heavenly."; 
+      break;
+    case BackgroundOption.WisteriaPurple: 
+      bgDesc = "Very pale lavender mist, almost white. Elegant and noble."; 
+      break;
+    case BackgroundOption.FreshGreen: 
+      bgDesc = "Very pale mint cream. Fresh and clean."; 
+      break;
+    case BackgroundOption.WhiteGrey: 
+      bgDesc = "Porcelain white, high-key. Pure and simple."; 
+      break;
     default: return base64Image;
   }
 
@@ -34,12 +44,18 @@ Synthesize a professional-quality background for a memorial photo while strictly
 [1. IDENTITY PRESERVATION]
 - Do NOT alter the subject's face, expression, wrinkles, or hairstyle. These are the "appearance of the deceased" and must be absolutely preserved.
 
-[2. BACKGROUND SPECIFICATION: ${bgDesc}]
-- Completely remove the existing background and generate the specified background.
-- Create a radial lighting effect (soft halo-like light) where the center behind the subject is slightly brighter, similar to studio portrait photography.
+[2. TONE & STYLE: High-key photography, Bright and Airy]
+- Create a "High-key" lighting effect. The entire image should be bright and transparent.
+- Use a "White vignette" effect (fade to white at the edges), NOT dark.
+- No dark shadows. No muddy colors. No heavy vignetting.
 
-[3. REFINEMENT]
-- Keep the subject's outline sharp while blending the boundary naturally with the background.
+[3. BACKGROUND SPECIFICATION: ${bgDesc}]
+- Completely remove the existing background.
+- Generate a smooth, gradient studio background based on the description above.
+- Ensure the background is very pale, almost pastel or white-tinted.
+
+[4. REFINEMENT]
+- Keep the subject's outline sharp while blending the boundary naturally with the bright background.
 
 [OUTPUT]
 - 3:4 Aspect Ratio, High Resolution.`;
