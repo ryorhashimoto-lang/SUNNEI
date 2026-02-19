@@ -66,7 +66,10 @@ Synthesize a professional-quality background for a memorial photo while strictly
       contents: {
         parts: [{ text: prompt }, { inlineData: { data: cleanBase64(base64Image), mimeType } }],
       },
-      config: { imageConfig: { aspectRatio: "3:4" } }
+      config: { 
+        temperature: 0.3,
+        imageConfig: { aspectRatio: "3:4" } 
+      }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
     if (!part?.inlineData) throw new Error("Background generation failed");
@@ -116,7 +119,10 @@ Change only the attire to high-quality formal wear while maintaining the "face" 
       contents: {
         parts: [{ text: prompt }, { inlineData: { data: cleanBase64(base64Image), mimeType } }],
       },
-      config: { imageConfig: { aspectRatio: "3:4" } }
+      config: { 
+        temperature: 0.3,
+        imageConfig: { aspectRatio: "3:4" } 
+      }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
     if (!part?.inlineData) throw new Error("Clothing change failed");
@@ -132,7 +138,10 @@ export const repairHeicImage = async (base64Heic: string): Promise<string> => {
     const response = await ai.models.generateContent({
         model: MODEL_NAME,
         contents: { parts: [{ text: "Convert to high quality 3:4 portrait photo." }, { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }] },
-        config: { imageConfig: { aspectRatio: "3:4" } }
+        config: { 
+          temperature: 0.3,
+          imageConfig: { aspectRatio: "3:4" } 
+        }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
     return `data:${part!.inlineData!.mimeType};base64,${part!.inlineData!.data}`;
