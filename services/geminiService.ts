@@ -32,33 +32,34 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
       bgDesc = "Very pale mint cream. Fresh and clean."; 
       break;
     case BackgroundOption.WhiteGrey: 
-      bgDesc = "Porcelain white, high-key. Pure and simple."; 
+      bgDesc = "Porcelain white, simple studio background."; 
       break;
     default: return base64Image;
   }
 
   const prompt = `
 [ROLE: PROFESSIONAL PHOTO RETOUCHER]
-Synthesize a professional-quality background for a memorial photo while strictly preserving the identity of the subject.
+Synthesize a professional studio background while strictly preserving the subject's identity.
 
 [1. IDENTITY PRESERVATION]
-- Do NOT alter the subject's face, expression, wrinkles, or hairstyle. These are the "appearance of the deceased" and must be absolutely preserved.
+- ABSOLUTELY DO NOT alter the subject's face, expression, wrinkles, or hairstyle.
+- The subject must remain 100% OPAQUE.
 
-[2. TONE & STYLE: High-key photography, Bright and Airy]
-- Create a "High-key" lighting effect. The background should be bright and clean.
-- Use a "White vignette" effect on the BACKGROUND layer only (fade to white at the edges).
-- No dark shadows. No muddy colors.
+[2. LIGHTING: FLAT STUDIO LIGHTING]
+- Apply "Standard Studio Lighting" (Neutral & Even) to the subject.
+- REMOVE all "High-key" bloom, glow, or overexposure effects from the subject.
+- PREVENT environmental light wrapping. The background light must NOT bleed onto the subject.
+- Ensure the subject has distinct, sharp edges.
 
 [3. BACKGROUND SPECIFICATION: ${bgDesc}]
 - Completely remove the existing background.
-- Generate a smooth, gradient studio background based on the description above.
-- Ensure the background is very pale, almost pastel or white-tinted.
+- Generate a smooth, clean gradient background.
+- NO vignette. NO textures.
 
-[4. CRITICAL: COMPOSITION & SEPARATION]
+[4. COMPOSITION]
 - STRICTLY SEPARATE the subject from the background.
-- DO NOT blend the background color onto the subject's clothes, hair, or skin (No color bleeding).
-- DO NOT make the subject transparent or translucent.
-- Maintain a sharp, clean edge between the subject and the background.
+- The subject should look like a solid cutout placed in front of the background.
+- No color blending at the boundaries.
 
 [OUTPUT]
 - 3:4 Aspect Ratio, High Resolution.`;
@@ -113,6 +114,7 @@ Change only the attire to high-quality formal wear while maintaining the "face" 
 [3. COMPOSITION]
 - Maintain the position and size of the original subject's head.
 - Ensure the clothing is opaque and does not blend with the background.
+- Use flat lighting to avoid bloom/glow effects.
 
 [OUTPUT]
 - 3:4 Aspect Ratio.`;
