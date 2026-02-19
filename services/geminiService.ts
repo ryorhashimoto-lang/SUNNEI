@@ -11,9 +11,10 @@ const cleanBase64 = (dataUrl: string): string => {
 };
 
 /**
- * Pads the image to match the target aspect ratio (default 3:4) to prevent Gemini from resizing the subject.
+ * Pads the image to match the target aspect ratio (default 1:1) to prevent Gemini from resizing the subject.
+ * Using 1:1 allows for safe cropping to 5:6 later.
  */
-const fitToAspect = async (base64Str: string, targetRatio: number = 3/4): Promise<string> => {
+const fitToAspect = async (base64Str: string, targetRatio: number = 1): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -30,10 +31,10 @@ const fitToAspect = async (base64Str: string, targetRatio: number = 3/4): Promis
 
       // Adjust dimensions to enclose the original image within the target aspect ratio
       if (currentRatio > targetRatio) {
-        // Image is wider than target (e.g., 5:6 > 3:4) -> Pad top/bottom
+        // Image is wider than target -> Pad top/bottom
         newH = img.width / targetRatio;
       } else {
-        // Image is taller than target -> Pad sides (unlikely for 5:6 -> 3:4)
+        // Image is taller than target (e.g. 5:6 < 1:1) -> Pad sides
         newW = img.height * targetRatio;
       }
 
@@ -67,8 +68,8 @@ const fitToAspect = async (base64Str: string, targetRatio: number = 3/4): Promis
 export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Pad image to 3:4 before sending to AI
-  const paddedImage = await fitToAspect(base64Image, 3/4);
+  // Pad image to 1:1 (Square) before sending to AI
+  const paddedImage = await fitToAspect(base64Image, 1);
   const mimeType = paddedImage.match(/data:([^;]+);/)?.[1] || "image/png";
 
   let bgDesc = "";
@@ -116,7 +117,7 @@ Synthesize a professional studio background while strictly preserving the subjec
 - No color blending at the boundaries.
 
 [OUTPUT]
-- 3:4 Aspect Ratio, High Resolution.`;
+- High Resolution, Square Aspect Ratio.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -126,7 +127,7 @@ Synthesize a professional studio background while strictly preserving the subjec
       },
       config: { 
         temperature: 0.3,
-        imageConfig: { aspectRatio: "3:4" } 
+        // No explicit aspect ratio config defaults to 1:1
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -144,8 +145,8 @@ Synthesize a professional studio background while strictly preserving the subjec
 export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Pad image to 3:4 before sending to AI
-  const paddedImage = await fitToAspect(base64Image, 3/4);
+  // Pad image to 1:1 (Square) before sending to AI
+  const paddedImage = await fitToAspect(base64Image, 1);
   const mimeType = paddedImage.match(/data:([^;]+);/)?.[1] || "image/png";
 
   let clothSpec = "";
@@ -174,7 +175,7 @@ Change only the attire to high-quality formal wear while maintaining the "face" 
 - Use flat lighting to avoid bloom/glow effects.
 
 [OUTPUT]
-- 3:4 Aspect Ratio.`;
+- High Resolution, Square Aspect Ratio.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -184,7 +185,7 @@ Change only the attire to high-quality formal wear while maintaining the "face" 
       },
       config: { 
         temperature: 0.3,
-        imageConfig: { aspectRatio: "3:4" } 
+        // No explicit aspect ratio config defaults to 1:1
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -200,10 +201,9 @@ export const repairHeicImage = async (base64Heic: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: MODEL_NAME,
-        contents: { parts: [{ text: "Convert to high quality 3:4 portrait photo." }, { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }] },
+        contents: { parts: [{ text: "Convert to high quality portrait photo." }, { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }] },
         config: { 
           temperature: 0.3,
-          imageConfig: { aspectRatio: "3:4" } 
         }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
