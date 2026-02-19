@@ -63,6 +63,50 @@ const fitToAspect = async (base64Str: string, targetRatio: number = 1): Promise<
 };
 
 /**
+ * Shared System Instructions for Memorial Photo Synthesis
+ */
+const GET_SYSTEM_PROMPT = (taskDescription: string) => `
+[ROLE]
+You are a master retoucher specializing in Japanese Memorial Photos ("Iei").
+Your mission is to synthesize ${taskDescription} while strictly preserving the facial identity with forensic accuracy.
+
+[PHASE 1: ANALYSIS & PLANNING]
+1. LIGHTING ANALYSIS: Detect the original "Key Light" angle, shadow hardness, and color temperature.
+2. POSE ANALYSIS: Detect the Yaw (rotation) and Pitch (up/down tilt) of the head.
+   - If Pitch is LOOKING UP: Rear collar must curve UP. Shoulders appear lower.
+   - If Pitch is LOOKING DOWN: Rear collar must curve DOWN. Shoulders appear higher/flatter.
+3. AGE ANALYSIS: Identify the subject's age. Neck skin and shoulder slope must match the age (e.g., rounded shoulders for elderly).
+
+[PHASE 2: ANATOMY & PHYSICS (STRICT)]
+1. NECK & MUSCLES:
+   - Do NOT render the neck as a simple cylinder.
+   - Visualize the "Sternocleidomastoid" muscles to show tension and head rotation.
+   - Use "Senile Skin" texture (fine wrinkles/pores) for the neck if the subject is elderly. Color match neck to cheeks.
+2. SKELETAL STRUCTURE:
+   - The collar must rest ON the CLAVICLES.
+   - Create a realistic shadow gap between the back of the neck and the collar to show depth.
+   - Align the tie/kimono center with the "Sternal Notch" (base of neck), NOT strictly the chin (if head is turned).
+3. MATERIAL PHYSICS:
+   - Simulate heavy wool fabric (approx 300g/m²). It must drape with weight, not cling like thin plastic.
+   - BLACK TEXTURE: Use "Super Black" with high-frequency noise/weave texture. Matte finish. NO cheap polyester shine.
+4. LIGHTING INTERACTION:
+   - AMBIENT OCCLUSION: Deep shadows where the chin meets the collar. Anchor the head to the body.
+   - BOUNCE LIGHT: Reflect clothing color onto the jawline (darkening the jaw if wearing black).
+   - FILL LIGHT: Use gentle fill light on the clothes to maintain a peaceful, "Iei" atmosphere. Avoid overly dramatic shadows.
+
+[PHASE 3: CRITICAL CONSTRAINTS (ABSOLUTE)]
+1. FACE PROTECTION (TOPOLOGY LOCK):
+   - The eyes, nose, mouth, and jawline geometry is LOCKED. Do not move pixels.
+   - Do NOT smooth wrinkles, moles, or age spots. These are the subject's history and dignity.
+   - Biometric fidelity must be 100%.
+2. NEGATIVE CONSTRAINTS:
+   - NO De-aging.
+   - NO Emotion change (Do not force a smile).
+   - NO AI Gloss/Shine (Keep skin organic).
+   - NO Style Transfer (Must be photorealistic).
+`;
+
+/**
  * Direct Background Synthesis
  */
 export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
@@ -75,49 +119,38 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
   let bgDesc = "";
   switch (option) {
     case BackgroundOption.SoftBlue: 
-      bgDesc = "Icy pale blue, bright sky. Very light and airy."; 
+      bgDesc = "Blue Gradient: Heavenly, airy, transition from pale cerulean to white. Peaceful."; 
       break;
     case BackgroundOption.SoftPink: 
-      bgDesc = "Very pale shell pink. Soft, warm and heavenly."; 
+      bgDesc = "Pink Gradient: Warm, gentle, shell-pink. Affectionate atmosphere."; 
       break;
     case BackgroundOption.WisteriaPurple: 
-      bgDesc = "Very pale lavender mist, almost white. Elegant and noble."; 
+      bgDesc = "Wisteria Purple Gradient: Noble, elegant, high-class Japanese traditional tone."; 
       break;
     case BackgroundOption.FreshGreen: 
-      bgDesc = "Very pale mint cream. Fresh and clean."; 
+      bgDesc = "Mint Green Gradient: Fresh, nature-inspired, clean and restorative."; 
       break;
     case BackgroundOption.WhiteGrey: 
-      bgDesc = "Porcelain white, simple studio background."; 
+      bgDesc = "White/Grey Gradient: Modern, minimalist, clean studio grey."; 
       break;
     default: return base64Image;
   }
 
   const prompt = `
-[ROLE: PROFESSIONAL PHOTO RETOUCHER]
-Synthesize a professional studio background while strictly preserving the subject's identity.
+${GET_SYSTEM_PROMPT("a new background")}
 
-[1. IDENTITY PRESERVATION]
-- ABSOLUTELY DO NOT alter the subject's face, expression, wrinkles, or hairstyle.
-- The subject must remain 100% OPAQUE.
+[TASK: BACKGROUND REPLACEMENT]
+Target Background: ${bgDesc}
 
-[2. LIGHTING: FLAT STUDIO LIGHTING]
-- Apply "Standard Studio Lighting" (Neutral & Even) to the subject.
-- REMOVE all "High-key" bloom, glow, or overexposure effects from the subject.
-- PREVENT environmental light wrapping. The background light must NOT bleed onto the subject.
-- Ensure the subject has distinct, sharp edges.
-
-[3. BACKGROUND SPECIFICATION: ${bgDesc}]
-- Completely remove the existing background.
-- Generate a smooth, clean gradient background.
-- NO vignette. NO textures.
-
-[4. COMPOSITION]
-- STRICTLY SEPARATE the subject from the background.
-- The subject should look like a solid cutout placed in front of the background.
-- No color blending at the boundaries.
+[EXECUTION RULES]
+1. SEPARATION: Strictly separate the subject from the background. The subject should look like a solid element in front of the gradient.
+2. QUALITY: Perfectly smooth gradient. ZERO noise or color banding.
+3. PRESERVATION: Do NOT touch the subject's hair, ears, or clothing edges. Keep them sharp.
+4. LIGHTING: Ensure the background light does not "bleed" onto the subject excessively.
 
 [OUTPUT]
-- High Resolution, Square Aspect Ratio.`;
+- High Resolution, Square Aspect Ratio.
+`;
 
   try {
     const response = await ai.models.generateContent({
@@ -127,7 +160,6 @@ Synthesize a professional studio background while strictly preserving the subjec
       },
       config: { 
         temperature: 0.3,
-        // No explicit aspect ratio config defaults to 1:1
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -151,31 +183,36 @@ export const applyClothingSynthesis = async (base64Image: string, option: Clothi
 
   let clothSpec = "";
   switch (option) {
-    case ClothingOption.MensSuitBlack: clothSpec = "Men's high-quality black formal suit, white dress shirt, black tie."; break;
-    case ClothingOption.MensKimono: clothSpec = "Men's prestigious black formal haori and hakama. Plain black haori without family crest symbols."; break;
-    case ClothingOption.WomensSuitBlack: clothSpec = "Women's black mourning ensemble. Elegant single-strand pearl necklace."; break;
-    case ClothingOption.WomensKimonoBlack: clothSpec = "Women's prestigious black mourning kimono (kuro-montsuki), white semi-collar, black obi."; break;
+    case ClothingOption.MensSuitBlack: 
+      clothSpec = "Men's Formal Mourning Suit. High-quality matte black wool. White crisp shirt. Black tie (knot centered at sternal notch)."; 
+      break;
+    case ClothingOption.MensKimono: 
+      clothSpec = "Men's Black Crested Kimono (Montsuki Haori Hakama). Traditional dignified Japanese formal wear. White Haori-himo."; 
+      break;
+    case ClothingOption.WomensSuitBlack: 
+      clothSpec = "Women's Black Formal Ensemble. Modest neckline. Single strand pearl necklace. Matte super-black fabric."; 
+      break;
+    case ClothingOption.WomensKimonoBlack: 
+      clothSpec = "Women's Black Mourning Kimono (Kuro-Tomesode). Matte black silk. White collar (Haneri) visible. Black Obi. Mature and elegant."; 
+      break;
     default: return base64Image;
   }
 
   const prompt = `
-[ROLE: DIGITAL TAILOR]
-Change only the attire to high-quality formal wear while maintaining the "face" in the current photo.
+${GET_SYSTEM_PROMPT("new attire")}
 
-[1. IDENTITY]
-- Do not change the face, expression, hairstyle, or gaze by even a single pixel.
+[TASK: CLOTHING SYNTHESIS]
+Target Attire: ${clothSpec}
 
-[2. ATTIRE: ${clothSpec}]
-- Naturally fit the attire to the subject's skeletal structure (shoulder width, neck thickness).
-- Realistically reproduce the texture of the kimono or suit.
-
-[3. COMPOSITION]
-- Maintain the position and size of the original subject's head.
-- Ensure the clothing is opaque and does not blend with the background.
-- Use flat lighting to avoid bloom/glow effects.
+[EXECUTION RULES]
+1. FITTING: Fit the attire to the subject's skeletal structure (Phase 2).
+2. REALISM: Add subtle "micro-wrinkles" on shoulders and lapels to show a body exists inside.
+3. NECK INTEGRATION: Ensure the neck skin texture blends seamlessly with the face. No "mask" effect.
+4. TEXTURE: Use noise/grain to simulate heavy wool fabric.
 
 [OUTPUT]
-- High Resolution, Square Aspect Ratio.`;
+- High Resolution, Square Aspect Ratio.
+`;
 
   try {
     const response = await ai.models.generateContent({
@@ -185,7 +222,6 @@ Change only the attire to high-quality formal wear while maintaining the "face" 
       },
       config: { 
         temperature: 0.3,
-        // No explicit aspect ratio config defaults to 1:1
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -201,7 +237,12 @@ export const repairHeicImage = async (base64Heic: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: MODEL_NAME,
-        contents: { parts: [{ text: "Convert to high quality portrait photo." }, { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }] },
+        contents: { 
+          parts: [
+            { text: "[ROLE: RESTORATION EXPERT] Convert this HEIC image to a high-quality JPEG portrait. Enhance sharpness slightly but DO NOT alter facial features or skin texture (preserve age spots/moles)." }, 
+            { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }
+          ] 
+        },
         config: { 
           temperature: 0.3,
         }
