@@ -182,7 +182,7 @@ const App: React.FC = () => {
     setStatus({ isProcessing: true, message: '最高画質で画像を生成しています...' });
     try {
       const canvas = document.createElement('canvas');
-      const width = 2700;
+      const width = 3000;
       const height = 3600;
       await drawMemorialPhoto({ 
         canvas, 
