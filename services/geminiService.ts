@@ -11,11 +11,65 @@ const cleanBase64 = (dataUrl: string): string => {
 };
 
 /**
+ * Pads the image to match the target aspect ratio (default 3:4) to prevent Gemini from resizing the subject.
+ */
+const fitToAspect = async (base64Str: string, targetRatio: number = 3/4): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const currentRatio = img.width / img.height;
+      // If close enough, return original
+      if (Math.abs(currentRatio - targetRatio) < 0.01) {
+        resolve(base64Str);
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      let newW = img.width;
+      let newH = img.height;
+
+      // Adjust dimensions to enclose the original image within the target aspect ratio
+      if (currentRatio > targetRatio) {
+        // Image is wider than target (e.g., 5:6 > 3:4) -> Pad top/bottom
+        newH = img.width / targetRatio;
+      } else {
+        // Image is taller than target -> Pad sides (unlikely for 5:6 -> 3:4)
+        newW = img.height * targetRatio;
+      }
+
+      canvas.width = newW;
+      canvas.height = newH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(base64Str);
+        return;
+      }
+
+      // Fill with white (neutral) - AI will replace this background anyway
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, newW, newH);
+
+      // Center the image
+      const x = (newW - img.width) / 2;
+      const y = (newH - img.height) / 2;
+      ctx.drawImage(img, x, y);
+
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = reject;
+    img.src = base64Str;
+  });
+};
+
+/**
  * Direct Background Synthesis
  */
 export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const mimeType = base64Image.match(/data:([^;]+);/)?.[1] || "image/png";
+  
+  // Pad image to 3:4 before sending to AI
+  const paddedImage = await fitToAspect(base64Image, 3/4);
+  const mimeType = paddedImage.match(/data:([^;]+);/)?.[1] || "image/png";
 
   let bgDesc = "";
   switch (option) {
@@ -68,7 +122,7 @@ Synthesize a professional studio background while strictly preserving the subjec
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: {
-        parts: [{ text: prompt }, { inlineData: { data: cleanBase64(base64Image), mimeType } }],
+        parts: [{ text: prompt }, { inlineData: { data: cleanBase64(paddedImage), mimeType } }],
       },
       config: { 
         temperature: 0.3,
@@ -89,7 +143,10 @@ Synthesize a professional studio background while strictly preserving the subjec
  */
 export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const mimeType = base64Image.match(/data:([^;]+);/)?.[1] || "image/png";
+  
+  // Pad image to 3:4 before sending to AI
+  const paddedImage = await fitToAspect(base64Image, 3/4);
+  const mimeType = paddedImage.match(/data:([^;]+);/)?.[1] || "image/png";
 
   let clothSpec = "";
   switch (option) {
@@ -123,7 +180,7 @@ Change only the attire to high-quality formal wear while maintaining the "face" 
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: {
-        parts: [{ text: prompt }, { inlineData: { data: cleanBase64(base64Image), mimeType } }],
+        parts: [{ text: prompt }, { inlineData: { data: cleanBase64(paddedImage), mimeType } }],
       },
       config: { 
         temperature: 0.3,
