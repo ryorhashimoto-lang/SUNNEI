@@ -49,11 +49,11 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   const currentClothingOptions = gender === 'men' ? menOptions : womenOptions;
 
   const bgItems = [
-    { id: BackgroundOption.SoftBlue, label: '浅葱 (青)', color: 'bg-[#e3f2fd]', text: 'text-gray-900' },
-    { id: BackgroundOption.SoftPink, label: '桜色 (桃)', color: 'bg-[#fce4ec]', text: 'text-gray-900' },
-    { id: BackgroundOption.WisteriaPurple, label: '藤色 (紫)', color: 'bg-[#f3e5f5]', text: 'text-gray-900' },
-    { id: BackgroundOption.FreshGreen, label: '若草 (緑)', color: 'bg-[#f1f8e9]', text: 'text-gray-900' },
-    { id: BackgroundOption.WhiteGrey, label: '白磁 (灰)', color: 'bg-[#fafafa]', text: 'text-gray-900' },
+    { id: BackgroundOption.SoftBlue, label: 'ブルー', color: 'bg-[#e3f2fd]', text: 'text-gray-900' },
+    { id: BackgroundOption.SoftPink, label: 'ピンク', color: 'bg-[#fce4ec]', text: 'text-gray-900' },
+    { id: BackgroundOption.WisteriaPurple, label: 'パープル', color: 'bg-[#f3e5f5]', text: 'text-gray-900' },
+    { id: BackgroundOption.FreshGreen, label: 'グリーン', color: 'bg-[#f1f8e9]', text: 'text-gray-900' },
+    { id: BackgroundOption.WhiteGrey, label: 'ホワイト', color: 'bg-[#fafafa]', text: 'text-gray-900' },
   ];
 
   const StepBadge = ({ num, text }: { num: string, text: string }) => (
@@ -101,7 +101,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               disabled={disabled}
               className={`flex items-center justify-center p-4 rounded-2xl border-2 text-center transition-all col-span-2 min-h-[60px] relative group active:scale-[0.98] ${appliedBg === BackgroundOption.None ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300'}`}
             >
-              <span className="text-xs font-bold text-gray-600">元の背景（変更しない）</span>
+              <span className="text-xs font-bold text-gray-600">背景を変更しない</span>
               {appliedBg === BackgroundOption.None && (
                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-900">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
@@ -163,7 +163,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               disabled={disabled}
               className={`w-full p-5 rounded-2xl border-2 text-left transition-all active:scale-[0.98] ${appliedClothing === ClothingOption.None ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300 shadow-sm'}`}
             >
-              <div className="font-bold text-[13px] text-gray-700">お召し物を変更しない</div>
+              <div className="font-bold text-[13px] text-gray-700">服装を変更しない</div>
             </button>
             {currentClothingOptions.map((opt) => (
               <button
@@ -213,7 +213,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-6 h-6 text-gray-400 group-hover:text-gray-900 transition-colors">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 13.5V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m12-3V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 9.75V10.5" />
               </svg>
-              構図（トリミング）を再調整
+              切り取り
             </button>
           </div>
         </section>
@@ -237,7 +237,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8 text-blue-400">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
-                <span className="text-[20px] tracking-[0.3em] font-serif font-bold">高品質データを保存</span>
+                <span className="text-[20px] tracking-[0.3em] font-serif font-bold">データを保存</span>
               </div>
               <span className="text-[10px] text-gray-500 font-bold tracking-[0.5em] opacity-80 uppercase font-sans">Studio Master Export</span>
             </>
