@@ -45,17 +45,20 @@ Synthesize a professional-quality background for a memorial photo while strictly
 - Do NOT alter the subject's face, expression, wrinkles, or hairstyle. These are the "appearance of the deceased" and must be absolutely preserved.
 
 [2. TONE & STYLE: High-key photography, Bright and Airy]
-- Create a "High-key" lighting effect. The entire image should be bright and transparent.
-- Use a "White vignette" effect (fade to white at the edges), NOT dark.
-- No dark shadows. No muddy colors. No heavy vignetting.
+- Create a "High-key" lighting effect. The background should be bright and clean.
+- Use a "White vignette" effect on the BACKGROUND layer only (fade to white at the edges).
+- No dark shadows. No muddy colors.
 
 [3. BACKGROUND SPECIFICATION: ${bgDesc}]
 - Completely remove the existing background.
 - Generate a smooth, gradient studio background based on the description above.
 - Ensure the background is very pale, almost pastel or white-tinted.
 
-[4. REFINEMENT]
-- Keep the subject's outline sharp while blending the boundary naturally with the bright background.
+[4. CRITICAL: COMPOSITION & SEPARATION]
+- STRICTLY SEPARATE the subject from the background.
+- DO NOT blend the background color onto the subject's clothes, hair, or skin (No color bleeding).
+- DO NOT make the subject transparent or translucent.
+- Maintain a sharp, clean edge between the subject and the background.
 
 [OUTPUT]
 - 3:4 Aspect Ratio, High Resolution.`;
@@ -109,6 +112,7 @@ Change only the attire to high-quality formal wear while maintaining the "face" 
 
 [3. COMPOSITION]
 - Maintain the position and size of the original subject's head.
+- Ensure the clothing is opaque and does not blend with the background.
 
 [OUTPUT]
 - 3:4 Aspect Ratio.`;
