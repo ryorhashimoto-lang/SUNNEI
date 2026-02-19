@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { ClothingOption, BackgroundOption } from "../types";
 
@@ -70,11 +71,9 @@ export const applyClothingSynthesis = async (base64Image: string, option: Clothi
   let clothSpec = "";
   switch (option) {
     case ClothingOption.MensSuitBlack: clothSpec = "Men's high-quality black formal suit, white dress shirt, black tie."; break;
-    case ClothingOption.MensKimono: clothSpec = "Men's prestigious black crested haori and hakama (montsuki). White family crest on the chest."; break;
-    case ClothingOption.MensSuitNavy: clothSpec = "Calm dark navy business suit."; break;
+    case ClothingOption.MensKimono: clothSpec = "Men's prestigious black formal haori and hakama. Plain black haori without family crest symbols."; break;
     case ClothingOption.WomensSuitBlack: clothSpec = "Women's black mourning ensemble. Elegant single-strand pearl necklace."; break;
     case ClothingOption.WomensKimonoBlack: clothSpec = "Women's prestigious black mourning kimono (kuro-montsuki), white semi-collar, black obi."; break;
-    case ClothingOption.WomensKimonoColor: clothSpec = "Elegant pale-colored kimono (visiting wear or solid color)."; break;
     default: return base64Image;
   }
 
