@@ -52,20 +52,18 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
          setRotation(initialConfig.rotation);
      } else {
         // Apply defaults explicitly if no config
-        setScale(DEFAULT_SCALE);
-        setOffset(DEFAULT_OFFSET);
-        setRotation(DEFAULT_ROTATION);
+        if (!initialConfig) {
+             setScale(DEFAULT_SCALE);
+             setOffset(DEFAULT_OFFSET);
+             setRotation(DEFAULT_ROTATION);
+        }
      }
   };
 
-  const handleFit = () => {
-    setScale(0.7);
+  const handleReset = () => {
+    setScale(DEFAULT_SCALE);
     setOffset(DEFAULT_OFFSET);
-  };
-
-  const handleFill = () => {
-    setScale(1.1);
-    setOffset(DEFAULT_OFFSET);
+    setRotation(DEFAULT_ROTATION);
   };
 
   const getClientCoordinates = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
@@ -79,7 +77,7 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
     e.preventDefault();
     const delta = -e.deltaY;
     const factor = delta > 0 ? 1.05 : 0.95;
-    setScale(prev => Math.min(Math.max(prev * factor, 0.1), 5));
+    setScale(prev => Math.min(Math.max(prev * factor, 0.1), 3.0));
   };
 
   const startDrag = (e: React.MouseEvent | React.TouchEvent, mode: 'move' | 'resize') => {
@@ -107,7 +105,7 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
       );
       if (lastTouchDistance !== null) {
         const factor = dist / lastTouchDistance;
-        setScale(prev => Math.min(Math.max(prev * factor, 0.1), 5));
+        setScale(prev => Math.min(Math.max(prev * factor, 0.1), 3.0));
       }
       setLastTouchDistance(dist);
       return;
@@ -127,7 +125,7 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
     } else if (dragMode === 'resize') {
       const moveMagnitude = (dx + dy) / 2;
       const scaleSensitivity = 0.005;
-      setScale(Math.min(Math.max(startState.scale - (moveMagnitude * scaleSensitivity), 0.1), 5));
+      setScale(Math.min(Math.max(startState.scale - (moveMagnitude * scaleSensitivity), 0.1), 3.0));
     }
   }, [dragMode, dragStart, startState, lastTouchDistance]);
 
@@ -216,12 +214,6 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
           </div>
         </div>
 
-        {/* 額装エリアの注意アラート */}
-        <div className="hidden md:flex items-center gap-2 bg-red-900/30 border border-red-500/30 px-3 py-1.5 rounded text-[10px] text-red-200">
-           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-           赤枠部分（約5mm）は額装時に隠れる場合があります
-        </div>
-
         <button 
           onClick={executeCrop} 
           className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2.5 rounded-full font-bold text-xs shadow-lg transition-all flex items-center gap-2 active:scale-95"
@@ -233,7 +225,7 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
         </button>
       </header>
 
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+      <div className="flex-1 flex flex-col overflow-hidden relative">
         <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden group">
           <div 
             ref={containerRef}
@@ -255,31 +247,12 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
               }} 
             />
 
-            {/* Viewport Frame with Corner Handle */}
+            {/* Viewport Frame */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                <div 
                   className="aperture-window relative border border-white/40 shadow-[0_0_0_9999px_rgba(0,0,0,0.8)]" 
                   style={{ aspectRatio: '5/6', height: '80%', maxWidth: '90%' }}
                >
-                  {/* ケラレ（額落ち）ガイドゾーン 
-                      四つ切りサイズ(254x305mm)における5mm
-                      横: 5/254 = 約1.97% 
-                      縦: 5/305 = 約1.64% 
-                  */}
-                  <div className="absolute inset-0 border-[rgba(255,50,50,0.25)] pointer-events-none z-20"
-                       style={{
-                         borderLeftWidth: '2%',
-                         borderRightWidth: '2%',
-                         borderTopWidth: '1.6%',
-                         borderBottomWidth: '1.6%'
-                       }}>
-                     {/* 角のガイドを赤色に強調 */}
-                     <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-red-500/50"></div>
-                     <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-red-500/50"></div>
-                     <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-red-500/50"></div>
-                     <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-red-500/50"></div>
-                  </div>
-
                   {/* Corner marks for aesthetic and guidance */}
                   <div className="absolute -top-[1px] -left-[1px] w-4 h-4 border-t-2 border-l-2 border-white shadow-sm"></div>
                   <div className="absolute -top-[1px] -right-[1px] w-4 h-4 border-t-2 border-r-2 border-white shadow-sm"></div>
@@ -298,11 +271,56 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
           </div>
         </div>
 
-        {/* Mobile Alert */}
-        <div className="md:hidden absolute top-20 left-1/2 -translate-x-1/2 z-40 whitespace-nowrap">
-           <div className="bg-red-900/50 backdrop-blur border border-red-500/30 px-3 py-1 rounded-full text-[9px] text-red-100 flex items-center gap-1.5 shadow-lg">
-             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-             赤枠部分（約5mm）は額装で隠れます
+        {/* Control Footer */}
+        <div className="bg-[#1a1a1a] border-t border-white/10 px-6 py-6 pb-10 md:pb-8 shrink-0 z-50">
+           <div className="max-w-xl mx-auto flex flex-col gap-6">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                 {/* Scale Slider */}
+                 <div className="space-y-3">
+                    <div className="flex justify-between text-[10px] font-bold text-gray-400 tracking-widest uppercase">
+                       <span>サイズ (拡大/縮小)</span>
+                       <span className="text-white">{Math.round(scale * 100)}%</span>
+                    </div>
+                    <input 
+                       type="range" min="0.1" max="3.0" step="0.01"
+                       value={scale}
+                       onChange={(e) => setScale(parseFloat(e.target.value))}
+                       className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-[0_0_0_4px_rgba(255,255,255,0.1)] hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
+                    />
+                 </div>
+
+                 {/* Rotation Slider */}
+                 <div className="space-y-3">
+                    <div className="flex justify-between text-[10px] font-bold text-gray-400 tracking-widest uppercase">
+                       <span>角度 (回転)</span>
+                       <span className="text-white">{Math.round(rotation)}°</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                       <span className="text-[9px] text-gray-600 font-bold">-45°</span>
+                       <input 
+                          type="range" min="-45" max="45" step="0.5"
+                          value={rotation}
+                          onChange={(e) => setRotation(parseFloat(e.target.value))}
+                          className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-[0_0_0_4px_rgba(255,255,255,0.1)] hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
+                       />
+                       <span className="text-[9px] text-gray-600 font-bold">+45°</span>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Reset Button */}
+              <div className="flex justify-center pt-2">
+                 <button 
+                    onClick={handleReset}
+                    className="flex items-center gap-2 text-[10px] font-bold text-gray-500 hover:text-white transition-colors px-4 py-2 rounded-full hover:bg-white/5 active:scale-95 border border-transparent hover:border-white/10"
+                 >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                       <path fillRule="evenodd" d="M7.793 2.232a.75.75 0 0 1-.025 1.06L3.622 7.25h10.003a5.375 5.375 0 0 1 0 10.75H10.75a.75.75 0 0 1 0-1.5h2.875a3.875 3.875 0 0 0 0-7.75H3.622l4.146 3.957a.75.75 0 0 1-1.036 1.085l-5.5-5.25a.75.75 0 0 1 0-1.085l5.5-5.25a.75.75 0 0 1 1.061.025Z" clipRule="evenodd" />
+                    </svg>
+                    調整をリセット
+                 </button>
+              </div>
            </div>
         </div>
       </div>
