@@ -37,13 +37,13 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   const remaining = limit === Infinity ? '無制限' : Math.max(0, limit - usageCount);
 
   const menOptions = [
-    { id: ClothingOption.MensSuitBlack, label: '黒礼服', desc: '葬儀・告別式の正装' },
-    { id: ClothingOption.MensKimono, label: '黒羽織袴', desc: '家紋のない無地の黒和装' },
+    { id: ClothingOption.MensSuitBlack, label: '（男性用）スーツ', desc: '葬儀・告別式の正装' },
+    { id: ClothingOption.MensKimono, label: '（男性用）着物', desc: '格式高い黒羽織袴' },
   ];
 
   const womenOptions = [
-    { id: ClothingOption.WomensSuitBlack, label: '黒洋装', desc: '落ち着いたアンサンブル' },
-    { id: ClothingOption.WomensKimonoBlack, label: '黒喪服', desc: '最も格式高い和服' },
+    { id: ClothingOption.WomensSuitBlack, label: '（女性用）スーツ', desc: '落ち着いたアンサンブル' },
+    { id: ClothingOption.WomensKimonoBlack, label: '（女性用）着物', desc: '最も格式高い和服' },
   ];
 
   const currentClothingOptions = gender === 'men' ? menOptions : womenOptions;
@@ -229,7 +229,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
           {disabled ? (
             <div className="flex items-center gap-5">
               <div className="w-8 h-8 border-[3px] border-white/20 border-t-white rounded-full animate-spin"></div>
-              <span className="text-[17px] font-sans font-medium tracking-tight">AIが修復を行っています...</span>
+              <span className="text-[17px] font-sans font-medium tracking-tight">変更を行なっています...</span>
             </div>
           ) : (
             <>
