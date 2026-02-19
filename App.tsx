@@ -156,8 +156,9 @@ const App: React.FC = () => {
     setStatus({ isProcessing: true, message: '調整用データを準備しています...' });
     try {
       const canvas = document.createElement('canvas');
+      // 四つ切り比率 (5:6) に合わせる
       const width = 1200;
-      const height = 1600;
+      const height = 1440; // 1200 * 1.2 = 1440
       await drawMemorialPhoto({ 
         canvas, 
         originalCropped, 
@@ -182,6 +183,7 @@ const App: React.FC = () => {
     setStatus({ isProcessing: true, message: '最高画質で画像を生成しています...' });
     try {
       const canvas = document.createElement('canvas');
+      // 四つ切りサイズ (300dpi: 254mm x 305mm)
       const width = 3000;
       const height = 3600;
       await drawMemorialPhoto({ 
