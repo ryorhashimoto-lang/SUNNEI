@@ -1,3 +1,4 @@
+
 import { CropConfig } from '../types';
 
 interface RenderOptions {
@@ -49,7 +50,31 @@ export const drawMemorialPhoto = async ({
   if (!bCtx) return;
 
   // Draw AI generated image (with background)
-  bCtx.drawImage(sourceImg, 0, 0, width, height);
+  // Fix: Use "Object Fit: Cover" logic to prevent stretching
+  // AI usually returns 3:4, but canvas is 5:6.
+  const imgAspect = sourceImg.width / sourceImg.height;
+  const canvasAspect = width / height;
+  
+  let drawX, drawY, drawW, drawH;
+
+  if (imgAspect < canvasAspect) {
+     // Image is taller/thinner than canvas -> Match Width, Crop Height
+     drawW = width;
+     drawH = width / imgAspect;
+     drawX = 0;
+     drawY = (height - drawH) / 2; // Center vertical
+  } else {
+     // Image is wider than canvas -> Match Height, Crop Width
+     drawH = height;
+     drawW = height * imgAspect;
+     drawX = (width - drawW) / 2; // Center horizontal
+     drawY = 0;
+  }
+
+  // Draw source image to buffer with cropping (no stretching)
+  bCtx.imageSmoothingEnabled = true;
+  bCtx.imageSmoothingQuality = 'high';
+  bCtx.drawImage(sourceImg, drawX, drawY, drawW, drawH);
 
   // Output canvas settings
   canvas.width = width;
@@ -62,14 +87,16 @@ export const drawMemorialPhoto = async ({
     ctx.rotate((finalCropConfig.rotation * Math.PI) / 180);
     
     // finalCropConfig values are normalized relative to width/height
-    const drawW = width * finalCropConfig.scale;
-    const drawH = height * finalCropConfig.scale;
+    const cropDrawW = width * finalCropConfig.scale;
+    const cropDrawH = height * finalCropConfig.scale;
     
     // Offset is fraction of width/height
     const dx = finalCropConfig.offsetX * width;
     const dy = finalCropConfig.offsetY * height;
 
-    ctx.drawImage(buffer, dx - drawW / 2, dy - drawH / 2, drawW, drawH);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(buffer, dx - cropDrawW / 2, dy - cropDrawH / 2, cropDrawW, cropDrawH);
     ctx.restore();
   } else {
     ctx.drawImage(buffer, 0, 0, width, height);
