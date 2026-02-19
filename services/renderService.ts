@@ -21,8 +21,8 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 };
 
 /**
- * 遺影をレンダリングする。
- * 背景合成はAI（Gemini）が行うため、プログラムによるクロマキー処理は不要です。
+ * Renders the memorial photo.
+ * Background synthesis is handled by AI (Gemini), so programmatic chroma key processing is not required.
  */
 export const drawMemorialPhoto = async ({
   canvas,
@@ -41,17 +41,17 @@ export const drawMemorialPhoto = async ({
 
   const sourceImg = await loadImage(sourceSrc);
 
-  // 一時バッファ
+  // Temporary buffer
   const buffer = document.createElement('canvas');
   buffer.width = width;
   buffer.height = height;
   const bCtx = buffer.getContext('2d');
   if (!bCtx) return;
 
-  // AI生成画像（背景込み）をフル描画
+  // Draw AI generated image (with background)
   bCtx.drawImage(sourceImg, 0, 0, width, height);
 
-  // 出力キャンバス設定
+  // Output canvas settings
   canvas.width = width;
   canvas.height = height;
   ctx.clearRect(0, 0, width, height);
@@ -75,7 +75,7 @@ export const drawMemorialPhoto = async ({
     ctx.drawImage(buffer, 0, 0, width, height);
   }
 
-  // 装飾フレーム（品位を高める薄い枠）
+  // Decorative frame (thin line to enhance quality)
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.1)';
   ctx.shadowBlur = isHighRes ? 60 : 10;
