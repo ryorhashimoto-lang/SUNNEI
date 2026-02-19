@@ -1,251 +1,364 @@
 
-import React, { useState } from 'react';
-import { ClothingOption, BackgroundOption, UserPlan, PLAN_LIMITS } from '../types';
+import React, { useState, useEffect } from 'react';
+import { AppState, ClothingOption, BackgroundOption, ProcessingStatus, CompanyInfo, CropConfig } from './types';
+import UploadArea from './components/UploadArea';
+import ActionPanel from './components/ActionPanel';
+import PhotoCanvas from './components/PhotoCanvas';
+import CropTool from './components/CropTool';
+import LoginScreen from './components/LoginScreen';
+import ManagementDashboard from './components/ManagementDashboard';
+import { applyBackgroundSynthesis, applyClothingSynthesis } from './services/geminiService';
+import { authService, AuthSession } from './services/authService';
+import { usageService } from './services/usageService';
+import { drawMemorialPhoto } from './services/renderService';
 
-interface ActionPanelProps {
-  onBgAction: (option: BackgroundOption) => void;
-  onClothingAction: (option: ClothingOption) => void;
-  disabled: boolean;
-  onDownload: () => void;
-  onReset: () => void;
-  onStartCrop: () => void;
-  appliedBg: BackgroundOption;
-  appliedClothing: ClothingOption;
-  userPlan: UserPlan;
-  usageCount: number;
-  deceasedName: string;
-  onDeceasedNameChange: (name: string) => void;
-}
-
-const ActionPanel: React.FC<ActionPanelProps> = ({ 
-  onBgAction,
-  onClothingAction,
-  disabled, 
-  onDownload, 
-  onReset, 
-  onStartCrop,
-  appliedBg,
-  appliedClothing,
-  userPlan,
-  usageCount,
-  deceasedName,
-  onDeceasedNameChange
-}) => {
-  const [gender, setGender] = useState<'men' | 'women'>('men');
-
-  const limit = PLAN_LIMITS[userPlan];
-  const remaining = limit === Infinity ? '無制限' : Math.max(0, limit - usageCount);
-
-  const menOptions = [
-    { id: ClothingOption.MensSuitBlack, label: '黒礼服', desc: '葬儀・告別式の正装' },
-    { id: ClothingOption.MensKimono, label: '黒羽織袴', desc: '家紋のない無地の黒和装' },
-  ];
-
-  const womenOptions = [
-    { id: ClothingOption.WomensSuitBlack, label: '黒洋装', desc: '落ち着いたアンサンブル' },
-    { id: ClothingOption.WomensKimonoBlack, label: '黒喪服', desc: '最も格式高い和服' },
-  ];
-
-  const currentClothingOptions = gender === 'men' ? menOptions : womenOptions;
-
-  const bgItems = [
-    { id: BackgroundOption.SoftBlue, label: 'ブルー', color: 'bg-[#e3f2fd]', text: 'text-gray-900' },
-    { id: BackgroundOption.SoftPink, label: 'ピンク', color: 'bg-[#fce4ec]', text: 'text-gray-900' },
-    { id: BackgroundOption.WisteriaPurple, label: 'パープル', color: 'bg-[#f3e5f5]', text: 'text-gray-900' },
-    { id: BackgroundOption.FreshGreen, label: 'グリーン', color: 'bg-[#f1f8e9]', text: 'text-gray-900' },
-    { id: BackgroundOption.WhiteGrey, label: 'ホワイト', color: 'bg-[#fafafa]', text: 'text-gray-900' },
-  ];
-
-  const StepBadge = ({ num, text }: { num: string, text: string }) => (
-    <div className="flex items-center gap-3.5 mb-6 group">
-      <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-[11px] font-bold font-sans shadow-lg ring-4 ring-gray-100 group-hover:scale-110 transition-transform">{num}</div>
-      <div className="flex flex-col">
-        <h3 className="text-[15px] font-bold text-gray-800 font-serif tracking-widest leading-none">{text}</h3>
-        <div className="w-full h-[1px] bg-gray-100 mt-2"></div>
-      </div>
+const Logo = () => (
+  <div className="flex items-center gap-4 select-none group">
+    <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center text-white font-serif font-bold text-2xl shadow-xl group-hover:scale-105 transition-transform duration-500">瞬</div>
+    <div className="flex flex-col justify-center">
+      <span className="text-3xl font-serif font-bold text-gray-900 tracking-[0.1em] leading-none">瞬影</span>
+      <span className="text-[10px] font-sans tracking-[0.5em] text-gray-400 uppercase mt-1 leading-none">SHUNNEI STUDIO</span>
     </div>
-  );
+  </div>
+);
+
+const App: React.FC = () => {
+  const [appState, setAppState] = useState<AppState>(AppState.LOGIN);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [originalCropped, setOriginalCropped] = useState<string | null>(null);
+  const [personImage, setPersonImage] = useState<string | null>(null);
+  const [appliedBg, setAppliedBg] = useState<BackgroundOption>(BackgroundOption.None);
+  const [appliedClothing, setAppliedClothing] = useState<ClothingOption>(ClothingOption.None);
+  
+  const [cropConfig, setCropConfig] = useState<CropConfig | null>(null);
+  const [finalCropConfig, setFinalCropConfig] = useState<CropConfig | null>(null);
+  const [isFinalCropping, setIsFinalCropping] = useState(false);
+  const [compositePreview, setCompositePreview] = useState<string | null>(null);
+
+  const [deceasedName, setDeceasedName] = useState<string>('');
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [usageCount, setUsageCount] = useState<number>(0);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [errorModal, setErrorModal] = useState({ isOpen: false, title: '', message: '' });
+  const [status, setStatus] = useState<ProcessingStatus>({ isProcessing: false, message: '' });
+
+  useEffect(() => {
+    const session = authService.getSession();
+    if (session) {
+      setCompanyInfo(session.company);
+      setUsageCount((session.company as any).usageCount || 0);
+      setIsAdminMode(session.company.id === 'admin');
+      setAppState(AppState.UPLOAD);
+    }
+  }, []);
+
+  const handleLogin = (session: AuthSession) => {
+    setCompanyInfo(session.company);
+    setUsageCount((session.company as any).usageCount || 0);
+    setIsAdminMode(session.company.id === 'admin');
+    setAppState(AppState.UPLOAD);
+  };
+
+  const handleImageSelected = (base64: string) => {
+    setUploadedImage(base64);
+    // Reset all states for new image
+    setCropConfig(null);
+    setFinalCropConfig(null);
+    setOriginalCropped(null);
+    setPersonImage(null);
+    setAppliedBg(BackgroundOption.None);
+    setAppliedClothing(ClothingOption.None);
+    setCompositePreview(null);
+    setIsFinalCropping(false);
+    
+    setAppState(AppState.CROPPING);
+  };
+
+  const handleReset = () => {
+    setUploadedImage(null);
+    setOriginalCropped(null);
+    setPersonImage(null);
+    setCropConfig(null);
+    setFinalCropConfig(null);
+    setCompositePreview(null);
+    setIsFinalCropping(false);
+    setAppliedBg(BackgroundOption.None);
+    setAppliedClothing(ClothingOption.None);
+    setDeceasedName('');
+    setAppState(AppState.UPLOAD);
+  };
+
+  const handleCropConfirm = (croppedImage: string, config: CropConfig) => {
+    if (isFinalCropping) {
+      setFinalCropConfig(config);
+      setIsFinalCropping(false);
+      setAppState(AppState.EDITING);
+    } else {
+      setOriginalCropped(croppedImage); 
+      setCropConfig(config);
+      setPersonImage(null);
+      setAppliedBg(BackgroundOption.None);
+      setAppliedClothing(ClothingOption.None);
+      setAppState(AppState.EDITING); 
+    }
+  };
+
+  const handleBgAction = async (option: BackgroundOption) => {
+    if (!originalCropped) return;
+    if (option === BackgroundOption.None) {
+      // 背景変更なし（リセット）
+      setPersonImage(null); // 現在の合成をクリアして元画像に戻す（衣装も消える仕様）
+      setAppliedBg(BackgroundOption.None);
+      setAppliedClothing(ClothingOption.None);
+      return;
+    }
+
+    setStatus({ isProcessing: true, message: '背景を変更中...' });
+    try {
+      // 衣装が適用済みの場合はその画像をベースにする
+      const base = personImage || originalCropped;
+      const result = await applyBackgroundSynthesis(base, option);
+      setPersonImage(result);
+      setAppliedBg(option);
+    } catch (e) {
+      setErrorModal({ isOpen: true, title: '背景合成エラー', message: '背景の生成に失敗しました。時間をおいて再度お試しください。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
+    }
+  };
+
+  const handleClothingAction = async (option: ClothingOption) => {
+    if (!originalCropped) return;
+    if (option === ClothingOption.None && appliedBg === BackgroundOption.None) {
+        setPersonImage(null);
+        setAppliedClothing(ClothingOption.None);
+        return;
+    }
+
+    setStatus({ isProcessing: true, message: '服装を変更中...' });
+    try {
+      // 背景が適用済みの場合はその画像をベースにする
+      const base = personImage || originalCropped;
+      const result = await applyClothingSynthesis(base, option);
+      setPersonImage(result);
+      setAppliedClothing(option);
+    } catch (e) {
+      setErrorModal({ isOpen: true, title: '生成エラー', message: '衣装の変更に失敗しました。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
+    }
+  };
+
+  const handleStartFinalCrop = async () => {
+    if (!originalCropped) return;
+    setStatus({ isProcessing: true, message: '調整用データを準備しています...' });
+    try {
+      const canvas = document.createElement('canvas');
+      const width = 1200;
+      const height = 1600;
+      await drawMemorialPhoto({ 
+        canvas, 
+        originalCropped, 
+        personImage, 
+        width, 
+        height, 
+        isHighRes: false, 
+        finalCropConfig: null 
+      });
+      setCompositePreview(canvas.toDataURL('image/jpeg', 0.9));
+      setIsFinalCropping(true);
+      setAppState(AppState.CROPPING);
+    } catch (e) {
+      setErrorModal({ isOpen: true, title: 'エラー', message: 'プレビューの生成に失敗しました。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!originalCropped || !companyInfo) return;
+    setStatus({ isProcessing: true, message: '最高画質で画像を生成しています...' });
+    try {
+      const canvas = document.createElement('canvas');
+      const width = 2700;
+      const height = 3600;
+      await drawMemorialPhoto({ 
+        canvas, 
+        originalCropped, 
+        personImage, 
+        width, 
+        height, 
+        isHighRes: true, 
+        finalCropConfig 
+      });
+      
+      const newCount = await usageService.incrementUsage(companyInfo.id);
+      setUsageCount(newCount);
+      
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = deceasedName.trim() ? `瞬影_${deceasedName}.png` : `瞬影_遺影.png`;
+      link.click();
+    } catch (err) { 
+      setErrorModal({ isOpen: true, title: '保存失敗', message: '画像の生成中にエラーが発生しました。' });
+    } finally {
+      setStatus({ isProcessing: false, message: '' });
+    }
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setAppState(AppState.LOGIN);
+    setCompanyInfo(null);
+    setIsLogoutConfirmOpen(false);
+  };
 
   return (
-    <div className="bg-white flex flex-col h-full border-l border-gray-200 shadow-2xl z-10 font-sans overflow-hidden">
-      
-      {/* Upper Info Bar */}
-      <div className="px-6 py-4 bg-white border-b border-gray-100 flex items-center justify-between shrink-0">
-        <button 
-          onClick={onReset}
-          disabled={disabled}
-          className="group flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-all text-[11px] font-bold disabled:opacity-30 active:scale-95"
-        >
-          <div className="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center group-hover:border-gray-400 shadow-sm transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-          </div>
-          やり直す
-        </button>
-
-        <div className="bg-gray-50/80 px-4 py-2 rounded-2xl border border-gray-100 shadow-inner text-right min-w-[110px]">
-          <p className="text-[8px] text-gray-400 font-bold tracking-[0.2em] uppercase leading-none mb-1.5">{userPlan} PLAN</p>
-          <p className="text-[14px] font-bold text-gray-800 leading-none">残: <span className="text-blue-600 font-mono">{remaining}</span></p>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-7 py-9 space-y-14 custom-scrollbar">
-        
-        {/* Step 1: Background - 全面カラータイルUI */}
-        <section className="animate-fade-in translate-y-2 opacity-0 [animation-fill-mode:forwards] [animation-delay:100ms]">
-          <StepBadge num="1" text="背景の選択" />
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => onBgAction(BackgroundOption.None)}
-              disabled={disabled}
-              className={`flex items-center justify-center p-4 rounded-2xl border-2 text-center transition-all col-span-2 min-h-[60px] relative group active:scale-[0.98] ${appliedBg === BackgroundOption.None ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300'}`}
-            >
-              <span className="text-xs font-bold text-gray-600">背景を変更しない</span>
-              {appliedBg === BackgroundOption.None && (
-                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-900">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
-                    </svg>
-                 </div>
-              )}
-            </button>
-            {bgItems.map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() => onBgAction(opt.id)}
-                disabled={disabled}
-                className={`flex items-center justify-center p-5 rounded-2xl border-2 transition-all min-h-[85px] relative group active:scale-[0.98] ${opt.color} ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
-              >
-                <span className="text-[13px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
-                {appliedBg === opt.id && (
-                  <div className="absolute top-2 right-2 bg-white rounded-full p-0.5 shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-900">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Step 2: Clothing - 性別色分けボタン */}
-        <section className="animate-fade-in translate-y-2 opacity-0 [animation-fill-mode:forwards] [animation-delay:200ms]">
-          <StepBadge num="2" text="服装の着せ替え" />
-          
-          <div className="flex mb-6 bg-gray-100/80 p-1.5 rounded-2xl gap-2 shadow-inner">
-            <button
-              onClick={() => setGender('men')}
-              disabled={disabled}
-              className={`flex-1 py-3.5 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center gap-2.5 active:scale-95 ${gender === 'men' ? 'bg-[#1e3a8a] text-white shadow-[0_4px_20px_rgba(30,58,138,0.4)]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
-              男性用
-            </button>
-            <button
-              onClick={() => setGender('women')}
-              disabled={disabled}
-              className={`flex-1 py-3.5 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center gap-2.5 active:scale-95 ${gender === 'women' ? 'bg-[#be123c] text-white shadow-[0_4px_20px_rgba(190,18,60,0.4)]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
-              女性用
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <button
-              onClick={() => onClothingAction(ClothingOption.None)}
-              disabled={disabled}
-              className={`w-full p-5 rounded-2xl border-2 text-left transition-all active:scale-[0.98] ${appliedClothing === ClothingOption.None ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300 shadow-sm'}`}
-            >
-              <div className="font-bold text-[13px] text-gray-700">服装を変更しない</div>
-            </button>
-            {currentClothingOptions.map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() => onClothingAction(opt.id)}
-                disabled={disabled}
-                className={`w-full p-6 rounded-2xl border-2 text-left transition-all relative group active:scale-[0.98] ${appliedClothing === opt.id ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300 shadow-sm'}`}
-              >
-                <div className="font-bold text-[15px] text-gray-800 tracking-tight">{opt.label}</div>
-                <div className="text-[11px] text-gray-400 mt-2 leading-relaxed font-medium">{opt.desc}</div>
-                {appliedClothing === opt.id && (
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2">
-                    <div className="w-9 h-9 bg-gray-900 rounded-full flex items-center justify-center shadow-lg ring-[6px] ring-white">
-                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-white">
-                        <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Step 3: Finishing */}
-        <section className="animate-fade-in translate-y-2 opacity-0 [animation-fill-mode:forwards] [animation-delay:300ms] pb-8">
-          <StepBadge num="3" text="仕上げと最終調整" />
-          
-          <div className="space-y-6">
-            <div className="bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 shadow-inner">
-              <label className="block text-[10px] font-bold text-gray-400 mb-4 uppercase tracking-widest ml-1 font-sans">故人様のお名前</label>
-              <input 
-                type="text" 
-                value={deceasedName}
-                onChange={(e) => onDeceasedNameChange(e.target.value)}
-                placeholder="例: 山田 太郎 様"
-                className="w-full px-6 py-5 bg-white border-2 border-transparent rounded-2xl text-[17px] outline-none focus:border-gray-900 transition-all font-serif font-bold placeholder:font-normal placeholder:text-gray-300 shadow-sm"
-              />
-              <p className="text-[10px] text-gray-400 mt-3 ml-1 italic font-sans">※ 保存時のファイル名として使用されます</p>
-            </div>
-
-            <button
-              onClick={onStartCrop}
-              disabled={disabled}
-              className="w-full py-5 bg-white text-gray-800 border-2 border-gray-200 font-bold rounded-2xl text-[13px] tracking-widest hover:bg-gray-50 hover:border-gray-900 transition-all flex items-center justify-center gap-4 shadow-sm active:scale-[0.98] group"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-6 h-6 text-gray-400 group-hover:text-gray-900 transition-colors">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 13.5V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m12-3V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 9.75V10.5" />
-              </svg>
-              切り取り
-            </button>
-          </div>
-        </section>
-      </div>
-
-      {/* Primary Action Button */}
-      <div className="p-8 bg-white border-t border-gray-100 shadow-[0_-20px_60px_rgba(0,0,0,0.1)] shrink-0 z-20 relative">
-        <button
-          onClick={onDownload}
-          disabled={disabled || !deceasedName}
-          className={`w-full py-8 text-white font-bold rounded-[2.75rem] shadow-2xl transition-all flex flex-col items-center justify-center gap-2.5 active:scale-[0.96] disabled:opacity-30 disabled:grayscale ${disabled ? 'bg-gray-800 cursor-wait' : 'bg-gray-900 cursor-pointer hover:bg-black hover:-translate-y-2'}`}
-        >
-          {disabled ? (
-            <div className="flex items-center gap-5">
-              <div className="w-8 h-8 border-[3px] border-white/20 border-t-white rounded-full animate-spin"></div>
-              <span className="text-[17px] font-sans font-medium tracking-tight">AIが修復を行っています...</span>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8 text-blue-400">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                <span className="text-[20px] tracking-[0.3em] font-serif font-bold">データを保存</span>
+    <div className="h-screen bg-[#f8f9fb] text-gray-800 font-serif flex flex-col overflow-hidden">
+      <header className="bg-white border-b border-gray-100 shrink-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <div className="max-w-[1800px] mx-auto px-8 py-3.5 flex items-center justify-between">
+          <Logo />
+          {companyInfo && (
+            <div className="flex items-center gap-6 group">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-bold text-gray-900 leading-none">{companyInfo.name}</p>
+                <div className="flex items-center justify-end gap-1.5 mt-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.4)]"></span>
+                  <span className="text-[9px] text-gray-400 font-sans tracking-widest uppercase font-bold">{companyInfo.plan} 会員</span>
+                </div>
               </div>
-              <span className="text-[10px] text-gray-500 font-bold tracking-[0.5em] opacity-80 uppercase font-sans">Studio Master Export</span>
-            </>
+              <button 
+                onClick={() => setIsLogoutConfirmOpen(true)} 
+                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100 shadow-sm md:shadow-none"
+                title="ログアウト"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                </svg>
+              </button>
+            </div>
           )}
-        </button>
-      </div>
+        </div>
+      </header>
+
+      <main className="flex-grow flex flex-col items-center justify-center overflow-hidden relative">
+        {appState === AppState.LOGIN ? <LoginScreen onLogin={handleLogin} /> : (
+          isAdminMode ? <ManagementDashboard /> : (
+            <div className="w-full h-full flex flex-col overflow-hidden">
+              {appState === AppState.UPLOAD && (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#fdfdfd]">
+                  <div className="text-center mb-16 animate-fade-in">
+                    <h2 className="text-5xl font-serif font-bold text-gray-900 mb-6 tracking-tight leading-tight">大切な思い出を、<br/>永遠の一枚に</h2>
+                    <p className="text-gray-400 font-sans tracking-[0.4em] uppercase text-[10px] font-bold">Digital Photo Studio Experience</p>
+                  </div>
+                  <UploadArea onImageSelected={handleImageSelected} />
+                </div>
+              )}
+              
+              {appState === AppState.CROPPING && uploadedImage && (
+                <CropTool 
+                  imageSrc={isFinalCropping ? compositePreview! : uploadedImage} 
+                  initialConfig={isFinalCropping ? finalCropConfig : cropConfig}
+                  onConfirm={handleCropConfirm} 
+                  onCancel={() => {
+                    setIsFinalCropping(false);
+                    setAppState(originalCropped ? AppState.EDITING : AppState.UPLOAD);
+                  }} 
+                />
+              )}
+              
+              {appState === AppState.EDITING && (
+                <div className="w-full h-full grid grid-cols-1 md:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px] overflow-hidden">
+                  <div className="flex items-center justify-center p-6 md:p-16 lg:p-24 overflow-y-auto bg-[#e9ebed] relative">
+                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                    <PhotoCanvas 
+                      originalCropped={originalCropped} 
+                      personImage={personImage} 
+                      isLoading={status.isProcessing} 
+                      loadingMessage={status.message}
+                      finalCropConfig={finalCropConfig}
+                    />
+                  </div>
+                  <ActionPanel 
+                    onBgAction={handleBgAction}
+                    onClothingAction={handleClothingAction}
+                    appliedBg={appliedBg}
+                    appliedClothing={appliedClothing}
+                    disabled={status.isProcessing} 
+                    onDownload={handleDownload} 
+                    onReset={handleReset} 
+                    onStartCrop={handleStartFinalCrop}
+                    userPlan={companyInfo!.plan} 
+                    usageCount={usageCount} 
+                    deceasedName={deceasedName} 
+                    onDeceasedNameChange={setDeceasedName} 
+                  />
+                </div>
+              )}
+            </div>
+          )
+        )}
+      </main>
+
+      {isLogoutConfirmOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-[2px] animate-fade-in">
+          <div className="bg-white rounded-3xl p-10 text-center max-w-sm shadow-2xl border border-gray-100">
+            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8">
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-serif font-bold mb-4 text-gray-900 leading-tight">ログアウトしても<br/>よろしいですか？</h3>
+            <p className="text-gray-400 text-[13px] font-sans mb-10 leading-relaxed px-4">編集中のデータは破棄されます。<br/>セッションを終了しますか？</p>
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => setIsLogoutConfirmOpen(false)} className="py-4 text-gray-500 font-bold hover:bg-gray-50 rounded-2xl transition-all border border-gray-100">戻る</button>
+              <button onClick={handleLogout} className="py-4 bg-red-600 text-white font-bold rounded-2xl transition-all shadow-lg hover:bg-red-700 shadow-red-200">終了する</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {errorModal.isOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-white p-10 rounded-3xl max-w-md w-full text-center shadow-2xl">
+            <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-serif font-bold mb-4 text-gray-900 tracking-tight">{errorModal.title}</h3>
+            <p className="mb-10 text-gray-500 leading-relaxed font-sans text-sm px-4">{errorModal.message}</p>
+            <button 
+              onClick={() => setErrorModal({...errorModal, isOpen: false})} 
+              className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-xl active:scale-95"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+        .animate-shake {
+          animation: shake 0.3s ease-in-out;
+        }
+      `}</style>
     </div>
   );
 };
 
-export default ActionPanel;
+export default App;
