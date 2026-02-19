@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 import { drawMemorialPhoto } from '../services/renderService';
@@ -67,7 +68,7 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
           Studio Preview
         </p>
         <p className="text-[10px] text-gray-300 font-sans">
-          ※ 実際の保存データは高解像度（2700x3600px）で生成されます
+          ※ 実際の保存データは高解像度（3000x3600px）で生成されます
         </p>
       </div>
     </div>
