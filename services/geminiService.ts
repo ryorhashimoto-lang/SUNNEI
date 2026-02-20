@@ -53,26 +53,36 @@ const optimizeImageForAI = async (base64Str: string): Promise<string> => {
 
 /**
  * Shared System Instructions for Memorial Photo Synthesis
- * Updated logic: Frequency Separation & Light Wrap
+ * Updated logic: "Digital Reshoot" & "Matte Choker"
  */
 const GET_SYSTEM_PROMPT = (taskDescription: string) => `
 [ROLE]
-You are a legendary Photo Restoration Master & VFX Compositor.
+You are a High-End Digital Retoucher and Portrait Photographer.
 Your task: ${taskDescription}.
-Output: A hyper-realistic 8K portrait suitable for a funeral altar (Iei).
+Output: A hyper-realistic, studio-quality portrait for a funeral altar (Iei).
 
-[CRITICAL: TEXTURE RECONSTRUCTION (FREQUENCY SEPARATION)]
-The input image is a SCANNED PHYSICAL PHOTO containing "Paper Grain", "Halftone Dots", "Film Grain", and "Surface Scratches".
-1. LOW FREQUENCY (Geometry): STRICTLY PRESERVE facial structure (Identity). Do not change the shape of eyes, nose, or mouth.
-2. HIGH FREQUENCY (Texture): DISCARD the original surface texture. It is noise.
-   - IGNORE: Scan lines, white dust spots, paper roughness, dot patterns.
-   - GENERATE: NEW, high-definition human skin texture (pores, vellus hair, natural smoothness).
-   - GOAL: The result must look like it was shot with a modern 100MP digital camera, NOT a scan of a print.
+[CRITICAL: DIGITAL RESHOOT STRATEGY]
+The input is a "Scanned Physical Print" with severe Halftone Dots, Paper Texture, and Harsh Flash.
+DO NOT "repair" the image. Instead, "RE-IMAGINE" and "RE-PAINT" the subject.
 
-[CRITICAL: COMPOSITING & LIGHTING]
-1. NO HALOS: Do NOT draw a white glowing line around the subject.
-2. DEFRINGE: Remove any white/black artifacts from the original cutout edges.
-3. LIGHT WRAP: Simulate "Environmental Light Wrap". The background color/light should slightly bleed into the very edges of the hair and clothes to blend them naturally.
+1. GEOMETRY (STRICT IDENTITY):
+   - Lock the facial landmarks (Eyes, Nose, Mouth, Bone Structure). These MUST NOT change.
+   - The person must be recognizable as the same individual.
+
+2. TEXTURE REPLACEMENT (NOISE ELIMINATION):
+   - IGNORE the original pixel surface. It is damaged data.
+   - DISCARD all halftone dots, white dust, and paper grain.
+   - GENERATE NEW SKIN: Paint a completely new, high-definition skin layer.
+   - TEXTURE: Add human pores, subsurface scattering, and natural smoothness. NO "plastic/waxy" look.
+
+3. LIGHTING CORRECTION:
+   - REMOVE FLASH GLARE: Eliminate the harsh white specular highlights on the forehead/cheeks caused by direct camera flash.
+   - STUDIO LIGHTING: Simulate "Softbox Lighting" from a 45-degree angle. Soft shadows, 3D depth.
+
+4. COMPOSITING (MATTE CHOKER):
+   - ELIMINATE HALOS: The edges of the subject must be perfectly clean.
+   - CHOKE THE MATTE: Intentionally erode the mask by 1-2 pixels to remove white fringe/artifacts from the cutout.
+   - BLEND: Apply Ambient Occlusion shadows where the hair meets the background.
 `;
 
 /**
@@ -108,20 +118,17 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
 ${GET_SYSTEM_PROMPT("background replacement")}
 
 [TASK]
-Replace the OLD BACKGROUND with: ${bgDesc}
+Replace the BACKGROUND with: ${bgDesc}
 
 [EXECUTION STEPS]
-1. SEGMENTATION: Identify the person (Face, Hair, Shoulders).
-2. REMOVAL: Delete the old background completely.
-3. COMPOSITING: Place the subject into the new background.
-4. BLENDING (CRITICAL):
-   - Apply "Light Wrap": The new background color (${bgDesc}) must influence the edges of the subject's hair.
-   - Anti-Aliasing: Ensure the edges are soft and natural. NO "cutout sticker" look.
-   - Color Decontamination: Remove any color cast from the OLD background on the subject's skin.
+1. EXTRACTION: Isolate the subject using the "Matte Choker" technique (erode edges).
+2. GENERATION: Create the new background.
+3. RE-LIGHTING: Adjust the subject's skin tone to match the new environment (Color Grading).
+4. FINAL POLISH: Ensure NO white outline remains. If in doubt, darken the edges of the hair slightly.
 
 [CONSTRAINT]
 - Output must be the EXACT SAME DIMENSIONS and COMPOSITION as the input.
-- REMOVE all white specks and scratches from the face.
+- REMOVE ALL NOISE/DOTS from the face.
 `;
 
   try {
@@ -131,7 +138,7 @@ Replace the OLD BACKGROUND with: ${bgDesc}
         parts: [{ text: prompt }, { inlineData: { data: cleanBase64(inputImage), mimeType } }],
       },
       config: { 
-        temperature: 0.2, // Low temperature for precision
+        temperature: 0.3, // Slightly increased to allow for texture regeneration
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -176,12 +183,10 @@ ${GET_SYSTEM_PROMPT("clothing synthesis")}
 Change the attire to: ${clothSpec}
 
 [EXECUTION STEPS]
-1. FACE LOCK: Keep the face, hair, and head orientation exactly as is.
-2. TEXTURE REPAIR: While changing clothes, also REPAIR the face texture (remove dots/scratches) as per system instructions.
-3. CLOTHING GENERATION:
-   - Generate the new clothing from the neck down.
-   - Fabric Weight: Ensure the material looks heavy (Wool/Silk), not like paper.
-   - Lighting: Cast shadows on the collar based on the Light Vector Analysis.
+1. FACE PRESERVATION: Keep the face/head geometry strict.
+2. SKIN REGENERATION: While processing, RE-PAINT the face skin to remove dots/grain.
+3. ATTIRE GENERATION: Generate realistic fabric texture.
+4. NECK BLENDING: Pay extreme attention to the neck connection. Add contact shadows.
 
 [CONSTRAINT]
 - Output must be the EXACT SAME DIMENSIONS and COMPOSITION as the input. Do not resize the head.
@@ -194,7 +199,7 @@ Change the attire to: ${clothSpec}
         parts: [{ text: prompt }, { inlineData: { data: cleanBase64(inputImage), mimeType } }],
       },
       config: { 
-        temperature: 0.2,
+        temperature: 0.3,
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -207,18 +212,17 @@ Change the attire to: ${clothSpec}
 };
 
 export const repairHeicImage = async (base64Heic: string): Promise<string> => {
-    // Uses restoration prompt to clean up the image during conversion
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: MODEL_NAME,
         contents: { 
           parts: [
-            { text: "[ROLE: RESTORATION EXPERT] Convert this HEIC image to a high-quality JPEG portrait. Enhance sharpness and remove noise while STRICTLY maintaining facial geometry (eyes, nose, mouth)." }, 
+            { text: "[ROLE: RESTORATION EXPERT] Convert this HEIC image to a high-quality JPEG. ELIMINATE all noise/grain. Sharpen details." }, 
             { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }
           ] 
         },
         config: { 
-          temperature: 0.2,
+          temperature: 0.3,
         }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
