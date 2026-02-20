@@ -15,8 +15,6 @@ interface ActionPanelProps {
   usageCount: number;
   deceasedName: string;
   onDeceasedNameChange: (name: string) => void;
-  isHybridMode: boolean;
-  onToggleHybridMode: () => void;
 }
 
 const ActionPanel: React.FC<ActionPanelProps> = ({ 
@@ -31,9 +29,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   userPlan,
   usageCount,
   deceasedName,
-  onDeceasedNameChange,
-  isHybridMode,
-  onToggleHybridMode
+  onDeceasedNameChange
 }) => {
   const [gender, setGender] = useState<'men' | 'women'>('men');
 
@@ -155,7 +151,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               className={`flex-1 py-3.5 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center gap-2.5 active:scale-95 ${gender === 'women' ? 'bg-[#be123c] text-white shadow-[0_4px_20px_rgba(190,18,60,0.4)]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
               女性用
             </button>
@@ -197,28 +193,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
           <StepBadge num="3" text="仕上げと最終調整" />
           
           <div className="space-y-6">
-            {/* Hybrid Mode Toggle */}
-            <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 relative overflow-hidden group">
-               <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
-               <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-blue-600">
-                       <path fillRule="evenodd" d="M12.516 2.17a.75.75 0 0 0-1.032 0 11.209 11.209 0 0 1-7.877 3.08.75.75 0 0 0-.722.515A12.74 12.74 0 0 0 2.25 9.75c0 5.942 4.064 10.933 9.563 12.348a.749.749 0 0 0 .374 0c5.499-1.415 9.563-6.406 9.563-12.348 0-1.352-.272-2.636-.759-3.807a.75.75 0 0 0-.722-.516l-.143.001c-2.996 0-5.717-1.17-7.734-3.08Zm3.094 8.016a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
-                    </svg>
-                    <label className="text-[13px] font-bold text-gray-800">顔を保護する</label>
-                  </div>
-                  <button 
-                     onClick={onToggleHybridMode}
-                     className={`w-11 h-6 rounded-full p-1 transition-all duration-300 ${isHybridMode ? 'bg-blue-600' : 'bg-gray-300'}`}
-                  >
-                     <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${isHybridMode ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                  </button>
-               </div>
-               <p className="text-[10px] text-gray-500 leading-relaxed font-sans">
-                  AIによる顔の変化を防ぐため、元の写真の顔を合成します。写真が荒い場合に推奨されます。
-               </p>
-            </div>
-
             <div className="bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 shadow-inner">
               <label className="block text-[10px] font-bold text-gray-400 mb-4 uppercase tracking-widest ml-1 font-sans">故人様のお名前</label>
               <input 
