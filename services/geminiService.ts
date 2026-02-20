@@ -53,7 +53,7 @@ const optimizeImageForAI = async (base64Str: string): Promise<string> => {
 
 /**
  * Shared System Instructions for Memorial Photo Synthesis
- * Updated logic: "Digital Reshoot" & "Matte Choker"
+ * Updated logic: "Digital Reshoot", "Body Integrity", & "Matte Choker"
  */
 const GET_SYSTEM_PROMPT = (taskDescription: string) => `
 [ROLE]
@@ -62,27 +62,32 @@ Your task: ${taskDescription}.
 Output: A hyper-realistic, studio-quality portrait for a funeral altar (Iei).
 
 [CRITICAL: DIGITAL RESHOOT STRATEGY]
-The input is a "Scanned Physical Print" with severe Halftone Dots, Paper Texture, and Harsh Flash.
+The input is a "Scanned Physical Print" with severe Halftone Dots, Paper Texture, and often contains unwanted people (occlusions).
 DO NOT "repair" the image. Instead, "RE-IMAGINE" and "RE-PAINT" the subject.
 
-1. GEOMETRY (STRICT IDENTITY):
-   - Lock the facial landmarks (Eyes, Nose, Mouth, Bone Structure). These MUST NOT change.
-   - The person must be recognizable as the same individual.
+1. SUBJECT ISOLATION (ELIMINATE OTHERS):
+   - Identify the MAIN SUBJECT (the person intended for the portrait).
+   - REMOVE ALL OTHER PEOPLE (babies, spouses, etc.) and objects from the frame.
+   - The output must contain ONLY the main subject.
 
-2. TEXTURE REPLACEMENT (NOISE ELIMINATION):
+2. BODY INTEGRITY (INPAINTING OCCLUSIONS):
+   - **EXTREMELY IMPORTANT**: When removing a person/object blocking the main subject (e.g., a baby in arms), DO NOT replace that area with background.
+   - **RECONSTRUCT THE BODY**: You must infer and paint the subject's missing chest, stomach, or arms behind the removed object.
+   - **EXTEND CLOTHING**: seamlessy extend the pattern/texture of the subject's visible clothes to fill the void.
+   - The subject must look like they were standing alone from the start.
+
+3. TEXTURE REGENERATION (NOISE ELIMINATION):
    - IGNORE the original pixel surface. It is damaged data.
    - DISCARD all halftone dots, white dust, and paper grain.
-   - GENERATE NEW SKIN: Paint a completely new, high-definition skin layer.
-   - TEXTURE: Add human pores, subsurface scattering, and natural smoothness. NO "plastic/waxy" look.
+   - GENERATE NEW SKIN: Paint a completely new, high-definition skin layer with pores and subsurface scattering.
 
-3. LIGHTING CORRECTION:
-   - REMOVE FLASH GLARE: Eliminate the harsh white specular highlights on the forehead/cheeks caused by direct camera flash.
-   - STUDIO LIGHTING: Simulate "Softbox Lighting" from a 45-degree angle. Soft shadows, 3D depth.
+4. LIGHTING CORRECTION:
+   - REMOVE FLASH GLARE: Eliminate harsh white specular highlights.
+   - STUDIO LIGHTING: Simulate "Softbox Lighting" from a 45-degree angle.
 
-4. COMPOSITING (MATTE CHOKER):
+5. COMPOSITING (MATTE CHOKER):
    - ELIMINATE HALOS: The edges of the subject must be perfectly clean.
-   - CHOKE THE MATTE: Intentionally erode the mask by 1-2 pixels to remove white fringe/artifacts from the cutout.
-   - BLEND: Apply Ambient Occlusion shadows where the hair meets the background.
+   - CHOKE THE MATTE: Intentionally erode the mask by 1-2 pixels to remove white fringe.
 `;
 
 /**
@@ -118,17 +123,21 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
 ${GET_SYSTEM_PROMPT("background replacement")}
 
 [TASK]
-Replace the BACKGROUND with: ${bgDesc}
+1. Remove any people/objects blocking the main subject.
+2. RECONSTRUCT the subject's body/clothes where the objects were removed.
+3. Replace the BACKGROUND with: ${bgDesc}
 
 [EXECUTION STEPS]
-1. EXTRACTION: Isolate the subject using the "Matte Choker" technique (erode edges).
-2. GENERATION: Create the new background.
-3. RE-LIGHTING: Adjust the subject's skin tone to match the new environment (Color Grading).
-4. FINAL POLISH: Ensure NO white outline remains. If in doubt, darken the edges of the hair slightly.
+1. PRE-PROCESS: Identify occlusions (other people).
+2. INPAINT: Draw the missing parts of the subject's body/clothes.
+3. EXTRACTION: Isolate the now-complete subject using "Matte Choker".
+4. BACKGROUND: Generate the new background.
+5. RE-LIGHTING: Match skin tone to new background.
 
 [CONSTRAINT]
-- Output must be the EXACT SAME DIMENSIONS and COMPOSITION as the input.
-- REMOVE ALL NOISE/DOTS from the face.
+- Output must be the SAME DIMENSIONS.
+- Face identity MUST be preserved.
+- NO white outlines.
 `;
 
   try {
@@ -138,7 +147,7 @@ Replace the BACKGROUND with: ${bgDesc}
         parts: [{ text: prompt }, { inlineData: { data: cleanBase64(inputImage), mimeType } }],
       },
       config: { 
-        temperature: 0.3, // Slightly increased to allow for texture regeneration
+        temperature: 0.2,
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -180,16 +189,17 @@ export const applyClothingSynthesis = async (base64Image: string, option: Clothi
 ${GET_SYSTEM_PROMPT("clothing synthesis")}
 
 [TASK]
-Change the attire to: ${clothSpec}
+1. Remove any people/objects blocking the main subject.
+2. Change the attire to: ${clothSpec}
 
 [EXECUTION STEPS]
 1. FACE PRESERVATION: Keep the face/head geometry strict.
-2. SKIN REGENERATION: While processing, RE-PAINT the face skin to remove dots/grain.
-3. ATTIRE GENERATION: Generate realistic fabric texture.
-4. NECK BLENDING: Pay extreme attention to the neck connection. Add contact shadows.
+2. BODY RECONSTRUCTION: If the original body was hidden by another person, generate the new clothing shape as if standing alone.
+3. SKIN REGENERATION: RE-PAINT the face skin to remove dots/grain.
+4. NECK BLENDING: Pay extreme attention to the neck connection.
 
 [CONSTRAINT]
-- Output must be the EXACT SAME DIMENSIONS and COMPOSITION as the input. Do not resize the head.
+- Output must be the SAME DIMENSIONS. Do not resize the head.
 `;
 
   try {
@@ -199,7 +209,7 @@ Change the attire to: ${clothSpec}
         parts: [{ text: prompt }, { inlineData: { data: cleanBase64(inputImage), mimeType } }],
       },
       config: { 
-        temperature: 0.3,
+        temperature: 0.2,
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -222,7 +232,7 @@ export const repairHeicImage = async (base64Heic: string): Promise<string> => {
           ] 
         },
         config: { 
-          temperature: 0.3,
+          temperature: 0.2,
         }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
