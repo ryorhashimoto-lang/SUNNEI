@@ -12,14 +12,13 @@ const cleanBase64 = (dataUrl: string): string => {
 
 /**
  * Optimizes the image for AI processing.
- * Simple resizing to max dimension to ensure speed and prompt adherence,
- * while STRICTLY preserving the original aspect ratio and composition.
+ * Resizes to 3072px to allow for high-resolution texture generation.
  */
 const optimizeImageForAI = async (base64Str: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      // Changed to 3072 to allow high-resolution input/output for printing (approx 3K resolution)
+      // 3072px allows for approx 3K resolution, sufficient for high-quality printing.
       const MAX_DIMENSION = 3072; 
       let newW = img.width;
       let newH = img.height;
@@ -45,7 +44,7 @@ const optimizeImageForAI = async (base64Str: string): Promise<string> => {
       }
 
       ctx.drawImage(img, 0, 0, newW, newH);
-      resolve(canvas.toDataURL("image/jpeg", 0.95)); // Quality increased to 0.95
+      resolve(canvas.toDataURL("image/jpeg", 0.95));
     };
     img.onerror = reject;
     img.src = base64Str;
@@ -54,35 +53,26 @@ const optimizeImageForAI = async (base64Str: string): Promise<string> => {
 
 /**
  * Shared System Instructions for Memorial Photo Synthesis
- * Updated to "Restoration Mode": Preserves geometry but upgrades texture/quality.
+ * Updated logic: Frequency Separation & Light Wrap
  */
 const GET_SYSTEM_PROMPT = (taskDescription: string) => `
 [ROLE]
-You are an expert Photo Retoucher & Restoration Artist specializing in Japanese Memorial Photos ("Iei").
-Your goal is to perform ${taskDescription} while upgrading the image quality to High-End Studio Portrait standards (8K Resolution equivalent).
+You are a legendary Photo Restoration Master & VFX Compositor.
+Your task: ${taskDescription}.
+Output: A hyper-realistic 8K portrait suitable for a funeral altar (Iei).
 
-[PROTOCOL: HYBRID RESTORATION]
-1. GEOMETRY (STRICT): Keep eyes, nose, mouth, and facial outline coordinates EXACTLY as is. This is crucial for identity.
-2. TEXTURE (UPGRADE): Apply "High-End Studio Restoration".
-   - Remove digital noise, jpeg artifacts, and film grain.
-   - Refine skin texture to be clear, natural, and high-definition.
-   - Fix blurry areas to appear sharp and in-focus.
-3. LIGHTING (CORRECTION):
-   - Analyze the original light source.
-   - If the original lighting is flat or poor, upgrade it to professional "Softbox" studio lighting while respecting the original shadow direction.
+[CRITICAL: TEXTURE RECONSTRUCTION (FREQUENCY SEPARATION)]
+The input image is a SCANNED PHYSICAL PHOTO containing "Paper Grain", "Halftone Dots", "Film Grain", and "Surface Scratches".
+1. LOW FREQUENCY (Geometry): STRICTLY PRESERVE facial structure (Identity). Do not change the shape of eyes, nose, or mouth.
+2. HIGH FREQUENCY (Texture): DISCARD the original surface texture. It is noise.
+   - IGNORE: Scan lines, white dust spots, paper roughness, dot patterns.
+   - GENERATE: NEW, high-definition human skin texture (pores, vellus hair, natural smoothness).
+   - GOAL: The result must look like it was shot with a modern 100MP digital camera, NOT a scan of a print.
 
-[PHYSICS ENGINE: MATERIAL & ATMOSPHERE]
-1. MATERIAL REFLECTANCE:
-   - SKIN: Natural matte texture. 0% environmental color bleed.
-   - CLOTH/HAIR: Subtle rim lighting allowed at edges.
-2. ATMOSPHERIC INTEGRATION:
-   - Apply subtle "Rim Lighting" to the outer edges to separate the subject from the background.
-   - NEVER blend background color into the center of the face.
-
-[ANATOMY ENGINE: 3D PROJECTION]
-1. SKULL ORIENTATION: Estimate the head's Yaw, Pitch, and Roll.
-2. BODY ALIGNMENT: Align the new body/clothes to the head's orientation perfectly.
-3. SHADOW INTEGRATION: Cast a natural occlusion shadow from the chin onto the collar.
+[CRITICAL: COMPOSITING & LIGHTING]
+1. NO HALOS: Do NOT draw a white glowing line around the subject.
+2. DEFRINGE: Remove any white/black artifacts from the original cutout edges.
+3. LIGHT WRAP: Simulate "Environmental Light Wrap". The background color/light should slightly bleed into the very edges of the hair and clothes to blend them naturally.
 `;
 
 /**
@@ -121,16 +111,17 @@ ${GET_SYSTEM_PROMPT("background replacement")}
 Replace the OLD BACKGROUND with: ${bgDesc}
 
 [EXECUTION STEPS]
-1. SEGMENTATION: Identify the person (Face, Hair, Shoulders) with sub-pixel precision.
+1. SEGMENTATION: Identify the person (Face, Hair, Shoulders).
 2. REMOVAL: Delete the old background completely.
-3. INPAINTING: Fill the removed area with the Target Gradient.
-4. OPTICAL BLENDING (CRITICAL):
-   - Analyze the background color (e.g., Blue).
-   - Apply a very thin "Rim Light" of that color to the edges of the hair.
-   - STRICTLY FORBID applying this color to the face skin. The face must remain warm and natural.
+3. COMPOSITING: Place the subject into the new background.
+4. BLENDING (CRITICAL):
+   - Apply "Light Wrap": The new background color (${bgDesc}) must influence the edges of the subject's hair.
+   - Anti-Aliasing: Ensure the edges are soft and natural. NO "cutout sticker" look.
+   - Color Decontamination: Remove any color cast from the OLD background on the subject's skin.
 
 [CONSTRAINT]
 - Output must be the EXACT SAME DIMENSIONS and COMPOSITION as the input.
+- REMOVE all white specks and scratches from the face.
 `;
 
   try {
@@ -140,7 +131,7 @@ Replace the OLD BACKGROUND with: ${bgDesc}
         parts: [{ text: prompt }, { inlineData: { data: cleanBase64(inputImage), mimeType } }],
       },
       config: { 
-        temperature: 0.2, // Lower temperature for stricter adherence to physics rules
+        temperature: 0.2, // Low temperature for precision
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -186,10 +177,7 @@ Change the attire to: ${clothSpec}
 
 [EXECUTION STEPS]
 1. FACE LOCK: Keep the face, hair, and head orientation exactly as is.
-2. ANATOMICAL ANALYSIS:
-   - Determine Head Yaw/Pitch.
-   - Construct a mental 3D model of the torso that aligns with this head angle.
-   - If the face is turned, turn the body accordingly (Do not paste a flat frontal body on a turned head).
+2. TEXTURE REPAIR: While changing clothes, also REPAIR the face texture (remove dots/scratches) as per system instructions.
 3. CLOTHING GENERATION:
    - Generate the new clothing from the neck down.
    - Fabric Weight: Ensure the material looks heavy (Wool/Silk), not like paper.
@@ -206,7 +194,7 @@ Change the attire to: ${clothSpec}
         parts: [{ text: prompt }, { inlineData: { data: cleanBase64(inputImage), mimeType } }],
       },
       config: { 
-        temperature: 0.2, // Lower temperature for stricter adherence to anatomy rules
+        temperature: 0.2,
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
