@@ -10,7 +10,6 @@ interface PhotoCanvasProps {
   isLoading: boolean;
   loadingMessage: string;
   finalCropConfig?: CropConfig | null;
-  isHybridMode?: boolean;
 }
 
 const PhotoCanvas: React.FC<PhotoCanvasProps> = ({ 
@@ -18,8 +17,7 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
   personImage,
   isLoading, 
   loadingMessage,
-  finalCropConfig,
-  isHybridMode = false
+  finalCropConfig
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -38,13 +36,12 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
         width,
         height,
         isHighRes: false,
-        finalCropConfig,
-        isHybridMode
+        finalCropConfig
       });
     };
 
     render();
-  }, [originalCropped, personImage, finalCropConfig, isHybridMode]);
+  }, [originalCropped, personImage, finalCropConfig]);
 
   if (!originalCropped) return null;
 
