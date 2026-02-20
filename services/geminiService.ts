@@ -11,33 +11,31 @@ const cleanBase64 = (dataUrl: string): string => {
 };
 
 /**
- * Pads the image to match the target aspect ratio (default 1:1) to prevent Gemini from resizing the subject.
- * Using 1:1 allows for safe cropping to 5:6 later.
+ * Optimizes the image for AI processing.
+ * REMOVED: Padding to 1:1 aspect ratio (caused the "box" effect).
+ * ADDED: Simple resizing to max dimension to ensure speed and prompt adherence,
+ * while STRICTLY preserving the original aspect ratio and composition.
  */
-const fitToAspect = async (base64Str: string, targetRatio: number = 1): Promise<string> => {
+const optimizeImageForAI = async (base64Str: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const currentRatio = img.width / img.height;
-      // If close enough, return original
-      if (Math.abs(currentRatio - targetRatio) < 0.01) {
-        resolve(base64Str);
-        return;
-      }
-
-      const canvas = document.createElement('canvas');
+      const MAX_DIMENSION = 1024; // Optimal for Gemini Flash
       let newW = img.width;
       let newH = img.height;
 
-      // Adjust dimensions to enclose the original image within the target aspect ratio
-      if (currentRatio > targetRatio) {
-        // Image is wider than target -> Pad top/bottom
-        newH = img.width / targetRatio;
-      } else {
-        // Image is taller than target (e.g. 5:6 < 1:1) -> Pad sides
-        newW = img.height * targetRatio;
+      if (newW > MAX_DIMENSION || newH > MAX_DIMENSION) {
+        const ratio = newW / newH;
+        if (newW > newH) {
+          newW = MAX_DIMENSION;
+          newH = MAX_DIMENSION / ratio;
+        } else {
+          newH = MAX_DIMENSION;
+          newW = MAX_DIMENSION * ratio;
+        }
       }
 
+      const canvas = document.createElement('canvas');
       canvas.width = newW;
       canvas.height = newH;
       const ctx = canvas.getContext('2d');
@@ -46,16 +44,9 @@ const fitToAspect = async (base64Str: string, targetRatio: number = 1): Promise<
         return;
       }
 
-      // Fill with white (neutral) - AI will replace this background anyway
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(0, 0, newW, newH);
-
-      // Center the image
-      const x = (newW - img.width) / 2;
-      const y = (newH - img.height) / 2;
-      ctx.drawImage(img, x, y);
-
-      resolve(canvas.toDataURL("image/png"));
+      // Draw exactly the original image, no padding, no distortion
+      ctx.drawImage(img, 0, 0, newW, newH);
+      resolve(canvas.toDataURL("image/jpeg", 0.9));
     };
     img.onerror = reject;
     img.src = base64Str;
@@ -64,46 +55,38 @@ const fitToAspect = async (base64Str: string, targetRatio: number = 1): Promise<
 
 /**
  * Shared System Instructions for Memorial Photo Synthesis
+ * Updated to fix "Blue Halo" and "Position Shift" issues.
  */
 const GET_SYSTEM_PROMPT = (taskDescription: string) => `
 [ROLE]
-You are a master retoucher specializing in Japanese Memorial Photos ("Iei").
-Your mission is to synthesize ${taskDescription} while strictly preserving the facial identity with forensic accuracy.
+You are a master digital compositor and retouching expert for Japanese Memorial Photos ("Iei").
+Your goal is to perform ${taskDescription} with forensic accuracy.
 
-[PHASE 1: ANALYSIS & PLANNING]
-1. LIGHTING ANALYSIS: Detect the original "Key Light" angle, shadow hardness, and color temperature.
-2. POSE ANALYSIS: Detect the Yaw (rotation) and Pitch (up/down tilt) of the head.
-   - If Pitch is LOOKING UP: Rear collar must curve UP. Shoulders appear lower.
-   - If Pitch is LOOKING DOWN: Rear collar must curve DOWN. Shoulders appear higher/flatter.
-3. AGE ANALYSIS: Identify the subject's age. Neck skin and shoulder slope must match the age (e.g., rounded shoulders for elderly).
+[CRITICAL RULE: NO BOX / NO HALO]
+- The input image is a crop from an old photo. It has an internal background (walls, curtains, etc.).
+- **DO NOT** treat the rectangular border of the image as the subject.
+- **DO NOT** just paint around the image border.
+- You MUST perform "CHROMA KEY" style extraction:
+  1. Identify the person (Face, Hair, Shoulders).
+  2. Treat EVERYTHING else (walls, shadows, noise behind head) as "Green Screen" to be removed.
+  3. Replace the background *behind* the hair strands, not just around the head.
 
-[PHASE 2: ANATOMY & PHYSICS (STRICT)]
-1. NECK & MUSCLES:
-   - Do NOT render the neck as a simple cylinder.
-   - Visualize the "Sternocleidomastoid" muscles to show tension and head rotation.
-   - Use "Senile Skin" texture (fine wrinkles/pores) for the neck if the subject is elderly. Color match neck to cheeks.
-2. SKELETAL STRUCTURE:
-   - The collar must rest ON the CLAVICLES.
-   - Create a realistic shadow gap between the back of the neck and the collar to show depth.
-   - Align the tie/kimono center with the "Sternal Notch" (base of neck), NOT strictly the chin (if head is turned).
-3. MATERIAL PHYSICS:
-   - Simulate heavy wool fabric (approx 300g/m²). It must drape with weight, not cling like thin plastic.
-   - BLACK TEXTURE: Use "Super Black" with high-frequency noise/weave texture. Matte finish. NO cheap polyester shine.
-4. LIGHTING INTERACTION:
-   - AMBIENT OCCLUSION: Deep shadows where the chin meets the collar. Anchor the head to the body.
-   - BOUNCE LIGHT: Reflect clothing color onto the jawline (darkening the jaw if wearing black).
-   - FILL LIGHT: Use gentle fill light on the clothes to maintain a peaceful, "Iei" atmosphere. Avoid overly dramatic shadows.
+[CRITICAL RULE: GEOMETRY LOCK (NO SHIFT)]
+- **DO NOT ZOOM.**
+- **DO NOT SHIFT.**
+- **DO NOT CROP.**
+- The subject's head MUST remain in the EXACT same pixel coordinates as the input.
+- You are painting *underneath* the subject, not moving the subject.
 
-[PHASE 3: CRITICAL CONSTRAINTS (ABSOLUTE)]
-1. FACE PROTECTION (TOPOLOGY LOCK):
-   - The eyes, nose, mouth, and jawline geometry is LOCKED. Do not move pixels.
-   - Do NOT smooth wrinkles, moles, or age spots. These are the subject's history and dignity.
-   - Biometric fidelity must be 100%.
-2. NEGATIVE CONSTRAINTS:
-   - NO De-aging.
-   - NO Emotion change (Do not force a smile).
-   - NO AI Gloss/Shine (Keep skin organic).
-   - NO Style Transfer (Must be photorealistic).
+[PHASE 1: IDENTITY PRESERVATION]
+- The face (Eyes, Nose, Mouth, Ears, Facial Structure) is HOLY.
+- Do not apply "Beauty Filters". Do not smooth deep wrinkles or moles.
+- Preserve the "Source Identity" 100%.
+
+[PHASE 2: ANATOMY & PHYSICS]
+- NECK: Connect the head naturally to the body. If the original photo has no neck visible, generate a realistic neck based on age.
+- CLOTHING: Ensure the collar sits on the clavicles properly.
+- DEPTH: Create realistic ambient occlusion shadows where the chin meets the clothing/neck.
 `;
 
 /**
@@ -112,9 +95,9 @@ Your mission is to synthesize ${taskDescription} while strictly preserving the f
 export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Pad image to 1:1 (Square) before sending to AI
-  const paddedImage = await fitToAspect(base64Image, 1);
-  const mimeType = paddedImage.match(/data:([^;]+);/)?.[1] || "image/png";
+  // Use optimized image (original aspect ratio, no padding)
+  const inputImage = await optimizeImageForAI(base64Image);
+  const mimeType = inputImage.match(/data:([^;]+);/)?.[1] || "image/jpeg";
 
   let bgDesc = "";
   switch (option) {
@@ -137,26 +120,26 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
   }
 
   const prompt = `
-${GET_SYSTEM_PROMPT("a new background")}
+${GET_SYSTEM_PROMPT("background replacement")}
 
-[TASK: BACKGROUND REPLACEMENT]
-Target Background: ${bgDesc}
+[TASK]
+Replace the OLD BACKGROUND with: ${bgDesc}
 
-[EXECUTION RULES]
-1. SEPARATION: Strictly separate the subject from the background. The subject should look like a solid element in front of the gradient.
-2. QUALITY: Perfectly smooth gradient. ZERO noise or color banding.
-3. PRESERVATION: Do NOT touch the subject's hair, ears, or clothing edges. Keep them sharp.
-4. LIGHTING: Ensure the background light does not "bleed" onto the subject excessively.
+[STEPS]
+1. SEGMENTATION: Find the exact contour of the person.
+2. REMOVAL: Delete the old background completely (walls, patterns, noise).
+3. INPAINTING: Fill the removed area with the Target Gradient.
+4. BLENDING: Soften the edges of the hair slightly to blend with the new background (Antialiasing).
 
-[OUTPUT]
-- High Resolution, Square Aspect Ratio.
+[CONSTRAINT]
+- Output must be the EXACT SAME DIMENSIONS and COMPOSITION as the input.
 `;
 
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: {
-        parts: [{ text: prompt }, { inlineData: { data: cleanBase64(paddedImage), mimeType } }],
+        parts: [{ text: prompt }, { inlineData: { data: cleanBase64(inputImage), mimeType } }],
       },
       config: { 
         temperature: 0.3,
@@ -177,14 +160,14 @@ Target Background: ${bgDesc}
 export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Pad image to 1:1 (Square) before sending to AI
-  const paddedImage = await fitToAspect(base64Image, 1);
-  const mimeType = paddedImage.match(/data:([^;]+);/)?.[1] || "image/png";
+  // Use optimized image (original aspect ratio, no padding)
+  const inputImage = await optimizeImageForAI(base64Image);
+  const mimeType = inputImage.match(/data:([^;]+);/)?.[1] || "image/jpeg";
 
   let clothSpec = "";
   switch (option) {
     case ClothingOption.MensSuitBlack: 
-      clothSpec = "Men's Formal Mourning Suit. High-quality matte black wool. White crisp shirt. Black tie (knot centered at sternal notch)."; 
+      clothSpec = "Men's Formal Mourning Suit. High-quality matte black wool. White crisp shirt. Black tie (knot centered)."; 
       break;
     case ClothingOption.MensKimono: 
       clothSpec = "Men's Black Crested Kimono (Montsuki Haori Hakama). Traditional dignified Japanese formal wear. White Haori-himo."; 
@@ -199,26 +182,26 @@ export const applyClothingSynthesis = async (base64Image: string, option: Clothi
   }
 
   const prompt = `
-${GET_SYSTEM_PROMPT("new attire")}
+${GET_SYSTEM_PROMPT("clothing synthesis")}
 
-[TASK: CLOTHING SYNTHESIS]
-Target Attire: ${clothSpec}
+[TASK]
+Change the attire to: ${clothSpec}
 
-[EXECUTION RULES]
-1. FITTING: Fit the attire to the subject's skeletal structure (Phase 2).
-2. REALISM: Add subtle "micro-wrinkles" on shoulders and lapels to show a body exists inside.
-3. NECK INTEGRATION: Ensure the neck skin texture blends seamlessly with the face. No "mask" effect.
-4. TEXTURE: Use noise/grain to simulate heavy wool fabric.
+[STEPS]
+1. FACE LOCK: Keep the face, hair, and head orientation exactly as is.
+2. BODY GENERATION: Generate the new clothing from the neck down.
+3. ADAPTATION: If the original image is cropped tight at the chin, EXTEND the canvas downwards slightly if needed to show the collar, but prefer fitting within the current frame.
+4. REALISM: The clothes must have weight and texture (wool/silk).
 
-[OUTPUT]
-- High Resolution, Square Aspect Ratio.
+[CONSTRAINT]
+- Output must be the EXACT SAME DIMENSIONS and COMPOSITION as the input. Do not resize the head.
 `;
 
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: {
-        parts: [{ text: prompt }, { inlineData: { data: cleanBase64(paddedImage), mimeType } }],
+        parts: [{ text: prompt }, { inlineData: { data: cleanBase64(inputImage), mimeType } }],
       },
       config: { 
         temperature: 0.3,
