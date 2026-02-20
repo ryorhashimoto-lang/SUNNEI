@@ -32,9 +32,6 @@ const App: React.FC = () => {
   const [appliedBg, setAppliedBg] = useState<BackgroundOption>(BackgroundOption.None);
   const [appliedClothing, setAppliedClothing] = useState<ClothingOption>(ClothingOption.None);
   
-  // New State for Face Protection (Hybrid Mode) - Default to true for safety
-  const [isHybridMode, setIsHybridMode] = useState<boolean>(true);
-  
   const [cropConfig, setCropConfig] = useState<CropConfig | null>(null);
   const [finalCropConfig, setFinalCropConfig] = useState<CropConfig | null>(null);
   const [isFinalCropping, setIsFinalCropping] = useState(false);
@@ -75,7 +72,6 @@ const App: React.FC = () => {
     setAppliedClothing(ClothingOption.None);
     setCompositePreview(null);
     setIsFinalCropping(false);
-    setIsHybridMode(true); // Reset to safe mode
     
     setAppState(AppState.CROPPING);
   };
@@ -91,7 +87,6 @@ const App: React.FC = () => {
     setAppliedBg(BackgroundOption.None);
     setAppliedClothing(ClothingOption.None);
     setDeceasedName('');
-    setIsHybridMode(true);
     setAppState(AppState.UPLOAD);
   };
 
@@ -167,8 +162,7 @@ const App: React.FC = () => {
         width, 
         height, 
         isHighRes: false, 
-        finalCropConfig: null,
-        isHybridMode // Pass mode
+        finalCropConfig: null
       });
       setCompositePreview(canvas.toDataURL('image/jpeg', 0.9));
       setIsFinalCropping(true);
@@ -194,8 +188,7 @@ const App: React.FC = () => {
         width, 
         height, 
         isHighRes: true, 
-        finalCropConfig,
-        isHybridMode // Pass mode
+        finalCropConfig
       });
       
       const newCount = await usageService.incrementUsage(companyInfo.id);
@@ -283,7 +276,6 @@ const App: React.FC = () => {
                       isLoading={status.isProcessing} 
                       loadingMessage={status.message}
                       finalCropConfig={finalCropConfig}
-                      isHybridMode={isHybridMode}
                     />
                   </div>
                   <ActionPanel 
@@ -299,8 +291,6 @@ const App: React.FC = () => {
                     usageCount={usageCount} 
                     deceasedName={deceasedName} 
                     onDeceasedNameChange={setDeceasedName}
-                    isHybridMode={isHybridMode}
-                    onToggleHybridMode={() => setIsHybridMode(!isHybridMode)}
                   />
                 </div>
               )}
