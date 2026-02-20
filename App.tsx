@@ -32,6 +32,9 @@ const App: React.FC = () => {
   const [appliedBg, setAppliedBg] = useState<BackgroundOption>(BackgroundOption.None);
   const [appliedClothing, setAppliedClothing] = useState<ClothingOption>(ClothingOption.None);
   
+  // New State for Face Protection (Hybrid Mode) - Default to true for safety
+  const [isHybridMode, setIsHybridMode] = useState<boolean>(true);
+  
   const [cropConfig, setCropConfig] = useState<CropConfig | null>(null);
   const [finalCropConfig, setFinalCropConfig] = useState<CropConfig | null>(null);
   const [isFinalCropping, setIsFinalCropping] = useState(false);
@@ -72,6 +75,7 @@ const App: React.FC = () => {
     setAppliedClothing(ClothingOption.None);
     setCompositePreview(null);
     setIsFinalCropping(false);
+    setIsHybridMode(true); // Reset to safe mode
     
     setAppState(AppState.CROPPING);
   };
@@ -87,6 +91,7 @@ const App: React.FC = () => {
     setAppliedBg(BackgroundOption.None);
     setAppliedClothing(ClothingOption.None);
     setDeceasedName('');
+    setIsHybridMode(true);
     setAppState(AppState.UPLOAD);
   };
 
@@ -108,8 +113,7 @@ const App: React.FC = () => {
   const handleBgAction = async (option: BackgroundOption) => {
     if (!originalCropped) return;
     if (option === BackgroundOption.None) {
-      // 背景変更なし（リセット）
-      setPersonImage(null); // 現在の合成をクリアして元画像に戻す（衣装も消える仕様）
+      setPersonImage(null);
       setAppliedBg(BackgroundOption.None);
       setAppliedClothing(ClothingOption.None);
       return;
@@ -117,7 +121,6 @@ const App: React.FC = () => {
 
     setStatus({ isProcessing: true, message: '背景を変更中...' });
     try {
-      // 衣装が適用済みの場合はその画像をベースにする
       const base = personImage || originalCropped;
       const result = await applyBackgroundSynthesis(base, option);
       setPersonImage(result);
@@ -139,7 +142,6 @@ const App: React.FC = () => {
 
     setStatus({ isProcessing: true, message: '服装を変更中...' });
     try {
-      // 背景が適用済みの場合はその画像をベースにする
       const base = personImage || originalCropped;
       const result = await applyClothingSynthesis(base, option);
       setPersonImage(result);
@@ -156,9 +158,8 @@ const App: React.FC = () => {
     setStatus({ isProcessing: true, message: '調整用データを準備しています...' });
     try {
       const canvas = document.createElement('canvas');
-      // 四つ切り比率 (5:6) に合わせる
       const width = 1200;
-      const height = 1440; // 1200 * 1.2 = 1440
+      const height = 1440;
       await drawMemorialPhoto({ 
         canvas, 
         originalCropped, 
@@ -166,7 +167,8 @@ const App: React.FC = () => {
         width, 
         height, 
         isHighRes: false, 
-        finalCropConfig: null 
+        finalCropConfig: null,
+        isHybridMode // Pass mode
       });
       setCompositePreview(canvas.toDataURL('image/jpeg', 0.9));
       setIsFinalCropping(true);
@@ -183,7 +185,6 @@ const App: React.FC = () => {
     setStatus({ isProcessing: true, message: '最高画質で画像を生成しています...' });
     try {
       const canvas = document.createElement('canvas');
-      // 四つ切りサイズ (300dpi: 254mm x 305mm)
       const width = 3000;
       const height = 3600;
       await drawMemorialPhoto({ 
@@ -193,7 +194,8 @@ const App: React.FC = () => {
         width, 
         height, 
         isHighRes: true, 
-        finalCropConfig 
+        finalCropConfig,
+        isHybridMode // Pass mode
       });
       
       const newCount = await usageService.incrementUsage(companyInfo.id);
@@ -281,6 +283,7 @@ const App: React.FC = () => {
                       isLoading={status.isProcessing} 
                       loadingMessage={status.message}
                       finalCropConfig={finalCropConfig}
+                      isHybridMode={isHybridMode}
                     />
                   </div>
                   <ActionPanel 
@@ -295,7 +298,9 @@ const App: React.FC = () => {
                     userPlan={companyInfo!.plan} 
                     usageCount={usageCount} 
                     deceasedName={deceasedName} 
-                    onDeceasedNameChange={setDeceasedName} 
+                    onDeceasedNameChange={setDeceasedName}
+                    isHybridMode={isHybridMode}
+                    onToggleHybridMode={() => setIsHybridMode(!isHybridMode)}
                   />
                 </div>
               )}
