@@ -255,10 +255,13 @@ const generatePortrait = async (
 
     const candidates = response.candidates;
     if (candidates && candidates.length > 0) {
-      const parts = candidates[0].content.parts;
-      for (const part of parts) {
-        if (part.inlineData && part.inlineData.data) {
-          return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+      // FIX: Add optional chaining and check for existence to satisfy TypeScript strict null checks
+      const parts = candidates[0].content?.parts;
+      if (parts) {
+        for (const part of parts) {
+          if (part.inlineData && part.inlineData.data) {
+            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+          }
         }
       }
     }
