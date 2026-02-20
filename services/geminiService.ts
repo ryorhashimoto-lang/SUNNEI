@@ -9,11 +9,12 @@ const cleanBase64 = (dataUrl: string) => {
 };
 
 /**
- * Prompt generation logic based on the "Stable Version"
+ * Prompt generation logic: Defines the visual style of the requested output.
  */
 const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
   let clothingPrompt = "";
-  // Enhanced descriptions for Material Physics (Super Black / High Quality) and Cultural Accuracy
+  
+  // Enhanced descriptions for Material Physics & Cultural Accuracy
   switch (clothing) {
     case ClothingOption.None:
       clothingPrompt = "";
@@ -21,27 +22,22 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
     
     // Men
     case ClothingOption.MensSuitBlack:
-      // Added: Mourning tie rules (Matte, Plain knot, No dimple)
       clothingPrompt = "a premium formal black mourning suit (Super Black matte wool, approx 300gsm weight). White shirt. Tie: Solid matte black silk mourning tie, plain knot (or Windsor), NO fashion dimples, strict solemn style. The lapel has a soft 'roll' indicating high-quality tailoring.";
       break;
     case ClothingOption.MensKimono:
-      // Added: Kimono Structure (Habutae) and Crests
       clothingPrompt = "a formal black Japanese Montsuki Haori Hakama kimono with 5 family crests (kamon). Material: High-quality Habutae silk (smooth, matte sheen). Masculine, dignified structure. Himo (cords) are white.";
       break;
 
     // Women
     case ClothingOption.WomensSuitBlack:
-      // Added: Pearl necklace specification and fabric texture
       clothingPrompt = "a women's high-quality formal black mourning ensemble (matte black jacket and dress, non-shiny deep black fabric). Accessories: A single strand of white pearls (matte luster). Modest, feminine tailored fit, high neckline.";
       break;
     case ClothingOption.WomensKimonoBlack:
-      // Added: Mofuku texture
       clothingPrompt = "a formal black Japanese Mofuku kimono (mourning kimono). Deep matte black silk (Chirimen or Habutae) with 5 family crests. Obi is black with subtle patterns. Feminine and elegant.";
       break;
   }
 
   let backgroundPrompt = "";
-  // Added descriptive keywords for ultra-smoothness and professional quality
   const qualitySuffix = "perfectly smooth professional studio gradient, uniform texture, no noise, no artifacts, clean high-end photographic finish";
   
   switch (background) {
@@ -73,7 +69,6 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Pr
   try {
     return await fn();
   } catch (error: any) {
-    // Check for transient errors (500 series or network issues)
     const isTransient = 
       error.status === 500 || 
       error.status === 503 ||
@@ -81,7 +76,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Pr
       (error.message && (
         error.message.includes("500") || 
         error.message.includes("Rpc failed") || 
-        error.message.includes("overloaded") ||
+        error.message.includes("overloaded") || 
         error.message.includes("unavailable")
       ));
 
@@ -95,7 +90,8 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Pr
 }
 
 /**
- * Core generation logic strictly following the "Stable Version" structure
+ * Core generation logic: Hybrid "Chain of Thought" strategy
+ * Combines "Restoration/Inpainting" strength with "Physics/Camera" realism.
  */
 const generatePortrait = async (
   imageBase64: string,
@@ -112,116 +108,61 @@ const generatePortrait = async (
   // === Chain of Thought Instruction Construction ===
   const instructionList: string[] = [];
 
-  // [Phase 1: Planning & Analysis]
-  instructionList.push("STEP 0 [ANALYSIS]: Analyze the original image's lighting angle (key light), shadow hardness, and color temperature. Plan the clothing generation to match this EXACT lighting environment.");
+  // [Phase 1: Digital Restoration (The "Eraser" & "Builder")]
+  // 強力な除去・復元指示
+  instructionList.push("STEP 1 [DIGITAL RESTORATION]:");
+  instructionList.push("  - IDENTIFY and REMOVE all obstructions in front of the subject (e.g., other people's hands, bouquets, babies, microphones, text overlays).");
+  instructionList.push("  - INPAINTING: Do not leave empty space. Anatomically reconstruct the 'chest', 'shoulders', and 'body' that were hidden behind the objects.");
+  instructionList.push("  - TEXTURE: Remove dot patterns (halftone) or paper grain from the skin. Make the skin texture look like high-resolution photography.");
+
+  // [Phase 2: Camera & Studio Settings (The "Photographer")]
+  // 安定版の強み：レンズ歪み補正
+  instructionList.push("STEP 2 [CAMERA SETTINGS]:");
+  instructionList.push("  - LENS: Simulate a focal length of 85mm to 105mm (Medium Telephoto).");
+  instructionList.push("  - CORRECTION: Flatten facial distortion caused by wide-angle lenses (e.g., smartphone selfies). Compress the distance between the nose and ears to create a dignified look.");
+  instructionList.push("  - APERTURE: f/8. Ensure sharp focus on the face, neck, and shoulders.");
+
+  // [Phase 3: Anatomy & Physics (The "Doctor")]
+  // 安定版の強み：首の整合性と年齢
+  instructionList.push("STEP 3 [ANATOMY & PHYSICS]:");
+  instructionList.push("  - NECK CONNECTION: Analyze the face's age. Apply equivalent 'aging' (wrinkles, skin sagging, texture) to the generated neck. Do NOT attach a young, smooth neck to an elderly face.");
+  instructionList.push("  - MUSCLE STRUCTURE: Faintly render the 'sternocleidomastoid muscles'. The neck must look like organic muscle, not a plastic cylinder.");
   
-  // LIGHTING STYLE
-  instructionList.push("LIGHTING STYLE: Japanese Memorial Portrait style. Ensure the face is evenly lit. If the original photo has harsh shadows, apply a subtle 'fill light' to the clothing to maintain a gentle, peaceful atmosphere. Avoid high-contrast dramatic noir lighting.");
-
-  // ORIENTATION ANALYSIS
-  instructionList.push("STEP 0.5 [ORIENTATION ANALYSIS]: Analyze the subject's Head Pose (Yaw, Pitch, Roll).");
-  instructionList.push("  - YAW (Turn): Is the subject looking straight or to the side?");
-  instructionList.push("  - PITCH (Tilt): Is the camera looking up at them (Low Angle) or down (High Angle)?");
-
-  // [UPDATED] CAMERA SETTINGS (Lens & Aperture)
-  // 焦点距離の指定：広角歪みを防ぎ、プロのポートレートの風格を出す
-  instructionList.push("CAMERA SETTINGS 1 (Lens): Focal Length 85mm to 105mm (Medium Telephoto). This is critical to flatten facial distortion and provide a dignified, professional look. Do NOT use wide-angle (24mm/35mm) perspective.");
-  // 被写界深度の指定：顔から肩までピントを合わせる
-  instructionList.push("CAMERA SETTINGS 2 (Aperture): f/8 or f/11 (Deep Depth of Field). Focus must be sharp on BOTH the face AND the chest/shoulders. Do NOT apply bokeh/blur to the clothing. Only the background should be out of focus. This is a formal portrait, not an artistic snapshot.");
-
-  // [Phase 2: Background (The Canvas)]
-  if (background !== BackgroundOption.None) {
-    instructionList.push(`STEP 1 [BACKGROUND]: Change the background to ${backgroundPrompt}.`);
-    instructionList.push("The background must be a flawless, smooth gradient with professional studio lighting. No noise, no banding.");
-  } else {
-    instructionList.push(`STEP 1 [BACKGROUND]: Keep the background exactly as it is. Do NOT change the background.`);
-  }
-
-  // [Phase 3: Clothing & Anatomy (The Structure)]
+  // [Phase 4: Clothing Simulation (The "Tailor")]
+  // 安定版の強み：生地の重さと質感
   if (clothing !== ClothingOption.None) {
-    instructionList.push(`STEP 2 [CLOTHING]: Change the person's clothing to ${clothingPrompt}.`);
-    
-    // [NEW] CULTURAL RULE: Kimono Crossing
-    if (clothing === ClothingOption.MensKimono || clothing === ClothingOption.WomensKimonoBlack) {
-        instructionList.push("CULTURAL RULE [CRITICAL]: Kimono Collar Crossing (Eri-awase).");
-        instructionList.push("  - The Left collar panel must cross OVER the Right collar panel.");
-        instructionList.push("  - Visual Shape: Look for a lowercase 'y' shape on the chest.");
-        instructionList.push("  - Do NOT generate 'Right over Left' (Dead person style) unless explicitly requested. Use standard formal 'Left over Right'.");
-    }
-
-    // Module: Anatomy (骨格・解剖学)
-    instructionList.push("ANATOMY RULE 1 (Muscles): Render the 'sternocleidomastoid muscles' faintly visible on the neck to indicate realistic head rotation and tension. Do not make the neck a simple cylinder.");
-    
-    instructionList.push("ANATOMY RULE 1.5 (Midline & Yaw): If the subject's head is turned (Yaw), do NOT place the tie knot/kimono center directly under the chin. It must align with the 'Suprasternal Notch' (base of neck).");
-    
-    instructionList.push("ANATOMY RULE 2 (Clavicles): The collar of the clothing must sit with weight upon the 'clavicles' (collarbones). Ensure there is a gap/shadow between the neck and the back of the collar to show depth.");
-    
-    instructionList.push("ANATOMY RULE 2.5 (Perspective & Pitch): Adjust collar curvature based on camera angle.");
-    instructionList.push("  - LOW ANGLE (Looking up): The back of the collar should curve UPWARDS around the neck. The shoulders appear lower.");
-    instructionList.push("  - HIGH ANGLE (Looking down): The back of the collar should curve DOWNWARDS. The shoulders appear higher and flatter.");
-    
-    instructionList.push("ANATOMY RULE 3 (Trapezius): Calculate the slope of the 'trapezius muscles' based on the subject's age. Older subjects should have slightly more rounded shoulders, not stiff square shoulders.");
-    
-    // ANATOMY PROPORTION
-    instructionList.push("ANATOMY PROPORTION: Strictly maintain realistic head-to-shoulder ratios. Do not elongate the neck like a fashion model. The trap muscles (shoulders) should start at a biologically accurate height relative to the chin.");
-    
-    // [NEW] NECK AGING
-    instructionList.push("NECK AGE MATCHING: The thickness and skin texture of the neck MUST match the age of the face.");
-    instructionList.push("  - If the face is elderly, the neck must show appropriate slackness, cords, and width. Do not put a young, thick neck on an elderly face.");
-
-    // Module: Lighting Physics (光と影)
-    instructionList.push("LIGHTING RULE 1 (Occlusion): Apply deep 'ambient occlusion shadows' directly under the chin and jawline where the head meets the neck/collar. This area must be the darkest point to anchor the head.");
-    instructionList.push("LIGHTING RULE 2 (Bounce): Calculate 'bounce light' from the clothing onto the jawline. If the clothes are black, the underside of the jaw should reflect less light (negative fill).");
-    instructionList.push("LIGHTING RULE 3 (Tone): Match the white balance of the clothing to the skin tones.");
-    // [NEW] Lighting Rule 4 - Hair Separation (黒髪と黒背景の分離)
-    instructionList.push("LIGHTING RULE 4 (Hair Separation): Apply a subtle 'Kicker Light' (Rim Light) to the top and sides of the hair. This is MANDATORY to separate dark hair from the dark background/suit. The hair silhouette must be clearly defined against the background.");
-
-    // Module: Materiality (衣服の質感)
-    instructionList.push("MATERIAL RULE 1 (Weight): Simulate the physics of heavyweight fabric (approx. 300gsm for suits). The fabric should drape stiffly and not cling to the body like thin cotton.");
-    instructionList.push("MATERIAL RULE 2 (Texture): Render 'high-frequency noise' on black fabric to represent the weave of the thread. Avoid a flat, solid black fill.");
-    
-    // [ENHANCED] Black Rendering Logic
-    if (clothing === ClothingOption.MensSuitBlack || clothing === ClothingOption.WomensSuitBlack || clothing === ClothingOption.MensKimono || clothing === ClothingOption.WomensKimonoBlack) {
-      instructionList.push("MATERIAL RULE 3 (Super Black): The fabric must be 'Super Black' formal wool/silk with a matte finish. No shiny polyester reflection.");
-      instructionList.push("MATERIAL RULE 4 (Edge Definition): To prevent the black suit from looking like a flat silhouette, add subtle 'Rim Light' or 'Edge Specularity' to the shoulders and lapel edges to separate the black clothing from the background.");
-      instructionList.push("MATERIAL RULE 5 (Black Values): Ensure the black area has a dynamic range (e.g., #0f0f0f to #252525) to show fold details, rather than flat #000000.");
-    }
-
-    // IMPERFECTION LOGIC (Realism)
-    instructionList.push("IMPERFECTION LOGIC: Introduce very subtle 'micro-folds' around the shoulders and lapels to suggest gravity and the physical presence of a body inside the suit. Do not make the suit look like a rigid 3D render.");
-    
-    // Module: Neck Color Integration (Compositing Logic)
-    instructionList.push("NECK INTEGRATION RULE: Sample the average HEX color code from the subject's cheek. Apply this EXACT color palette to the newly generated neck area to ensure zero color difference.");
-
-    // NECK TEXTURE RULE
-    instructionList.push("NECK TEXTURE RULE: Do NOT render the neck with smooth plastic skin. Apply 'senile skin texture' (fine wrinkles, pores) to the neck area that matches the age of the subject's face. The transition from jaw to neck must have 'subsurface scattering' to look organic.");
-
+    instructionList.push(`STEP 4 [CLOTHING GENERATION]: Change clothing to: ${clothingPrompt}`);
+    instructionList.push("  - FABRIC PHYSICS: Calculate as 300g/m² Heavy Wool/Silk. The fabric must drape with weight. Shoulders should be structured, not round like a T-shirt.");
+    instructionList.push("  - COLLAR FIT: The collar must sit with weight on the clavicles. Create a realistic shadow gap between the neck and the collar back.");
   } else {
-    instructionList.push(`STEP 2 [CLOTHING]: Keep the person's clothing exactly as it is.`);
+    instructionList.push("STEP 4 [CLOTHING]: Keep the original clothing.");
   }
 
-  // [Phase 4: Absolute Identity Protection (Defense-Specialized)]
-  instructionList.push("STEP 3 [FACE LOCK - CRITICAL]: The face area is SACRED.");
-  
-  instructionList.push("RULE 1 [TOPOLOGY LOCK]: Treat facial landmarks (eyes, nose, mouth, jawline) as **FIXED GEOMETRY**. Do not move pixels. Do not warp features. Do not re-mesh the face.");
-  instructionList.push("RULE 2 [BIOMETRIC FIDELITY]: The output image must pass a **biometric face recognition test** against the input image. If the eye distance or nose width changes by even 1 pixel, the generation is a failure.");
-  
-  instructionList.push("RULE 3 [SKIN HISTORY]: Treat wrinkles, age spots, and moles as **'Essential Identity Markers'**. Do NOT apply 'beauty filters'. Do NOT apply 'denoising' to skin texture. These are the client's history.");
-  instructionList.push("RULE 4 [FORENSIC ACCURACY]: Maintain the exact depth of the nasolabial folds (laugh lines) and the exact volume of the eye bags. Altering these features changes the perceived age and identity.");
+  // [Phase 5: Cultural Rules (The "Master")]
+  // 安定版の強み：着付けの絶対ルール
+  if (clothing === ClothingOption.MensKimono || clothing === ClothingOption.WomensKimonoBlack) {
+    instructionList.push("STEP 5 [CULTURAL RULES - CRITICAL]:");
+    instructionList.push("  - KIMONO COLLAR: Must be 'Left Over Right' (creates a lowercase 'y' shape on chest).");
+    instructionList.push("  - TABOO: Never generate 'Right Over Left' (this is for the deceased). Use standard formal dressing.");
+    instructionList.push("  - KAMON: Ensure family crests are placed symmetrically.");
+  }
 
-  // [Phase 5: Compositing Logic]
-  instructionList.push("STEP 4 [COMPOSITING LOGIC]: Only generate pixels for the **Clothing** and **Background** regions. For the Face region, perform a **'Texture Projection'** of the original image to ensure 100% fidelity.");
-  
-  // [NEW] Texture & Blending Rules (ISO Matching & Feathering)
-  instructionList.push("COMPOSITING RULE 1 (ISO Matching): Analyze the 'Film Grain' / 'ISO Noise' level of the original face image. Apply the EXACT SAME amount of monochromatic noise to the generated clothing and background. Do not generate a 'clean digital' image if the source is a scanned film photo. The image must look consistent.");
-  instructionList.push("COMPOSITING RULE 2 (Seam Blending): When merging the original face with the new neck/body, do not use a hard cut. Apply 'Subsurface Scattering' simulation at the jawline transition. The shadow under the chin must blend softly into the neck (Feathering).");
+  // [Phase 6: Background (The "Stage")]
+  if (background !== BackgroundOption.None) {
+    instructionList.push(`STEP 6 [BACKGROUND]: Change background to: ${backgroundPrompt}`);
+  } else {
+    instructionList.push("STEP 6 [BACKGROUND]: Keep original background.");
+  }
 
-  // [Phase 6: Negative Constraints]
-  instructionList.push("NEGATIVE CONSTRAINTS: NO de-aging (Respect the dignity of age). NO emotion shift (Do not add a smile). NO 'AI GLOSS' (Skin must look organic). NO style transfer. NO oil painting style.");
+  // [Phase 7: Identity Protection (The "Guardian")]
+  // 共通の重要事項：顔の保護
+  instructionList.push("FINAL STEP [IDENTITY PROTECTION]:");
+  instructionList.push("  - FACE LOCK: Do NOT move the coordinates of eyes, nose, mouth, and eyebrows.");
+  instructionList.push("  - IDENTITY MARKERS: Preserve moles, scars, and age spots. These are the person's history. Do not over-smooth the skin.");
 
   const prompt = `
     Role: You are a master professional retoucher (Compositor) specializing in Japanese memorial portraits (Iei).
-    Task: Composite new attire onto the subject while preserving the facial identity with 100% accuracy.
+    Task: Create a respectful, high-quality portrait by following this strict execution plan.
 
     EXECUTION PLAN:
     ${instructionList.join('\n')}
@@ -233,9 +174,7 @@ const generatePortrait = async (
         model: 'gemini-2.5-flash-image',
         contents: {
           parts: [
-            {
-              text: prompt,
-            },
+            { text: prompt },
             {
               inlineData: {
                 mimeType: 'image/jpeg',
@@ -245,7 +184,7 @@ const generatePortrait = async (
           ],
         },
         config: {
-          temperature: 0.2, // Low temperature for precision
+          temperature: 0.2,
           imageConfig: {
              aspectRatio: "3:4" 
           }
@@ -255,7 +194,7 @@ const generatePortrait = async (
 
     const candidates = response.candidates;
     if (candidates && candidates.length > 0) {
-      // FIX: Add optional chaining and check for existence to satisfy TypeScript strict null checks
+      // Fix: Add optional chaining and null check to prevent "Object is possibly undefined" error
       const parts = candidates[0].content?.parts;
       if (parts) {
         for (const part of parts) {
@@ -296,16 +235,14 @@ const generatePortrait = async (
 };
 
 // ==========================================================
-// EXPORTED FUNCTIONS COMPATIBLE WITH CURRENT UI
+// EXPORTED FUNCTIONS
 // ==========================================================
 
 export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
-  // Use generatePortrait but keep clothing as is (ClothingOption.None)
   return generatePortrait(base64Image, ClothingOption.None, option);
 };
 
 export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
-  // Use generatePortrait but keep background as is (BackgroundOption.None)
   return generatePortrait(base64Image, option, BackgroundOption.None);
 };
 
@@ -323,6 +260,7 @@ export const repairHeicImage = async (base64Heic: string): Promise<string> => {
           temperature: 0.2,
         }
     });
+    // Safe access for repair function as well
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
     if (!part?.inlineData) throw new Error("Repair failed");
     return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
