@@ -126,7 +126,7 @@ const generatePortrait = async (
   // 安定版の強み：首の整合性と年齢
   instructionList.push("STEP 3 [ANATOMY & PHYSICS]:");
   instructionList.push("  - NECK CONNECTION: Analyze the face's age. Apply equivalent 'aging' (wrinkles, skin sagging, texture) to the generated neck. Do NOT attach a young, smooth neck to an elderly face.");
-  instructionList.push("  - MUSCLE STRUCTURE: The neck must look like organic muscle, not a plastic cylinder.");
+  instructionList.push("  - Faintly render the 'sternocleidomastoid muscles'. MUSCLE STRUCTURE: The neck must look like organic muscle, not a plastic cylinder.");
   
   // [Phase 4: Clothing Simulation (The "Tailor")]
   // 安定版の強み：生地の重さと質感
