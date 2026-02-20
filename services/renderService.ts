@@ -9,7 +9,6 @@ interface RenderOptions {
   height: number;
   isHighRes?: boolean;
   finalCropConfig?: CropConfig | null;
-  isHybridMode?: boolean; // New flag for face protection
 }
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -24,7 +23,6 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 /**
  * Renders the memorial photo.
- * Now supports "Hybrid Mode" to graft the original face onto the AI body.
  */
 export const drawMemorialPhoto = async ({
   canvas,
@@ -34,7 +32,6 @@ export const drawMemorialPhoto = async ({
   height,
   isHighRes = false,
   finalCropConfig = null,
-  isHybridMode = false
 }: RenderOptions) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -80,52 +77,7 @@ export const drawMemorialPhoto = async ({
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(baseImg, baseCoords.drawX, baseCoords.drawY, baseCoords.drawW, baseCoords.drawH);
 
-  // 2. Hybrid Mode: Overlay Original Face
-  // Only execute if we have an AI image (personImage) AND hybrid mode is active AND we have the original.
-  if (personImage && originalCropped && isHybridMode) {
-    const originalImg = await loadImage(originalCropped);
-    
-    // Create an offscreen canvas for the face layer
-    const faceCanvas = document.createElement('canvas');
-    faceCanvas.width = width;
-    faceCanvas.height = height;
-    const fCtx = faceCanvas.getContext('2d');
-
-    if (fCtx) {
-      // Draw the original image onto the face layer (using same cover coords as base)
-      // Since originalCropped was the input to AI, their compositions should be nearly identical.
-      const origCoords = getCoverCoords(originalImg.width, originalImg.height, width, height);
-      fCtx.imageSmoothingEnabled = true;
-      fCtx.imageSmoothingQuality = 'high';
-      fCtx.drawImage(originalImg, origCoords.drawX, origCoords.drawY, origCoords.drawW, origCoords.drawH);
-
-      // Create the Alpha Mask (Feathering)
-      fCtx.globalCompositeOperation = 'destination-in';
-      
-      // Mask Geometry:
-      // We assume the face is roughly in the center of the cropped image.
-      // We create a radial gradient that is opaque in the center and transparent at the edges.
-      // Position: Center horizontally, slightly above center vertically (typical portrait composition).
-      const centerX = width / 2;
-      const centerY = height * 0.45; 
-      const radiusInner = Math.min(width, height) * 0.25; // Face area
-      const radiusOuter = Math.min(width, height) * 0.55; // Fade out to neck/hair
-
-      const gradient = fCtx.createRadialGradient(centerX, centerY, radiusInner, centerX, centerY, radiusOuter);
-      gradient.addColorStop(0, 'rgba(0, 0, 0, 1)'); // Opaque (Keep original face)
-      gradient.addColorStop(0.6, 'rgba(0, 0, 0, 0.8)'); // Start fading
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)'); // Transparent (Show AI body)
-
-      fCtx.fillStyle = gradient;
-      fCtx.fillRect(0, 0, width, height);
-
-      // Reset composite and draw the masked face onto the main canvas
-      fCtx.globalCompositeOperation = 'source-over';
-      ctx.drawImage(faceCanvas, 0, 0);
-    }
-  }
-
-  // 3. Final Crop (if applied via CropTool for output)
+  // 2. Final Crop (if applied via CropTool for output)
   if (finalCropConfig) {
     // We need to re-process the whole canvas content through the crop config.
     // The easiest way is to copy the current canvas to a buffer, clear, and draw back with transform.
@@ -149,7 +101,7 @@ export const drawMemorialPhoto = async ({
     ctx.restore();
   }
 
-  // 4. Decorative Frame
+  // 3. Decorative Frame
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.1)';
   ctx.shadowBlur = isHighRes ? 60 : 10;
