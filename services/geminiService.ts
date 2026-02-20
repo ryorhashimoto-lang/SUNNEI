@@ -25,7 +25,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       clothingPrompt = "a premium formal black mourning suit (Super Black matte wool, approx 300gsm weight). White shirt. Tie: Solid matte black silk mourning tie, plain knot (or Windsor), NO fashion dimples, strict solemn style. The lapel has a soft 'roll' indicating high-quality tailoring.";
       break;
     case ClothingOption.MensKimono:
-      clothingPrompt = "a formal black Japanese Montsuki Haori Hakama kimono with 5 family crests (kamon). Material: High-quality Habutae silk (smooth, matte sheen). Masculine, dignified structure. Himo (cords) are white.";
+      clothingPrompt = "a formal black Japanese Montsuki Haori Hakama kimono. Texture: Completely solid black plain fabric (Habutae silk), NO woven patterns, NO jacquard texture, NO embroidery. 5 family crests (kamon) are white. Himo (cords) are white. Masculine, dignified structure.";
       break;
 
     // Women
@@ -33,7 +33,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       clothingPrompt = "a women's high-quality formal black mourning ensemble (matte black jacket and dress, non-shiny deep black fabric). Accessories: A single strand of white pearls (matte luster). Modest, feminine tailored fit, high neckline.";
       break;
     case ClothingOption.WomensKimonoBlack:
-      clothingPrompt = "a formal black Japanese Mofuku kimono (mourning kimono). Deep matte black silk (Chirimen or Habutae) with 5 family crests. Obi is black with subtle patterns. Feminine and elegant.";
+      clothingPrompt = "a formal black Japanese Mofuku kimono (mourning kimono). Texture: Completely solid black plain silk (Muji), NO woven patterns, NO embroidery. 5 family crests. Obi is solid black plain (Kuro-tomo-obi) with NO patterns or designs. Feminine and elegant.";
       break;
   }
 
