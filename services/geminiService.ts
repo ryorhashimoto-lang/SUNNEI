@@ -19,7 +19,8 @@ const optimizeImageForAI = async (base64Str: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const MAX_DIMENSION = 1024; // Optimal for Gemini Flash
+      // Changed to 3072 to allow high-resolution input/output for printing (approx 3K resolution)
+      const MAX_DIMENSION = 3072; 
       let newW = img.width;
       let newH = img.height;
 
@@ -44,7 +45,7 @@ const optimizeImageForAI = async (base64Str: string): Promise<string> => {
       }
 
       ctx.drawImage(img, 0, 0, newW, newH);
-      resolve(canvas.toDataURL("image/jpeg", 0.9));
+      resolve(canvas.toDataURL("image/jpeg", 0.95)); // Quality increased to 0.95
     };
     img.onerror = reject;
     img.src = base64Str;
@@ -53,34 +54,34 @@ const optimizeImageForAI = async (base64Str: string): Promise<string> => {
 
 /**
  * Shared System Instructions for Memorial Photo Synthesis
- * Updated for Optical Consistency, Anatomical Projection, and Color Separation.
+ * Updated to "Restoration Mode": Preserves geometry but upgrades texture/quality.
  */
 const GET_SYSTEM_PROMPT = (taskDescription: string) => `
 [ROLE]
-You are a forensic-level Digital Compositor and Lighting Expert specializing in Japanese Memorial Photos ("Iei").
-Your goal is to perform ${taskDescription} with absolute fidelity to the subject's identity while integrating them into a new environment with perfect optical physics.
+You are an expert Photo Retoucher & Restoration Artist specializing in Japanese Memorial Photos ("Iei").
+Your goal is to perform ${taskDescription} while upgrading the image quality to High-End Studio Portrait standards (8K Resolution equivalent).
 
-[CRITICAL PROTOCOL: IDENTITY PRESERVATION]
-1. NO GEOMETRY SHIFT: The eyes, nose, mouth, and facial outline must remain in the EXACT same pixel coordinates.
-2. NO BEAUTY FILTERS: Do not smooth skin, remove wrinkles, or alter age spots. These are vital for identification.
-3. NO EXPRESSION CHANGE: Maintain the original gaze and expression 100%.
+[PROTOCOL: HYBRID RESTORATION]
+1. GEOMETRY (STRICT): Keep eyes, nose, mouth, and facial outline coordinates EXACTLY as is. This is crucial for identity.
+2. TEXTURE (UPGRADE): Apply "High-End Studio Restoration".
+   - Remove digital noise, jpeg artifacts, and film grain.
+   - Refine skin texture to be clear, natural, and high-definition.
+   - Fix blurry areas to appear sharp and in-focus.
+3. LIGHTING (CORRECTION):
+   - Analyze the original light source.
+   - If the original lighting is flat or poor, upgrade it to professional "Softbox" studio lighting while respecting the original shadow direction.
 
-[PHYSICS ENGINE: LIGHT & MATERIAL]
-1. LIGHT VECTOR ALIGNMENT:
-   - Analyze the highlight on the forehead/nose to determine the original light source direction (e.g., Top-Left 45°).
-   - Ensure all new shadows (on generated clothes or background) follow this EXACT vector.
-2. MATERIAL REFLECTANCE (NO COLOR BLEED):
-   - SKIN (Matte): 0% environmental reflection. Keep natural skin tones. DO NOT tint the face with the background color.
-   - HAIR/CLOTH (Semi-Gloss): 5% reflection of ambient light at the edges ONLY (Rim Light).
-3. ATMOSPHERIC INTEGRATION:
-   - Apply subtle "Rim Lighting" (background color reflection) to the outer 1-2px pixels of the hair and shoulders to remove the "cutout" look.
+[PHYSICS ENGINE: MATERIAL & ATMOSPHERE]
+1. MATERIAL REFLECTANCE:
+   - SKIN: Natural matte texture. 0% environmental color bleed.
+   - CLOTH/HAIR: Subtle rim lighting allowed at edges.
+2. ATMOSPHERIC INTEGRATION:
+   - Apply subtle "Rim Lighting" to the outer edges to separate the subject from the background.
    - NEVER blend background color into the center of the face.
 
 [ANATOMY ENGINE: 3D PROJECTION]
 1. SKULL ORIENTATION: Estimate the head's Yaw, Pitch, and Roll.
-2. BODY ALIGNMENT:
-   - If Head Yaw is > 0 (looking right), the Left Shoulder must recede in depth (Perspective).
-   - Adjust collar height asymmetry based on Head Roll.
+2. BODY ALIGNMENT: Align the new body/clothes to the head's orientation perfectly.
 3. SHADOW INTEGRATION: Cast a natural occlusion shadow from the chin onto the collar.
 `;
 
@@ -218,14 +219,13 @@ Change the attire to: ${clothSpec}
 };
 
 export const repairHeicImage = async (base64Heic: string): Promise<string> => {
-    // This function can optionally use a slightly higher temperature if creative restoration is needed,
-    // but for simple conversion, stability is better.
+    // Uses restoration prompt to clean up the image during conversion
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: MODEL_NAME,
         contents: { 
           parts: [
-            { text: "[ROLE: RESTORATION EXPERT] Convert this HEIC image to a high-quality JPEG portrait. Enhance sharpness slightly but DO NOT alter facial features or skin texture (preserve age spots/moles)." }, 
+            { text: "[ROLE: RESTORATION EXPERT] Convert this HEIC image to a high-quality JPEG portrait. Enhance sharpness and remove noise while STRICTLY maintaining facial geometry (eyes, nose, mouth)." }, 
             { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }
           ] 
         },
