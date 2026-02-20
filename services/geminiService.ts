@@ -12,8 +12,7 @@ const cleanBase64 = (dataUrl: string): string => {
 
 /**
  * Optimizes the image for AI processing.
- * REMOVED: Padding to 1:1 aspect ratio (caused the "box" effect).
- * ADDED: Simple resizing to max dimension to ensure speed and prompt adherence,
+ * Simple resizing to max dimension to ensure speed and prompt adherence,
  * while STRICTLY preserving the original aspect ratio and composition.
  */
 const optimizeImageForAI = async (base64Str: string): Promise<string> => {
@@ -44,7 +43,6 @@ const optimizeImageForAI = async (base64Str: string): Promise<string> => {
         return;
       }
 
-      // Draw exactly the original image, no padding, no distortion
       ctx.drawImage(img, 0, 0, newW, newH);
       resolve(canvas.toDataURL("image/jpeg", 0.9));
     };
@@ -55,38 +53,35 @@ const optimizeImageForAI = async (base64Str: string): Promise<string> => {
 
 /**
  * Shared System Instructions for Memorial Photo Synthesis
- * Updated to fix "Blue Halo" and "Position Shift" issues.
+ * Updated for Optical Consistency, Anatomical Projection, and Color Separation.
  */
 const GET_SYSTEM_PROMPT = (taskDescription: string) => `
 [ROLE]
-You are a master digital compositor and retouching expert for Japanese Memorial Photos ("Iei").
-Your goal is to perform ${taskDescription} with forensic accuracy.
+You are a forensic-level Digital Compositor and Lighting Expert specializing in Japanese Memorial Photos ("Iei").
+Your goal is to perform ${taskDescription} with absolute fidelity to the subject's identity while integrating them into a new environment with perfect optical physics.
 
-[CRITICAL RULE: NO BOX / NO HALO]
-- The input image is a crop from an old photo. It has an internal background (walls, curtains, etc.).
-- **DO NOT** treat the rectangular border of the image as the subject.
-- **DO NOT** just paint around the image border.
-- You MUST perform "CHROMA KEY" style extraction:
-  1. Identify the person (Face, Hair, Shoulders).
-  2. Treat EVERYTHING else (walls, shadows, noise behind head) as "Green Screen" to be removed.
-  3. Replace the background *behind* the hair strands, not just around the head.
+[CRITICAL PROTOCOL: IDENTITY PRESERVATION]
+1. NO GEOMETRY SHIFT: The eyes, nose, mouth, and facial outline must remain in the EXACT same pixel coordinates.
+2. NO BEAUTY FILTERS: Do not smooth skin, remove wrinkles, or alter age spots. These are vital for identification.
+3. NO EXPRESSION CHANGE: Maintain the original gaze and expression 100%.
 
-[CRITICAL RULE: GEOMETRY LOCK (NO SHIFT)]
-- **DO NOT ZOOM.**
-- **DO NOT SHIFT.**
-- **DO NOT CROP.**
-- The subject's head MUST remain in the EXACT same pixel coordinates as the input.
-- You are painting *underneath* the subject, not moving the subject.
+[PHYSICS ENGINE: LIGHT & MATERIAL]
+1. LIGHT VECTOR ALIGNMENT:
+   - Analyze the highlight on the forehead/nose to determine the original light source direction (e.g., Top-Left 45°).
+   - Ensure all new shadows (on generated clothes or background) follow this EXACT vector.
+2. MATERIAL REFLECTANCE (NO COLOR BLEED):
+   - SKIN (Matte): 0% environmental reflection. Keep natural skin tones. DO NOT tint the face with the background color.
+   - HAIR/CLOTH (Semi-Gloss): 5% reflection of ambient light at the edges ONLY (Rim Light).
+3. ATMOSPHERIC INTEGRATION:
+   - Apply subtle "Rim Lighting" (background color reflection) to the outer 1-2px pixels of the hair and shoulders to remove the "cutout" look.
+   - NEVER blend background color into the center of the face.
 
-[PHASE 1: IDENTITY PRESERVATION]
-- The face (Eyes, Nose, Mouth, Ears, Facial Structure) is HOLY.
-- Do not apply "Beauty Filters". Do not smooth deep wrinkles or moles.
-- Preserve the "Source Identity" 100%.
-
-[PHASE 2: ANATOMY & PHYSICS]
-- NECK: Connect the head naturally to the body. If the original photo has no neck visible, generate a realistic neck based on age.
-- CLOTHING: Ensure the collar sits on the clavicles properly.
-- DEPTH: Create realistic ambient occlusion shadows where the chin meets the clothing/neck.
+[ANATOMY ENGINE: 3D PROJECTION]
+1. SKULL ORIENTATION: Estimate the head's Yaw, Pitch, and Roll.
+2. BODY ALIGNMENT:
+   - If Head Yaw is > 0 (looking right), the Left Shoulder must recede in depth (Perspective).
+   - Adjust collar height asymmetry based on Head Roll.
+3. SHADOW INTEGRATION: Cast a natural occlusion shadow from the chin onto the collar.
 `;
 
 /**
@@ -95,14 +90,13 @@ Your goal is to perform ${taskDescription} with forensic accuracy.
 export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Use optimized image (original aspect ratio, no padding)
   const inputImage = await optimizeImageForAI(base64Image);
   const mimeType = inputImage.match(/data:([^;]+);/)?.[1] || "image/jpeg";
 
   let bgDesc = "";
   switch (option) {
     case BackgroundOption.SoftBlue: 
-      bgDesc = "Blue Gradient: Heavenly, airy, transition from pale cerulean to white. Peaceful."; 
+      bgDesc = "Blue Gradient: Heavenly, airy, transition from pale cerulean to white. Peaceful atmosphere."; 
       break;
     case BackgroundOption.SoftPink: 
       bgDesc = "Pink Gradient: Warm, gentle, shell-pink. Affectionate atmosphere."; 
@@ -125,11 +119,14 @@ ${GET_SYSTEM_PROMPT("background replacement")}
 [TASK]
 Replace the OLD BACKGROUND with: ${bgDesc}
 
-[STEPS]
-1. SEGMENTATION: Find the exact contour of the person.
-2. REMOVAL: Delete the old background completely (walls, patterns, noise).
+[EXECUTION STEPS]
+1. SEGMENTATION: Identify the person (Face, Hair, Shoulders) with sub-pixel precision.
+2. REMOVAL: Delete the old background completely.
 3. INPAINTING: Fill the removed area with the Target Gradient.
-4. BLENDING: Soften the edges of the hair slightly to blend with the new background (Antialiasing).
+4. OPTICAL BLENDING (CRITICAL):
+   - Analyze the background color (e.g., Blue).
+   - Apply a very thin "Rim Light" of that color to the edges of the hair.
+   - STRICTLY FORBID applying this color to the face skin. The face must remain warm and natural.
 
 [CONSTRAINT]
 - Output must be the EXACT SAME DIMENSIONS and COMPOSITION as the input.
@@ -142,7 +139,7 @@ Replace the OLD BACKGROUND with: ${bgDesc}
         parts: [{ text: prompt }, { inlineData: { data: cleanBase64(inputImage), mimeType } }],
       },
       config: { 
-        temperature: 0.3,
+        temperature: 0.2, // Lower temperature for stricter adherence to physics rules
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -160,7 +157,6 @@ Replace the OLD BACKGROUND with: ${bgDesc}
 export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Use optimized image (original aspect ratio, no padding)
   const inputImage = await optimizeImageForAI(base64Image);
   const mimeType = inputImage.match(/data:([^;]+);/)?.[1] || "image/jpeg";
 
@@ -187,11 +183,16 @@ ${GET_SYSTEM_PROMPT("clothing synthesis")}
 [TASK]
 Change the attire to: ${clothSpec}
 
-[STEPS]
+[EXECUTION STEPS]
 1. FACE LOCK: Keep the face, hair, and head orientation exactly as is.
-2. BODY GENERATION: Generate the new clothing from the neck down.
-3. ADAPTATION: If the original image is cropped tight at the chin, EXTEND the canvas downwards slightly if needed to show the collar, but prefer fitting within the current frame.
-4. REALISM: The clothes must have weight and texture (wool/silk).
+2. ANATOMICAL ANALYSIS:
+   - Determine Head Yaw/Pitch.
+   - Construct a mental 3D model of the torso that aligns with this head angle.
+   - If the face is turned, turn the body accordingly (Do not paste a flat frontal body on a turned head).
+3. CLOTHING GENERATION:
+   - Generate the new clothing from the neck down.
+   - Fabric Weight: Ensure the material looks heavy (Wool/Silk), not like paper.
+   - Lighting: Cast shadows on the collar based on the Light Vector Analysis.
 
 [CONSTRAINT]
 - Output must be the EXACT SAME DIMENSIONS and COMPOSITION as the input. Do not resize the head.
@@ -204,7 +205,7 @@ Change the attire to: ${clothSpec}
         parts: [{ text: prompt }, { inlineData: { data: cleanBase64(inputImage), mimeType } }],
       },
       config: { 
-        temperature: 0.3,
+        temperature: 0.2, // Lower temperature for stricter adherence to anatomy rules
       }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -217,6 +218,8 @@ Change the attire to: ${clothSpec}
 };
 
 export const repairHeicImage = async (base64Heic: string): Promise<string> => {
+    // This function can optionally use a slightly higher temperature if creative restoration is needed,
+    // but for simple conversion, stability is better.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: MODEL_NAME,
@@ -227,9 +230,10 @@ export const repairHeicImage = async (base64Heic: string): Promise<string> => {
           ] 
         },
         config: { 
-          temperature: 0.3,
+          temperature: 0.2,
         }
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-    return `data:${part!.inlineData!.mimeType};base64,${part!.inlineData!.data}`;
+    if (!part?.inlineData) throw new Error("Repair failed");
+    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
 };
