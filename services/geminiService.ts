@@ -184,7 +184,7 @@ const generatePortrait = async (
           ],
         },
         config: {
-          temperature: 0.2,
+          temperature: 0.1,
           imageConfig: {
              aspectRatio: "3:4" 
           }
@@ -257,7 +257,7 @@ export const repairHeicImage = async (base64Heic: string): Promise<string> => {
           ] 
         },
         config: { 
-          temperature: 0.2,
+          temperature: 0.1,
         }
     });
     // Safe access for repair function as well
