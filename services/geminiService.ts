@@ -113,7 +113,7 @@ const generatePortrait = async (
   instructionList.push("STEP 1 [DIGITAL RESTORATION]:");
   instructionList.push("  - IDENTIFY and REMOVE all obstructions in front of the subject (e.g., other people's hands, bouquets, babies, microphones, text overlays).");
   instructionList.push("  - INPAINTING: Do not leave empty space. Anatomically reconstruct the 'chest', 'shoulders', and 'body' that were hidden behind the objects.");
-  instructionList.push("  - TEXTURE: Remove dot patterns (halftone) or paper grain from the skin. Make the skin texture look like high-resolution photography.");
+  instructionList.push("  - TEXTURE: Keep the original skin texture exactly as captured, including natural grain and photographic characteristics. Do NOT remove or alter the natural texture patterns. Preserve authenticity over artificial enhancement.");
 
   // [Phase 2: Camera & Studio Settings (The "Photographer")]
   // 安定版の強み：レンズ歪み補正
