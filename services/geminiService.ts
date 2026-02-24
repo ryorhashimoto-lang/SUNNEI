@@ -24,7 +24,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
     case ClothingOption.MensSuitBlack:
       clothingPrompt = "a premium formal black mourning suit (Super Black matte wool, approx 300gsm weight). White shirt. Tie: Solid matte black silk mourning tie, plain knot (or Windsor), NO fashion dimples, strict solemn style. The lapel has a soft 'roll' indicating high-quality tailoring.";
       break;
-    case ClothingOption.MensKimono:
+    case ClothingOption.MensKimonoBlack:
       clothingPrompt = "a formal black Japanese Mofuku kimono (mourning kimono). Texture: Completely solid black plain silk (Muji), NO woven patterns, NO embroidery. NO patterns or designs.";
       break;
 
@@ -127,7 +127,7 @@ const generatePortrait = async (
 
   // [Phase 3: Cultural Rules (The "Master")]
   // 安定版の強み：着付けの絶対ルール
-  if (clothing === ClothingOption.MensKimono || clothing === ClothingOption.WomensKimonoBlack) {
+  if (clothing === ClothingOption.MensKimonoBlack || clothing === ClothingOption.WomensKimonoBlack) {
     instructionList.push("STEP 3 [CULTURAL RULES - CRITICAL]:");
     instructionList.push("  - KIMONO COLLAR: Must be 'Left Over Right' (creates a lowercase 'y' shape on chest).");
     instructionList.push("  - TABOO: Never generate 'Right Over Left' (this is for the deceased).");
