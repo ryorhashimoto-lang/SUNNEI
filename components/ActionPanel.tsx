@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ClothingOption, BackgroundOption, UserPlan, PLAN_LIMITS } from '../types';
 
@@ -6,7 +5,7 @@ interface ActionPanelProps {
   onBgAction: (option: BackgroundOption) => void;
   onClothingAction: (option: ClothingOption) => void;
   disabled: boolean;
-  onDownload: () => void;
+  onDownload: (type: 'four-cut' | 'three-four') => void;
   onReset: () => void;
   onStartCrop: () => void;
   appliedBg: BackgroundOption;
@@ -70,7 +69,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     <div className="bg-white flex flex-col h-full border-l border-gray-200 shadow-2xl z-10 font-sans overflow-hidden">
       
       {/* Upper Info Bar */}
-      <div className="px-6 py-4 bg-white border-b border-gray-100 flex items-center justify-between shrink-0">
+      <div className="px-6 py-4 bg-white border-b border-gray-100 flex items-center justify-center shrink-0">
         <button 
           onClick={onReset}
           disabled={disabled}
@@ -84,7 +83,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
           やり直す
         </button>
 
-        <div className="bg-gray-50/80 px-4 py-2 rounded-2xl border border-gray-100 shadow-inner text-right min-w-[110px]">
+        <div className="bg-gray-50/80 px-4 py-2 rounded-2xl border border-gray-100 shadow-inner text-right min-w-[110px] ml-auto">
           <p className="text-[8px] text-gray-400 font-bold tracking-[0.2em] uppercase leading-none mb-1.5">{userPlan} PLAN</p>
           <p className="text-[14px] font-bold text-gray-800 leading-none">残: <span className="text-blue-600 font-mono">{remaining}</span></p>
         </div>
@@ -221,28 +220,39 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 
       {/* Primary Action Button */}
       <div className="p-8 bg-white border-t border-gray-100 shadow-[0_-20px_60px_rgba(0,0,0,0.1)] shrink-0 z-20 relative">
-        <button
-          onClick={onDownload}
-          disabled={disabled || !deceasedName}
-          className={`w-full py-8 text-white font-bold rounded-[2.75rem] shadow-2xl transition-all flex flex-col items-center justify-center gap-2.5 active:scale-[0.96] disabled:opacity-30 disabled:grayscale ${disabled ? 'bg-gray-800 cursor-wait' : 'bg-gray-900 cursor-pointer hover:bg-black hover:-translate-y-2'}`}
-        >
-          {disabled ? (
-            <div className="flex items-center gap-5">
-              <div className="w-8 h-8 border-[3px] border-white/20 border-t-white rounded-full animate-spin"></div>
-              <span className="text-[17px] font-sans font-medium tracking-tight">変更を行なっています...</span>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8 text-blue-400">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                <span className="text-[20px] tracking-[0.3em] font-serif font-bold">データを保存</span>
+        {disabled ? (
+           <button
+             disabled
+             className="w-full py-8 text-white font-bold rounded-[2.75rem] shadow-2xl bg-gray-800 cursor-wait flex flex-col items-center justify-center gap-2.5"
+           >
+              <div className="flex items-center gap-5">
+                <div className="w-8 h-8 border-[3px] border-white/20 border-t-white rounded-full animate-spin"></div>
+                <span className="text-[17px] font-sans font-medium tracking-tight">変更を行なっています...</span>
               </div>
-              <span className="text-[10px] text-gray-500 font-bold tracking-[0.5em] opacity-80 uppercase font-sans">Studio Master Export</span>
-            </>
-          )}
-        </button>
+           </button>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+             {/* Button 1: Four Cut */}
+             <button
+               onClick={() => onDownload('four-cut')}
+               disabled={!deceasedName}
+               className="w-full py-6 bg-gray-900 text-white font-bold rounded-[2rem] shadow-xl hover:bg-black hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-1 active:scale-[0.96] disabled:opacity-30 disabled:grayscale"
+             >
+                <span className="text-[16px] tracking-[0.1em] font-serif">四つ切り保存</span>
+                <span className="text-[9px] text-gray-400 font-sans tracking-widest opacity-80">3000 x 3600 (5:6)</span>
+             </button>
+
+             {/* Button 2: 3:4 */}
+             <button
+               onClick={() => onDownload('three-four')}
+               disabled={!deceasedName}
+               className="w-full py-6 bg-white text-gray-900 border-2 border-gray-900 font-bold rounded-[2rem] shadow-xl hover:bg-gray-50 hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-1 active:scale-[0.96] disabled:opacity-30 disabled:grayscale"
+             >
+                <span className="text-[16px] tracking-[0.1em] font-serif">3:4 保存</span>
+                <span className="text-[9px] text-gray-500 font-sans tracking-widest opacity-80">3000 x 4000</span>
+             </button>
+          </div>
+        )}
       </div>
     </div>
   );
