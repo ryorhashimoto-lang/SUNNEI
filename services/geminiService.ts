@@ -118,26 +118,26 @@ const generatePortrait = async (
   // [Phase 2: Clothing Simulation (The "Tailor")]
   // 安定版の強み：生地の重さと質感
   if (clothing !== ClothingOption.None) {
-    instructionList.push(`STEP 4 [CLOTHING GENERATION]: Change clothing to: ${clothingPrompt}`);
+    instructionList.push(`STEP 2 [CLOTHING GENERATION]: Change clothing to: ${clothingPrompt}`);
     instructionList.push("  - FABRIC PHYSICS: Calculate as 300g/m² Heavy Wool/Silk. The fabric must drape with weight. Shoulders should be structured, not round like a T-shirt.");
     instructionList.push("  - COLLAR FIT: The collar must sit with weight on the clavicles. Create a realistic shadow gap between the neck and the collar back.");
   } else {
-    instructionList.push("STEP 4 [CLOTHING]: Keep the original clothing.");
+    instructionList.push("STEP 2 [CLOTHING]: Keep the original clothing.");
   }
 
   // [Phase 3: Cultural Rules (The "Master")]
   // 安定版の強み：着付けの絶対ルール
   if (clothing === ClothingOption.MensKimono || clothing === ClothingOption.WomensKimonoBlack) {
-    instructionList.push("STEP 5 [CULTURAL RULES - CRITICAL]:");
+    instructionList.push("STEP 3 [CULTURAL RULES - CRITICAL]:");
     instructionList.push("  - KIMONO COLLAR: Must be 'Left Over Right' (creates a lowercase 'y' shape on chest).");
     instructionList.push("  - TABOO: Never generate 'Right Over Left' (this is for the deceased).");
   }
 
   // [Phase 4: Background (The "Stage")]
   if (background !== BackgroundOption.None) {
-    instructionList.push(`STEP 6 [BACKGROUND]: Change background to: ${backgroundPrompt}`);
+    instructionList.push(`STEP 4 [BACKGROUND]: Change background to: ${backgroundPrompt}`);
   } else {
-    instructionList.push("STEP 6 [BACKGROUND]: Keep original background.");
+    instructionList.push("STEP 4 [BACKGROUND]: Keep original background.");
   }
 
   // [Phase 5: Identity Protection (The "Guardian")]
