@@ -180,7 +180,7 @@ const App: React.FC = () => {
       const canvas = document.createElement('canvas');
       let width = 3000;
       let height = 3600; // Default 5:6 (Four Cut)
-      let filenameSuffix = "";
+      let filenameSuffix = "_5-6";
 
       if (type === 'three-four') {
         width = 3000;
