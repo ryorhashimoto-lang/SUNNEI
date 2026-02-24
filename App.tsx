@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppState, ClothingOption, BackgroundOption, ProcessingStatus, CompanyInfo, CropConfig } from './types';
 import UploadArea from './components/UploadArea';
@@ -174,13 +173,21 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDownload = async () => {
+  const handleDownload = async (type: 'four-cut' | 'three-four') => {
     if (!originalCropped || !companyInfo) return;
     setStatus({ isProcessing: true, message: '最高画質で画像を生成しています...' });
     try {
       const canvas = document.createElement('canvas');
-      const width = 3000;
-      const height = 3600;
+      let width = 3000;
+      let height = 3600; // Default 5:6 (Four Cut)
+      let filenameSuffix = "";
+
+      if (type === 'three-four') {
+        width = 3000;
+        height = 4000; // 3:4
+        filenameSuffix = "_3-4";
+      }
+
       await drawMemorialPhoto({ 
         canvas, 
         originalCropped, 
@@ -196,7 +203,7 @@ const App: React.FC = () => {
       
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/png');
-      link.download = deceasedName.trim() ? `瞬影_${deceasedName}.png` : `瞬影_遺影.png`;
+      link.download = deceasedName.trim() ? `瞬影_${deceasedName}${filenameSuffix}.png` : `瞬影_遺影${filenameSuffix}.png`;
       link.click();
     } catch (err) { 
       setErrorModal({ isOpen: true, title: '保存失敗', message: '画像の生成中にエラーが発生しました。' });
