@@ -37,7 +37,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 
   const menOptions = [
     { id: ClothingOption.MensSuitBlack, label: '（男性用）スーツ', desc: '葬儀・告別式の正装' },
-    { id: ClothingOption.MensKimono, label: '（男性用）着物', desc: '格式高い黒羽織袴' },
+    { id: ClothingOption.MensKimonoBlack, label: '（男性用）着物', desc: '格式高い黒羽織袴' },
   ];
 
   const womenOptions = [
