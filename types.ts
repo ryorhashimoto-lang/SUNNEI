@@ -10,7 +10,7 @@ export enum AppState {
 export enum ClothingOption {
   None = 'none',
   MensSuitBlack = 'mens_suit_black',
-  MensKimono = 'mens_kimono',
+  MensKimonoBlack = 'mens_kimono_black',
   WomensSuitBlack = 'womens_suit_black',
   WomensKimonoBlack = 'womens_kimono_black',
 }
