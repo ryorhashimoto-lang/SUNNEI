@@ -25,7 +25,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       clothingPrompt = "a premium formal black mourning suit (Super Black matte wool, approx 300gsm weight). White shirt. Tie: Solid matte black silk mourning tie, plain knot (or Windsor), NO fashion dimples, strict solemn style. The lapel has a soft 'roll' indicating high-quality tailoring.";
       break;
     case ClothingOption.MensKimonoBlack:
-      clothingPrompt = "服装は日本の伝統的な喪服で、漆黒の無地の羽織と着物を着用している。羽織の左右の胸元や袖など、どこにも家紋（紋）は一切ない。生地にも地紋、柄、模様、刺繍、デザインは一切なく、完全に均一な黒色である。 首元から、白い半衿（長襦袢の襟）が清潔に少し見えている。";
+      clothingPrompt = "服装は日本の伝統的な喪服で、漆黒の無地の羽織と着物を着用している。羽織の左右の胸元にのみ、白色ではっきりと染め抜かれた家紋（紋）がそれぞれ1つずつ、合計2つある（抱き紋）。生地自体にはこの家紋以外の地紋、柄、模様、刺繍、デザインは一切なく、完全に均一な黒色である。 首元から、白い半衿（長襦袢の襟）が清潔に少し見えている。";
       break;
 
     // Women
