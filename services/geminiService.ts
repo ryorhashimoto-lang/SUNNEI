@@ -120,7 +120,7 @@ const generatePortrait = async (
   if (clothing !== ClothingOption.None) {
     instructionList.push(`STEP 2 [CLOTHING GENERATION]: Change clothing to: ${clothingPrompt}`);
     instructionList.push("  - FABRIC PHYSICS: Calculate as 300g/m² Heavy Wool/Silk. The fabric must drape with weight. Shoulders should be structured, not round like a T-shirt.");
-    instructionList.push("  - COLLAR FIT: The collar must sit with weight on the clavicles. Create a realistic shadow gap between the neck and the collar back.");
+    instructionList.push("  - COLLAR FIT: The collar must sit with weight on the clavicles.");
   } else {
     instructionList.push("STEP 2 [CLOTHING]: Keep the original clothing.");
   }
