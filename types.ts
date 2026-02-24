@@ -14,7 +14,7 @@ export enum ClothingOption {
   MensSuitNavy = 'mens_suit_navy',
   WomensSuitBlack = 'womens_suit_black',
   WomensKimonoBlack = 'womens_kimono_black',
-  WomensKimonoColor = 'womens_kimono_color'
+  
 }
 
 export enum BackgroundOption {
