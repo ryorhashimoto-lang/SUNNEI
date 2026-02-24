@@ -131,7 +131,6 @@ const generatePortrait = async (
     instructionList.push("STEP 5 [CULTURAL RULES - CRITICAL]:");
     instructionList.push("  - KIMONO COLLAR: Must be 'Left Over Right' (creates a lowercase 'y' shape on chest).");
     instructionList.push("  - TABOO: Never generate 'Right Over Left' (this is for the deceased). Use standard formal dressing.");
-    instructionList.push("  - KAMON: Ensure family crests are placed symmetrically.");
   }
 
   // [Phase 4: Background (The "Stage")]
