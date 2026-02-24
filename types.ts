@@ -44,8 +44,6 @@ export const PLAN_LIMITS: Record<UserPlan, number> = {
   [UserPlan.ENTERPRISE]: Infinity,
 };
 
-export type FrameType = 'none' | 'black_gold' | 'pearl' | 'wood';
-
 export interface ProcessingStatus {
   isProcessing: boolean;
   message: string;
