@@ -115,20 +115,7 @@ const generatePortrait = async (
   instructionList.push("  - INPAINTING: Do not leave empty space. Anatomically reconstruct the 'chest', 'shoulders', and 'body' that were hidden behind the objects.");
   instructionList.push("  - TEXTURE: Keep the original skin texture exactly as captured, including natural grain and photographic characteristics. Do NOT remove or alter the natural texture patterns. Preserve authenticity over artificial enhancement.");
 
-  // [Phase 2: Camera & Studio Settings (The "Photographer")]
-  // 安定版の強み：レンズ歪み補正
-  instructionList.push("STEP 2 [CAMERA SETTINGS]:");
-  instructionList.push("  - LENS: Simulate a focal length of 85mm to 105mm (Medium Telephoto).");
-  instructionList.push("  - CORRECTION: Flatten facial distortion caused by wide-angle lenses (e.g., smartphone selfies). Compress the distance between the nose and ears to create a dignified look.");
-  instructionList.push("  - APERTURE: f/8. Ensure sharp focus on the face, neck, and shoulders.");
-
-  // [Phase 3: Anatomy & Physics (The "Doctor")]
-  // 安定版の強み：首の整合性と年齢
-  instructionList.push("STEP 3 [ANATOMY & PHYSICS]:");
-  instructionList.push("  - NECK CONNECTION: Analyze the face's age. Apply equivalent 'aging' (wrinkles, skin sagging, texture) to the generated neck. Do NOT attach a young, smooth neck to an elderly face.");
-  instructionList.push("  - Faintly render the 'sternocleidomastoid muscles'. MUSCLE STRUCTURE: The neck must look like organic muscle, not a plastic cylinder.");
-  
-  // [Phase 4: Clothing Simulation (The "Tailor")]
+  // [Phase 2: Clothing Simulation (The "Tailor")]
   // 安定版の強み：生地の重さと質感
   if (clothing !== ClothingOption.None) {
     instructionList.push(`STEP 4 [CLOTHING GENERATION]: Change clothing to: ${clothingPrompt}`);
@@ -138,7 +125,7 @@ const generatePortrait = async (
     instructionList.push("STEP 4 [CLOTHING]: Keep the original clothing.");
   }
 
-  // [Phase 5: Cultural Rules (The "Master")]
+  // [Phase 3: Cultural Rules (The "Master")]
   // 安定版の強み：着付けの絶対ルール
   if (clothing === ClothingOption.MensKimono || clothing === ClothingOption.WomensKimonoBlack) {
     instructionList.push("STEP 5 [CULTURAL RULES - CRITICAL]:");
@@ -147,14 +134,14 @@ const generatePortrait = async (
     instructionList.push("  - KAMON: Ensure family crests are placed symmetrically.");
   }
 
-  // [Phase 6: Background (The "Stage")]
+  // [Phase 4: Background (The "Stage")]
   if (background !== BackgroundOption.None) {
     instructionList.push(`STEP 6 [BACKGROUND]: Change background to: ${backgroundPrompt}`);
   } else {
     instructionList.push("STEP 6 [BACKGROUND]: Keep original background.");
   }
 
-  // [Phase 7: Identity Protection (The "Guardian")]
+  // [Phase 5: Identity Protection (The "Guardian")]
   // 共通の重要事項：顔の保護
   instructionList.push("FINAL STEP [IDENTITY PROTECTION]:");
   instructionList.push("  - FACE LOCK: Do NOT move the coordinates of eyes, nose, mouth, and eyebrows.");
