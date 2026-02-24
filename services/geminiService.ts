@@ -38,7 +38,6 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
   }
 
   let backgroundPrompt = "";
-  let backgroundPrompt = "";
   
   switch (background) {
     case BackgroundOption.None:
