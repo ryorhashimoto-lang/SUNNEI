@@ -11,7 +11,6 @@ export enum ClothingOption {
   None = 'none',
   MensSuitBlack = 'mens_suit_black',
   MensKimono = 'mens_kimono',
-  MensSuitNavy = 'mens_suit_navy',
   WomensSuitBlack = 'womens_suit_black',
   WomensKimonoBlack = 'womens_kimono_black',
 }
