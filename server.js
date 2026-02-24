@@ -46,7 +46,7 @@ const initDb = async () => {
     await client.query(`
       INSERT INTO companies (id, name, plan, password_hash, usage_count, contact_person)
       VALUES 
-        ('admin', 'システム管理者', 'ENTERPRISE', process.env.ADMIN_PASSWORD_HASH, 0, '本部担当者'),
+        ('admin', 'システム管理者', 'ENTERPRISE', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 0, '本部担当者'),
         ('demo', 'デモ葬儀社', 'STANDARD', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 12, '佐藤 健二'),
         ('demo_ent', '瞬影メモリアル 本部', 'ENTERPRISE', '2064505391c53229b43343603d6f78f888da76c81335359c381f621350a4d538', 450, '鈴木 一郎')
       ON CONFLICT (id) DO UPDATE SET 
