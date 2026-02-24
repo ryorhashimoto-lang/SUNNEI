@@ -38,55 +38,26 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
   }
 
   let backgroundPrompt = "";
+  const qualitySuffix = "perfectly smooth professional studio gradient, uniform texture, no noise, no artifacts, clean high-end photographic finish";
   
   switch (background) {
     case BackgroundOption.None:
       backgroundPrompt = "Keep the background exactly as it is.";
       break;
     case BackgroundOption.SoftBlue:
-      backgroundPrompt = `BACKGROUND COLOR - CRITICAL:
-Hex Color Code: #B3D9E8
-RGB Value: rgb(179, 217, 232)
-Generate a perfectly uniform, smooth background with this EXACT color.
-- NO gradients, NO textures, NO patterns
-- EXACT uniform fill: #B3D9E8
-- Professional studio quality, zero noise, zero artifacts`;
+      backgroundPrompt = `a soft, light blue ${qualitySuffix}`;
       break;
     case BackgroundOption.SoftPink:
-      backgroundPrompt = `BACKGROUND COLOR - CRITICAL:
-Hex Color Code: #E3DEF1
-RGB Value: rgb(227, 222, 241)
-Generate a perfectly uniform, smooth background with this EXACT color.
-- NO gradients, NO textures, NO patterns
-- EXACT uniform fill: #E3DEF1
-- Professional studio quality, zero noise, zero artifacts`;
+      backgroundPrompt = `a gentle, warm pale pink ${qualitySuffix}`;
       break;
     case BackgroundOption.WisteriaPurple:
-      backgroundPrompt = `BACKGROUND COLOR - CRITICAL:
-Hex Color Code: #C7B8D8
-RGB Value: rgb(199, 184, 216)
-Generate a perfectly uniform, smooth background with this EXACT color.
-- NO gradients, NO textures, NO patterns
-- EXACT uniform fill: #C7B8D8
-- Professional studio quality, zero noise, zero artifacts`;
+      backgroundPrompt = `a dignified, soft wisteria purple (traditional Japanese Fujiiro) ${qualitySuffix}`;
       break;
     case BackgroundOption.FreshGreen:
-      backgroundPrompt = `BACKGROUND COLOR - CRITICAL:
-Hex Color Code: #D4E8D8
-RGB Value: rgb(212, 232, 216)
-Generate a perfectly uniform, smooth background with this EXACT color.
-- NO gradients, NO textures, NO patterns
-- EXACT uniform fill: #D4E8D8
-- Professional studio quality, zero noise, zero artifacts`;
+      backgroundPrompt = `a fresh, calming pale green (Wakakusairo) ${qualitySuffix}`;
       break;
     case BackgroundOption.WhiteGrey:
-      backgroundPrompt = `BACKGROUND COLOR - CRITICAL:
-Hex Color Code: #F5F5F5
-RGB Value: rgb(245, 245, 245)
-Generate a perfectly uniform, smooth background with this EXACT color.
-- NO gradients, NO textures, NO patterns
-- EXACT uniform fill: #F5F5F5
-- Professional studio quality, zero noise, zero artifacts`;
+      backgroundPrompt = `a bright, clean white-grey ${qualitySuffix}`;
       break;
   }
 
