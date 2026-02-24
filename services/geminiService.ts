@@ -25,7 +25,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       clothingPrompt = "a premium formal black mourning suit (Super Black matte wool, approx 300gsm weight). White shirt. Tie: Solid matte black silk mourning tie, plain knot (or Windsor), NO fashion dimples, strict solemn style. The lapel has a soft 'roll' indicating high-quality tailoring.";
       break;
     case ClothingOption.MensKimono:
-      clothingPrompt = "a formal black Japanese Haori Hakama kimono. Texture: Completely solid black plain fabric (Habutae silk), NO woven patterns, NO jacquard texture, NO embroidery. Himo (cords) are white. Masculine, dignified structure.";
+      clothingPrompt = "a formal black Japanese Haori Hakama kimono. Texture: Completely solid black plain silk (Muji), NO woven patterns, NO embroidery. Obi is solid black plain (Kuro-tomo-obi) with NO patterns or designs. Masculine, dignified structure.";
       break;
 
     // Women
