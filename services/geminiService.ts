@@ -33,7 +33,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       clothingPrompt = "a women's high-quality formal black mourning ensemble (matte black jacket and dress, non-shiny deep black fabric). Accessories: A single strand of white pearls (matte luster). Modest, feminine tailored fit, high neckline.";
       break;
     case ClothingOption.WomensKimonoBlack:
-      clothingPrompt = "服装は日本の伝統的な喪服で、漆黒の無地の羽織と着物を着用している。羽織の左右の胸元にのみ、白色ではっきりと染め抜かれた家紋（紋）がそれぞれ1つずつ、合計2つある（抱き紋）。生地自体にはこの家紋以外の地紋、柄、模様、刺繍、デザインは一切なく、完全に均一な黒色である。 首元から、白い半衿（長襦袢の襟）が清潔に少し見えている。";
+      clothingPrompt = "The character is wearing traditional Japanese formal mourning attire (Mofuku). It consists of a solid, jet-black kimono and a matching jet-black haori coat. There are exactly two family crests (Kamon) clearly dyed in crisp white on the front: one on each side of the haori's chest (Dakimon). Aside from these two crests, the fabric is completely void of any woven patterns, textures, embroidery, or designs—a perfectly uniform, deep matte black. A clean, white under-collar (han-eri) is neatly visible at the neckline.";
       break;
   }
 
