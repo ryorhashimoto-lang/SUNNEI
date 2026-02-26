@@ -45,7 +45,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       backgroundPrompt = "Keep the background exactly as it is.";
       break;
     case BackgroundOption.SoftBlue:
-      backgroundPrompt = `a soft, light blue ${qualitySuffix}`;
+      backgroundPrompt = `a very light, pale blue ${qualitySuffix}`;
       break;
     case BackgroundOption.SoftPink:
       backgroundPrompt = `a gentle, warm pale pink ${qualitySuffix}`;
