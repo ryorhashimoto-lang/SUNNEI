@@ -136,6 +136,8 @@ const generatePortrait = async (
   // [Phase 4: Background (The "Stage")]
   if (background !== BackgroundOption.None) {
     instructionList.push(`STEP 4 [BACKGROUND]: Change background to: ${backgroundPrompt}`);
+    instructionList.push("  - SUBJECT PROTECTION: Keep the person's body, clothing, and skin details SHARP and DETAILED.");
+    instructionList.push("  - Do NOT apply smoothing, blurring, or uniform texture to the subject's body.");
   } else {
     instructionList.push("STEP 4 [BACKGROUND]: Keep original background.");
   }
