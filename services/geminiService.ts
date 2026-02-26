@@ -48,13 +48,13 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       backgroundPrompt = `a very light, pale blue ${qualitySuffix}`;
       break;
     case BackgroundOption.SoftPink:
-      backgroundPrompt = `a gentle, warm pale pink ${qualitySuffix}`;
+      backgroundPrompt = `a very light, pale pink ${qualitySuffix}`;
       break;
     case BackgroundOption.WisteriaPurple:
-      backgroundPrompt = `a soft, light purple ${qualitySuffix}`;
+      backgroundPrompt = `a very light, pale purple ${qualitySuffix}`;
       break;
     case BackgroundOption.FreshGreen:
-      backgroundPrompt = `a fresh, calming pale green (Wakakusairo) ${qualitySuffix}`;
+      backgroundPrompt = `a very light, pale green ${qualitySuffix}`;
       break;
     case BackgroundOption.WhiteGrey:
       backgroundPrompt = `a bright, clean white-grey ${qualitySuffix}`;
