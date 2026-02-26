@@ -60,7 +60,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
       <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-[11px] font-bold font-sans shadow-lg ring-4 ring-gray-100 group-hover:scale-110 transition-transform">{num}</div>
       <div className="flex flex-col">
         <h3 className="text-[15px] font-bold text-gray-800 font-serif tracking-widest leading-none">{text}</h3>
-        <div className="w-full h-[1px] bg-gray-100 mt-2"></div>
+        <div className="w-0 h-[1px] bg-gray-900 mt-2 group-hover:w-full transition-all duration-300"></div>
       </div>
     </div>
   );
