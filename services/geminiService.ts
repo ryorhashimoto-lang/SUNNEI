@@ -38,7 +38,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
   }
 
   let backgroundPrompt = "";
-  const qualitySuffix = "perfectly smooth professional studio gradient, uniform texture, no noise, no artifacts, clean high-end photographic finish";
+  const qualitySuffix = "clean, professional studio gradient background with distinct edge separation from the subject, sharp high-end photographic finish";
   
   switch (background) {
     case BackgroundOption.None:
