@@ -150,7 +150,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               className={`flex-1 py-3.5 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center gap-2.5 active:scale-95 ${gender === 'women' ? 'bg-[#be123c] text-white shadow-[0_4px_20px_rgba(190,18,60,0.4)]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
             >
              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-               <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>
+               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
              </svg>
              女性用
             </button>
