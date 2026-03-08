@@ -60,7 +60,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       backgroundPrompt = `a bright, clean white-grey ${qualitySuffix}`;
       break;
     case BackgroundOption.Sky:
-      backgroundPrompt = `a soft, peaceful sky blue gradient ${qualitySuffix}`;
+      backgroundPrompt = `A vast, pristine blue sky filled with soft, fluffy white cumulus clouds. Peaceful, serene, and gentle atmosphere, evoking a sense of heavenly rest and eternal peace. Soft, diffuse natural daylight, professional landscape photography, highly detailed. ${qualitySuffix}`;
       break;
     case BackgroundOption.Sea:
       backgroundPrompt = `a serene deep blue ocean wave background ${qualitySuffix}`;
