@@ -130,7 +130,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-          <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => onBgAction(BackgroundOption.None)}
               disabled={disabled}
