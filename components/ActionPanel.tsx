@@ -37,13 +37,13 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   const remaining = limit === Infinity ? '無制限' : Math.max(0, limit - usageCount);
 
   const menOptions = [
-    { id: ClothingOption.MensSuitBlack, label: '（男性用）スーツ', desc: '葬儀・告別式の正装' },
-    { id: ClothingOption.MensKimonoBlack, label: '（男性用）着物', desc: '格式高い黒羽織袴' },
+    { id: ClothingOption.MensSuitBlack, label: '（男性用）スーツ' },
+    { id: ClothingOption.MensKimonoBlack, label: '（男性用）着物' },
   ];
 
   const womenOptions = [
-    { id: ClothingOption.WomensSuitBlack, label: '（女性用）スーツ', desc: '落ち着いたアンサンブル' },
-    { id: ClothingOption.WomensKimonoBlack, label: '（女性用）着物', desc: '最も格式高い和服' },
+    { id: ClothingOption.WomensSuitBlack, label: '（女性用）スーツ' },
+    { id: ClothingOption.WomensKimonoBlack, label: '（女性用）着物' },
   ];
 
   const currentClothingOptions = gender === 'men' ? menOptions : womenOptions;
@@ -121,7 +121,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             <button
               onClick={() => setBgTab('landscape')}
               disabled={disabled}
-              className={`flex-1 py-4 text-[16px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
+              className={`flex-1 py-4 text-[18px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
                 bgTab === 'landscape'
                   ? 'bg-gradient-to-b from-emerald-100 to-emerald-50 border-2 border-green-500 text-green-700 shadow-lg'
                   : 'bg-gray-100 border-2 border-gray-300 text-gray-400'
@@ -226,8 +226,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                 disabled={disabled}
                 className={`w-full p-6 rounded-2xl border-2 text-left transition-all relative group active:scale-[0.98] ${appliedClothing === opt.id ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300 shadow-sm'}`}
               >
-                <div className="font-bold text-[16px] text-gray-800 tracking-tight">{opt.label}</div>
-                <div className="text-[13px] text-gray-400 mt-2 leading-relaxed font-medium">{opt.desc}</div>
+                <div className="font-bold text-[18px] text-gray-800 tracking-tight">{opt.label}</div>
                 {appliedClothing === opt.id && (
                   <div className="absolute right-6 top-1/2 -translate-y-1/2">
                     <div className="w-9 h-9 bg-gray-900 rounded-full flex items-center justify-center shadow-lg ring-[6px] ring-white">
