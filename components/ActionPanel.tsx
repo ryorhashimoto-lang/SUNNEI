@@ -53,6 +53,10 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     { id: BackgroundOption.WisteriaPurple, label: 'パープル', color: 'bg-[#f3e5f5]', text: 'text-gray-900' },
     { id: BackgroundOption.FreshGreen, label: 'グリーン', color: 'bg-[#f1f8e9]', text: 'text-gray-900' },
     { id: BackgroundOption.WhiteGrey, label: 'ホワイト', color: 'bg-[#fafafa]', text: 'text-gray-900' },
+    { id: BackgroundOption.Sky, label: '空', color: 'bg-gradient-to-b from-blue-200 to-blue-100', text: 'text-gray-900' },
+    { id: BackgroundOption.Sea, label: '海', color: 'bg-gradient-to-b from-blue-400 to-blue-600', text: 'text-white' },
+    { id: BackgroundOption.CherryBlossom, label: '桜', color: 'bg-gradient-to-b from-pink-300 to-pink-100', text: 'text-gray-900' },
+    { id: BackgroundOption.FreshNewGreen, label: '新緑', color: 'bg-gradient-to-b from-green-400 to-green-200', text: 'text-gray-900' },
   ];
 
   const StepBadge = ({ num, text }: { num: string, text: string }) => (
