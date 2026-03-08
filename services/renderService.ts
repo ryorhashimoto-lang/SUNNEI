@@ -33,6 +33,7 @@ export const drawMemorialPhoto = async ({
   height,
   isHighRes = false,
   finalCropConfig = null,
+  backgroundOption,
 }: RenderOptions) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
