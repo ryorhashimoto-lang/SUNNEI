@@ -33,6 +33,19 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
   
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null);
 
+    // 背景スタイルを動的に生成する関数
+  const getBackgroundStyle = () => {
+    if (backgroundImage) {
+      return {
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
+    }
+    return {
+      backgroundColor: backgroundColor || '#000',
+    };
+  };
   // Initialize/Restore config only after image is loaded and layout is ready
   const handleImageLoad = () => {
      if (initialConfig && containerRef.current && imageRef.current) {
