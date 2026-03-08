@@ -70,8 +70,8 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       break;
     case BackgroundOption.FreshNewGreen:
       backgroundPrompt = `a fresh, vibrant spring green ${qualitySuffix}`;
-      break;
-　}
+           break;
+  }
 
   return { clothingPrompt, backgroundPrompt };
 };
