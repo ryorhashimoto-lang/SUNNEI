@@ -161,7 +161,8 @@ const App: React.FC = () => {
         width, 
         height, 
         isHighRes: false, 
-        finalCropConfig: null
+        finalCropConfig: null,
+        backgroundOption: appliedBg
       });
       setCompositePreview(canvas.toDataURL('image/jpeg', 0.9));
       setIsFinalCropping(true);
@@ -188,14 +189,15 @@ const App: React.FC = () => {
         filenameSuffix = "_3-4";
       }
 
-      await drawMemorialPhoto({ 
+       await drawMemorialPhoto({ 
         canvas, 
         originalCropped, 
         personImage, 
         width, 
         height, 
         isHighRes: true, 
-        finalCropConfig
+        finalCropConfig,
+        backgroundOption: appliedBg
       });
       
       const newCount = await usageService.incrementUsage(companyInfo.id);
