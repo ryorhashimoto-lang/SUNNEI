@@ -81,7 +81,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
         <button 
           onClick={onReset}
           disabled={disabled}
-          className="group flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-all text-[11px] font-bold disabled:opacity-30 active:scale-95"
+          className="group flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-all text-[14px] font-bold disabled:opacity-30 active:scale-95"
         >
           <div className="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center group-hover:border-gray-400 shadow-sm transition-all">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
@@ -247,7 +247,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
           
           <div className="space-y-6">
             <div className="bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 shadow-inner">
-              <label className="block text-[10px] font-bold text-gray-400 mb-4 uppercase tracking-widest ml-1 font-sans">故人様のお名前</label>
+              <label className="block text-[14px] font-bold text-gray-400 mb-4 uppercase tracking-widest ml-1 font-sans">故人様のお名前</label>
               <input 
                 type="text" 
                 value={deceasedName}
@@ -255,13 +255,13 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                 placeholder="例: 山田 太郎 様"
                 className="w-full px-6 py-5 bg-white border-2 border-transparent rounded-2xl text-[17px] outline-none focus:border-gray-900 transition-all font-serif font-bold placeholder:font-normal placeholder:text-gray-300 shadow-sm"
               />
-              <p className="text-[10px] text-gray-400 mt-3 ml-1 italic font-sans">※ 保存時のファイル名として使用されます</p>
+              <p className="text-[14px] text-gray-400 mt-3 ml-1 italic font-sans">※ 保存時のファイル名として使用されます</p>
             </div>
 
             <button
               onClick={onStartCrop}
               disabled={disabled}
-              className="w-full py-5 bg-white text-gray-800 border-2 border-gray-200 font-bold rounded-2xl text-[13px] tracking-widest hover:bg-gray-50 hover:border-gray-900 transition-all flex items-center justify-center gap-4 shadow-sm active:scale-[0.98] group"
+              className="w-full py-5 bg-white text-gray-800 border-2 border-gray-200 font-bold rounded-2xl text-[16px] tracking-widest hover:bg-gray-50 hover:border-gray-900 transition-all flex items-center justify-center gap-4 shadow-sm active:scale-[0.98] group"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-6 h-6 text-gray-400 group-hover:text-gray-900 transition-colors">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 13.5V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m12-3V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 9.75V10.5" />
