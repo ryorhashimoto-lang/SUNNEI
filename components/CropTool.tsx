@@ -242,7 +242,10 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
       </header>
 
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden group">
+        <div 
+          className="flex-1 relative flex items-center justify-center overflow-hidden group"
+          style={getBackgroundStyle()}
+        >
           <div 
             ref={containerRef}
             className="w-full h-full relative flex items-center justify-center select-none touch-none cursor-grab active:cursor-grabbing"
