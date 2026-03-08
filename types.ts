@@ -22,6 +22,10 @@ export enum BackgroundOption {
   WisteriaPurple = 'wisteria_purple',
   FreshGreen = 'fresh_green',
   WhiteGrey = 'white_grey',
+  Sky = 'sky',
+  Sea = 'sea',
+  CherryBlossom = 'cherry_blossom',
+  FreshNewGreen = 'fresh_new_green',
 }
 
 export enum UserPlan {
