@@ -108,26 +108,26 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             <button
               onClick={() => setBgTab('solid')}
               disabled={disabled}
-              className={`flex-1 py-4 text-[12px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
+              className={`flex-1 py-4 text-[16px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
                 bgTab === 'solid'
                  ? 'bg-gradient-to-b from-slate-100 to-slate-50 border-2 border-blue-500 text-blue-700 shadow-lg'
                  : 'bg-gray-100 border-2 border-gray-300 text-gray-400'
               }`}
             >
-              単色背景
+              単色
             </button>
 
             {/* 景色背景タブ */}
             <button
               onClick={() => setBgTab('landscape')}
               disabled={disabled}
-              className={`flex-1 py-4 text-[12px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
+              className={`flex-1 py-4 text-[16px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
                 bgTab === 'landscape'
                   ? 'bg-gradient-to-b from-emerald-100 to-emerald-50 border-2 border-green-500 text-green-700 shadow-lg'
                   : 'bg-gray-100 border-2 border-gray-300 text-gray-400'
               }`}
             >
-              景色背景
+              景色
             </button>
           </div>
           
@@ -192,7 +192,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             <button
               onClick={() => setGender('men')}
               disabled={disabled}
-              className={`flex-1 py-3.5 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center gap-2.5 active:scale-95 ${gender === 'men' ? 'bg-[#1e3a8a] text-white shadow-[0_4px_20px_rgba(30,58,138,0.4)]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+              className={`flex-1 py-3.5 text-[14px] font-bold rounded-xl transition-all flex items-center justify-center gap-2.5 active:scale-95 ${gender === 'men' ? 'bg-[#1e3a8a] text-white shadow-[0_4px_20px_rgba(30,58,138,0.4)]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
@@ -202,7 +202,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             <button
               onClick={() => setGender('women')}
               disabled={disabled}
-              className={`flex-1 py-3.5 text-[11px] font-bold rounded-xl transition-all flex items-center justify-center gap-2.5 active:scale-95 ${gender === 'women' ? 'bg-[#be123c] text-white shadow-[0_4px_20px_rgba(190,18,60,0.4)]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+              className={`flex-1 py-3.5 text-[14px] font-bold rounded-xl transition-all flex items-center justify-center gap-2.5 active:scale-95 ${gender === 'women' ? 'bg-[#be123c] text-white shadow-[0_4px_20px_rgba(190,18,60,0.4)]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
             >
              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
@@ -217,7 +217,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               disabled={disabled}
               className={`w-full p-5 rounded-2xl border-2 text-left transition-all active:scale-[0.98] ${appliedClothing === ClothingOption.None ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300 shadow-sm'}`}
             >
-              <div className="font-bold text-[14px] text-gray-700">服装を変更しない</div>
+              <div className="font-bold text-[16px] text-gray-700">服装を変更しない</div>
             </button>
             {currentClothingOptions.map((opt) => (
               <button
@@ -226,8 +226,8 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                 disabled={disabled}
                 className={`w-full p-6 rounded-2xl border-2 text-left transition-all relative group active:scale-[0.98] ${appliedClothing === opt.id ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300 shadow-sm'}`}
               >
-                <div className="font-bold text-[15px] text-gray-800 tracking-tight">{opt.label}</div>
-                <div className="text-[11px] text-gray-400 mt-2 leading-relaxed font-medium">{opt.desc}</div>
+                <div className="font-bold text-[16px] text-gray-800 tracking-tight">{opt.label}</div>
+                <div className="text-[13px] text-gray-400 mt-2 leading-relaxed font-medium">{opt.desc}</div>
                 {appliedClothing === opt.id && (
                   <div className="absolute right-6 top-1/2 -translate-y-1/2">
                     <div className="w-9 h-9 bg-gray-900 rounded-full flex items-center justify-center shadow-lg ring-[6px] ring-white">
