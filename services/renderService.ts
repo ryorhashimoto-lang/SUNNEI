@@ -1,5 +1,5 @@
 
-import { CropConfig } from '../types';
+import { CropConfig, BackgroundOption } from '../types';
 
 interface RenderOptions {
   canvas: HTMLCanvasElement;
@@ -9,6 +9,7 @@ interface RenderOptions {
   height: number;
   isHighRes?: boolean;
   finalCropConfig?: CropConfig | null;
+  backgroundOption?: BackgroundOption;  // ✨ この行を追加
 }
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -40,6 +41,37 @@ export const drawMemorialPhoto = async ({
   canvas.width = width;
   canvas.height = height;
   ctx.clearRect(0, 0, width, height);
+  
+  // 背景を描画する関数
+  const drawBackground = (bgOption?: BackgroundOption) => {
+    if (!bgOption || bgOption === 'none') {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+      return;
+    }
+
+    const gradients: Record<string, [string, string]> = {
+      'sky': ['#87CEEB', '#E0F6FF'],
+      'sea': ['#1E90FF', '#4169E1'],
+      'cherry_blossom': ['#FFB6C1', '#FFC0CB'],
+      'fresh_new_green': ['#90EE90', '#98FB98'],
+      'soft_blue': ['#e3f2fd', '#bbdefb'],
+      'soft_pink': ['#fce4ec', '#f8bbd0'],
+      'wisteria_purple': ['#f3e5f5', '#e1bee7'],
+      'fresh_green': ['#f1f8e9', '#dcedc8'],
+      'white_grey': ['#fafafa', '#f5f5f5'],
+    };
+
+    const colors = gradients[bgOption] || ['#000000', '#000000'];
+    const grad = ctx.createLinearGradient(0, 0, 0, height);
+    grad.addColorStop(0, colors[0]);
+    grad.addColorStop(1, colors[1]);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+  };
+
+  // 背景を描画
+  drawBackground(backgroundOption);
 
   // Load Images
   // If AI image exists, that's our base. If not, we use the original.
