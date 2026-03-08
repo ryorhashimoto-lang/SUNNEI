@@ -63,7 +63,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       backgroundPrompt = `A vast, pristine blue sky filled with soft, fluffy white cumulus clouds. Peaceful, serene, and gentle atmosphere, evoking a sense of heavenly rest and eternal peace. Soft, diffuse natural daylight, professional landscape photography, highly detailed. ${qualitySuffix}`;
       break;
     case BackgroundOption.Sea:
-      backgroundPrompt = `a serene deep blue ocean wave background ${qualitySuffix}`;
+      backgroundPrompt = `photorealistic, hyper-realistic, extremely detailed depiction of a vast, calm, and serene ocean with pristine water and gentle, diffuse daylight resembling a professional studio backdrop for portraiture. The horizon is vast and clear. The atmosphere is peaceful, comforting, and sacred, evoking a sense of heavenly rest and eternal peace. Minimalist composition focused on the water and sky, uninterrupted ${qualitySuffix}`;
       break;
     case BackgroundOption.CherryBlossom:
       backgroundPrompt = `a delicate cherry blossom pink ${qualitySuffix}`;
