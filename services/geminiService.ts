@@ -66,7 +66,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       backgroundPrompt = `photorealistic, hyper-realistic, extremely detailed depiction of a vast, calm, and serene ocean with pristine water and gentle, diffuse daylight resembling a professional studio backdrop for portraiture. The horizon is vast and clear. The atmosphere is peaceful, comforting, and sacred, evoking a sense of heavenly rest and eternal peace. Minimalist composition focused on the water and sky, uninterrupted ${qualitySuffix}`;
       break;
     case BackgroundOption.CherryBlossom:
-      backgroundPrompt = `a delicate cherry blossom pink ${qualitySuffix}`;
+      backgroundPrompt = `photorealistic, hyper-realistic. Soft, pale pink cherry blossoms (sakura) with beautiful, creamy bokeh, resembling a premium professional studio backdrop for portraiture. Gentle, diffuse spring daylight. The center is clear and softly blurred to perfectly frame a person's face. The atmosphere is peaceful, comforting, elegant, and sacred, evoking a sense of heavenly rest and eternal peace. Uninterrupted, dignified pastel tones ${qualitySuffix}`;
       break;
     case BackgroundOption.FreshNewGreen:
       backgroundPrompt = `a fresh, vibrant spring green ${qualitySuffix}`;
