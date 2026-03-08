@@ -7,6 +7,9 @@ interface CropToolProps {
   initialConfig?: CropConfig | null;
   onConfirm: (croppedImage: string, config: CropConfig) => void;
   onCancel: () => void;
+  // ✨ 新しいプロパティを追加
+  backgroundColor?: string;  // 背景色
+  backgroundImage?: string;  // 背景画像URL
 }
 
 // 遺影写真用の比率を 5:6 に設定 (3000px : 3600px)
