@@ -137,7 +137,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               disabled={disabled}
               className={`flex items-center justify-center p-4 rounded-2xl border-2 text-center transition-all col-span-2 min-h-[60px] relative group active:scale-[0.98] ${appliedBg === BackgroundOption.None ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300'}`}
             >
-              <span className="text-xs font-bold text-gray-600">背景を変更しない</span>
+              <span className="text-[14px] font-bold text-gray-600">背景を変更しない</span>
               {appliedBg === BackgroundOption.None && (
                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-900">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
@@ -153,7 +153,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                 disabled={disabled}
                 className={`flex items-center justify-center p-5 rounded-2xl border-2 transition-all min-h-[85px] relative group active:scale-[0.98] ${opt.color} ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
               >
-                <span className="text-[13px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
+                <span className="text-[16px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
                 {appliedBg === opt.id && (
                   <div className="absolute top-2 right-2 bg-white rounded-full p-0.5 shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-900">
@@ -171,7 +171,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                disabled={disabled}
                className={`flex items-center justify-center p-5 rounded-2xl border-2 transition-all min-h-[85px] relative group active:scale-[0.98] ${opt.color} ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
              >
-               <span className="text-[13px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
+               <span className="text-[16px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
                {appliedBg === opt.id && (
                  <div className="absolute top-2 right-2 bg-white rounded-full p-0.5 shadow-sm">
                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-900">
@@ -217,7 +217,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               disabled={disabled}
               className={`w-full p-5 rounded-2xl border-2 text-left transition-all active:scale-[0.98] ${appliedClothing === ClothingOption.None ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300 shadow-sm'}`}
             >
-              <div className="font-bold text-[13px] text-gray-700">服装を変更しない</div>
+              <div className="font-bold text-[14px] text-gray-700">服装を変更しない</div>
             </button>
             {currentClothingOptions.map((opt) => (
               <button
