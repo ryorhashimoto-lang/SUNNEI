@@ -121,7 +121,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             <button
               onClick={() => setBgTab('landscape')}
               disabled={disabled}
-              className={`flex-1 py-4 text-[18px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
+              className={`flex-1 py-4 text-[16px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
                 bgTab === 'landscape'
                   ? 'bg-gradient-to-b from-emerald-100 to-emerald-50 border-2 border-green-500 text-green-700 shadow-lg'
                   : 'bg-gray-100 border-2 border-gray-300 text-gray-400'
@@ -153,7 +153,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                 disabled={disabled}
                 className={`flex items-center justify-center p-5 rounded-2xl border-2 transition-all min-h-[85px] relative group active:scale-[0.98] ${opt.color} ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
               >
-                <span className="text-[16px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
+                <span className="text-[18px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
                 {appliedBg === opt.id && (
                   <div className="absolute top-2 right-2 bg-white rounded-full p-0.5 shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-900">
@@ -171,7 +171,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                disabled={disabled}
                className={`flex items-center justify-center p-5 rounded-2xl border-2 transition-all min-h-[85px] relative group active:scale-[0.98] ${opt.color} ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
              >
-               <span className="text-[16px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
+               <span className="text-[18px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
                {appliedBg === opt.id && (
                  <div className="absolute top-2 right-2 bg-white rounded-full p-0.5 shadow-sm">
                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-900">
