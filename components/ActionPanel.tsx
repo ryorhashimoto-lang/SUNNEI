@@ -31,6 +31,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   onDeceasedNameChange
 }) => {
   const [gender, setGender] = useState<'men' | 'women'>('men');
+  const [bgTab, setBgTab] = useState<'solid' | 'landscape'>('solid');
 
   const limit = PLAN_LIMITS[userPlan];
   const remaining = limit === Infinity ? '無制限' : Math.max(0, limit - usageCount);
