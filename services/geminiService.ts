@@ -59,7 +59,19 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
     case BackgroundOption.WhiteGrey:
       backgroundPrompt = `a bright, clean white-grey ${qualitySuffix}`;
       break;
-  }
+    case BackgroundOption.Sky:
+      backgroundPrompt = `a soft, peaceful sky blue gradient ${qualitySuffix}`;
+      break;
+    case BackgroundOption.Sea:
+      backgroundPrompt = `a serene deep blue ocean wave background ${qualitySuffix}`;
+      break;
+    case BackgroundOption.CherryBlossom:
+      backgroundPrompt = `a delicate cherry blossom pink ${qualitySuffix}`;
+      break;
+    case BackgroundOption.FreshNewGreen:
+      backgroundPrompt = `a fresh, vibrant spring green ${qualitySuffix}`;
+      break;
+ }
 
   return { clothingPrompt, backgroundPrompt };
 };
