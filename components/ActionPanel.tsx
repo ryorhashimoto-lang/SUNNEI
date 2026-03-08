@@ -98,6 +98,38 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
         {/* Step 1: Background - 全面カラータイルUI */}
         <section className="animate-fade-in translate-y-2 opacity-0 [animation-fill-mode:forwards] [animation-delay:100ms]">
           <StepBadge num="1" text="背景の選択" />
+                    {/* ✨ 背景タイプのタブボタン（背景プレビュー付き） */}
+          <div className="flex mb-6 gap-2">
+            {/* 単色背景タブ */}
+            <button
+              onClick={() => setBgTab('solid')}
+              disabled={disabled}
+              className={`flex-1 py-4 text-[12px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
+                bgTab === 'solid'
+                  ? 'bg-gradient-to-b from-slate-100 to-slate-50 border-2 border-blue-500 text-blue-700 shadow-lg'
+                  : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-blue-300'
+              }`}
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-b from-blue-100 to-blue-50 border border-blue-300"></div>
+              単色背景
+            </button>
+
+            {/* 景色背景タブ */}
+            <button
+              onClick={() => setBgTab('landscape')}
+              disabled={disabled}
+              className={`flex-1 py-4 text-[12px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
+                bgTab === 'landscape'
+                  ? 'bg-gradient-to-b from-emerald-100 to-emerald-50 border-2 border-green-500 text-green-700 shadow-lg'
+                  : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-green-300'
+              }`}
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-b from-green-300 to-green-200 border border-green-500"></div>
+              景色背景
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => onBgAction(BackgroundOption.None)}
