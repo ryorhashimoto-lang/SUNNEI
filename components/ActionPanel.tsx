@@ -217,7 +217,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               disabled={disabled}
               className={`w-full p-5 rounded-2xl border-2 text-left transition-all active:scale-[0.98] ${appliedClothing === ClothingOption.None ? 'border-gray-900 bg-gray-50 ring-4 ring-gray-900/5 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300 shadow-sm'}`}
             >
-              <div className="font-bold text-[16px] text-gray-700">服装を変更しない</div>
+              <span className="text-[14px] font-bold text-gray-600 block text-center">服装を変更しない</span>
             </button>
             {currentClothingOptions.map((opt) => (
               <button
