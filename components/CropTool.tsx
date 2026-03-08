@@ -15,7 +15,7 @@ interface CropToolProps {
 // 遺影写真用の比率を 5:6 に設定 (3000px : 3600px)
 const ASPECT_RATIO = 5 / 6;
 
-const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm, onCancel }) => {
+const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm, onCancel, backgroundColor, backgroundImage }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   
