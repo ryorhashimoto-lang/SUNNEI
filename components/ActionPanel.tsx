@@ -48,17 +48,20 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 
   const currentClothingOptions = gender === 'men' ? menOptions : womenOptions;
 
-  const bgItems = [
-    { id: BackgroundOption.SoftBlue, label: 'ブルー', color: 'bg-[#e3f2fd]', text: 'text-gray-900' },
-    { id: BackgroundOption.SoftPink, label: 'ピンク', color: 'bg-[#fce4ec]', text: 'text-gray-900' },
-    { id: BackgroundOption.WisteriaPurple, label: 'パープル', color: 'bg-[#f3e5f5]', text: 'text-gray-900' },
-    { id: BackgroundOption.FreshGreen, label: 'グリーン', color: 'bg-[#f1f8e9]', text: 'text-gray-900' },
-    { id: BackgroundOption.WhiteGrey, label: 'ホワイト', color: 'bg-[#fafafa]', text: 'text-gray-900' },
-    { id: BackgroundOption.Sky, label: '空', color: 'bg-gradient-to-b from-blue-200 to-blue-100', text: 'text-gray-900' },
-    { id: BackgroundOption.Sea, label: '海', color: 'bg-gradient-to-b from-blue-400 to-blue-600', text: 'text-white' },
-    { id: BackgroundOption.CherryBlossom, label: '桜', color: 'bg-gradient-to-b from-pink-300 to-pink-100', text: 'text-gray-900' },
-    { id: BackgroundOption.FreshNewGreen, label: '新緑', color: 'bg-gradient-to-b from-green-400 to-green-200', text: 'text-gray-900' },
-  ];
+ const solidBgItems = [
+  { id: BackgroundOption.SoftBlue, label: 'ブルー', color: 'bg-[#e3f2fd]', text: 'text-gray-900' },
+  { id: BackgroundOption.SoftPink, label: 'ピンク', color: 'bg-[#fce4ec]', text: 'text-gray-900' },
+  { id: BackgroundOption.WisteriaPurple, label: 'パープル', color: 'bg-[#f3e5f5]', text: 'text-gray-900' },
+  { id: BackgroundOption.FreshGreen, label: 'グリーン', color: 'bg-[#f1f8e9]', text: 'text-gray-900' },
+  { id: BackgroundOption.WhiteGrey, label: 'ホワイト', color: 'bg-[#fafafa]', text: 'text-gray-900' },
+ ];
+
+ const landscapeBgItems = [
+  { id: BackgroundOption.Sky, label: '空', color: 'bg-blue-100', text: 'text-gray-900' },
+  { id: BackgroundOption.Sea, label: '海', color: 'bg-blue-500', text: 'text-white' },
+  { id: BackgroundOption.CherryBlossom, label: '桜', color: 'bg-pink-100', text: 'text-gray-900' },
+  { id: BackgroundOption.FreshNewGreen, label: '新緑', color: 'bg-green-100', text: 'text-gray-900' },
+ ];
 
   const StepBadge = ({ num, text }: { num: string, text: string }) => (
     <div className="flex items-center gap-3.5 mb-6 group">
@@ -107,11 +110,10 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               disabled={disabled}
               className={`flex-1 py-4 text-[12px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
                 bgTab === 'solid'
-                  ? 'bg-gradient-to-b from-slate-100 to-slate-50 border-2 border-blue-500 text-blue-700 shadow-lg'
-                  : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-blue-300'
+                 ? 'bg-gradient-to-b from-slate-100 to-slate-50 border-2 border-blue-500 text-blue-700 shadow-lg'
+                 : 'bg-gray-100 border-2 border-gray-300 text-gray-400'
               }`}
             >
-              <div className="w-5 h-5 rounded-full bg-gradient-to-b from-blue-100 to-blue-50 border border-blue-300"></div>
               単色背景
             </button>
 
@@ -122,10 +124,9 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               className={`flex-1 py-4 text-[12px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
                 bgTab === 'landscape'
                   ? 'bg-gradient-to-b from-emerald-100 to-emerald-50 border-2 border-green-500 text-green-700 shadow-lg'
-                  : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-green-300'
+                  : 'bg-gray-100 border-2 border-gray-300 text-gray-400'
               }`}
             >
-              <div className="w-5 h-5 rounded-full bg-gradient-to-b from-green-300 to-green-200 border border-green-500"></div>
               景色背景
             </button>
           </div>
@@ -145,7 +146,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                  </div>
               )}
             </button>
-            {bgItems.map((opt) => (
+            {bgTab === 'solid' && solidBgItems.map((opt) => (
               <button
                 key={opt.id}
                 onClick={() => onBgAction(opt.id)}
@@ -157,11 +158,29 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                   <div className="absolute top-2 right-2 bg-white rounded-full p-0.5 shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-900">
                       <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
-              </button>
-            ))}
+                   </svg>
+                 </div>
+               )}
+             </button>
+           ))}
+
+           {bgTab === 'landscape' && landscapeBgItems.map((opt) => (
+             <button
+               key={opt.id}
+               onClick={() => onBgAction(opt.id)}
+               disabled={disabled}
+               className={`flex items-center justify-center p-5 rounded-2xl border-2 transition-all min-h-[85px] relative group active:scale-[0.98] ${opt.color} ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
+             >
+               <span className="text-[13px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
+               {appliedBg === opt.id && (
+                 <div className="absolute top-2 right-2 bg-white rounded-full p-0.5 shadow-sm">
+                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-900">
+                     <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+                   </svg>
+                 </div>
+               )}
+           </button>
+         ))}
           </div>
         </section>
 
