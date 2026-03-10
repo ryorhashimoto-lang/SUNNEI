@@ -45,7 +45,7 @@ const initDb = async () => {
     // 【修正】テスト環境では初期データを挿入しない
     if (process.env.NODE_ENV !== 'test') {
     　 // 管理者およびデモデータの挿入（UPSERTロジックに変更）
-    await client.query(`
+       await client.query(`
          INSERT INTO companies (id, name, plan, password_hash, usage_count, contact_person)
          VALUES 
            ('admin', 'システム管理者', 'ENTERPRISE', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 0, '本部担当者'),
