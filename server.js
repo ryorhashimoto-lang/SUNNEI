@@ -43,8 +43,8 @@ const initDb = async () => {
     await client.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS contact_person TEXT;`);
 
     // 【修正】テスト環境では初期データを挿入しない
-     if (process.env.NODE_ENV !== 'test') {
-    // 管理者およびデモデータの挿入（UPSERTロジックに変更）
+    if (process.env.NODE_ENV !== 'test') {
+    　 // 管理者およびデモデータの挿入（UPSERTロジックに変更）
     await client.query(`
          INSERT INTO companies (id, name, plan, password_hash, usage_count, contact_person)
          VALUES 
