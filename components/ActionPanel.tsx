@@ -121,7 +121,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             <button
               onClick={() => setBgTab('landscape')}
               disabled={disabled}
-              className={`flex-1 py-4 text-[16px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
+              className={`flex-1 py-4 text-[10px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
                 bgTab === 'landscape'
                   ? 'bg-gradient-to-b from-emerald-100 to-emerald-50 border-2 border-green-500 text-green-700 shadow-lg'
                   : 'bg-gray-100 border-2 border-gray-300 text-gray-400'
