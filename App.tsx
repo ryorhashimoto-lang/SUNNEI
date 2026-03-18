@@ -272,6 +272,7 @@ const App: React.FC = () => {
                     setIsFinalCropping(false);
                     setAppState(originalCropped ? AppState.EDITING : AppState.UPLOAD);
                   }} 
+                  backgroundOption={appliedBg}
                 />
               )}
               
