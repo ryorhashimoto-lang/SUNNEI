@@ -16,7 +16,12 @@ const cleanBase64 = (dataUrl: string) => {
 
 
 // 背景合成関数
-export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
+export const applyBackgroundSynthesis = async (
+  base64Image: string, 
+  option: BackgroundOption,
+  width?: number,
+  height?: number
+): Promise<string> => {
   try {
     if (option === BackgroundOption.None) return base64Image;
     
@@ -25,8 +30,8 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
       throw new Error(`背景画像が見つかりません: ${option}`);
     }
     
-    // 背景画像を合成
-    return await compositeImages(base64Image, bgImageUrl, 'background');
+    // 背景画像を合成（サイズ指定）
+    return await compositeImages(base64Image, bgImageUrl, 'background', width, height);
   } catch (error: any) {
     console.error('背景合成エラー:', error);
     throw new Error(`背景の合成に失敗しました: ${error.message}`);
@@ -34,7 +39,12 @@ export const applyBackgroundSynthesis = async (base64Image: string, option: Back
 };
 
 // 着せ替え合成関数
-export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
+export const applyClothingSynthesis = async (
+  base64Image: string, 
+  option: ClothingOption,
+  width?: number,
+  height?: number
+): Promise<string> => {
   try {
     if (option === ClothingOption.None) return base64Image;
     
@@ -43,8 +53,8 @@ export const applyClothingSynthesis = async (base64Image: string, option: Clothi
       throw new Error(`着せ替え画像が見つかりません: ${option}`);
     }
     
-    // 着せ替え画像を合成
-    return await compositeImages(base64Image, clothingImageUrl, 'clothing');
+    // 着せ替え画像を合成（サイズ指定）
+    return await compositeImages(base64Image, clothingImageUrl, 'clothing', width, height);
   } catch (error: any) {
     console.error('着せ替え合成エラー:', error);
     throw new Error(`着せ替えの合成に失敗しました: ${error.message}`);
