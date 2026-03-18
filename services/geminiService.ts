@@ -55,7 +55,9 @@ export const applyClothingSynthesis = async (base64Image: string, option: Clothi
 const compositeImages = async (
   baseImage: string, 
   overlayUrl: string, 
-  type: 'background' | 'clothing'
+  type: 'background' | 'clothing',
+  targetWidth?: number,
+  targetHeight?: number
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
@@ -68,8 +70,15 @@ const compositeImages = async (
     // ベース画像を読み込み
     const baseImg = new Image();
     baseImg.onload = () => {
-      canvas.width = baseImg.width;
-      canvas.height = baseImg.height;
+      // ターゲットサイズが指定されていなければ、ベース画像のサイズを使う
+      const finalWidth = targetWidth || baseImg.width;
+      const finalHeight = targetHeight || baseImg.height;
+      
+      canvas.width = finalWidth;
+      canvas.height = finalHeight;
+      
+      console.log('📐 Canvas サイズ設定:', finalWidth, 'x', finalHeight);
+      console.log('📍 ベース画像サイズ:', baseImg.width, 'x', baseImg.height);
 
       if (type === 'background') {
         // 背景を先に描画
@@ -77,9 +86,18 @@ const compositeImages = async (
         bgImg.crossOrigin = 'anonymous';
         bgImg.onload = () => {
           console.log('✅ 背景画像を読み込み成功:', overlayUrl);
-          ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-          ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/png'));
+          
+          // 背景をターゲットサイズに合わせて描画
+          ctx.drawImage(bgImg, 0, 0, finalWidth, finalHeight);
+          console.log('🎨 背景を Canvas に描画完了');
+          
+          // ベース画像（人物写真）をターゲットサイズに合わせて描画
+          ctx.drawImage(baseImg, 0, 0, finalWidth, finalHeight);
+          console.log('🎨 ベース画像を Canvas に描画完了');
+          
+          const result = canvas.toDataURL('image/png');
+          console.log('📸 合成完了。PNG データサイズ:', result.length, '|', finalWidth, 'x', finalHeight);
+          resolve(result);
         };
         bgImg.onerror = () => {
           console.error('❌ 背景画像の読み込み失敗:', overlayUrl);
@@ -88,13 +106,15 @@ const compositeImages = async (
         bgImg.src = overlayUrl;
       } else {
         // 着せ替えを上に描画
-        ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(baseImg, 0, 0, finalWidth, finalHeight);
         const clothingImg = new Image();
         clothingImg.crossOrigin = 'anonymous';
         clothingImg.onload = () => {
           console.log('✅ 着せ替え画像を読み込み成功:', overlayUrl);
-          ctx.drawImage(clothingImg, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/png'));
+          ctx.drawImage(clothingImg, 0, 0, finalWidth, finalHeight);
+          const result = canvas.toDataURL('image/png');
+          console.log('📸 着せ替え合成完了。PNG データサイズ:', result.length, '|', finalWidth, 'x', finalHeight);
+          resolve(result);
         };
         clothingImg.onerror = () => {
           console.error('❌ 着せ替え画像の読み込み失敗:', overlayUrl);
@@ -110,7 +130,6 @@ const compositeImages = async (
     baseImg.src = baseImage;
   });
 };
-
 export const repairHeicImage = async (base64Heic: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
