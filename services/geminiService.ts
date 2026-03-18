@@ -15,7 +15,7 @@ const cleanBase64 = (dataUrl: string) => {
 // ==========================================================
 
 
-// 背景合成関数
+// 背景合成関数（Gemini で自然な合成）
 export const applyBackgroundSynthesis = async (
   base64Image: string, 
   option: BackgroundOption,
@@ -29,9 +29,71 @@ export const applyBackgroundSynthesis = async (
     if (!bgImageUrl) {
       throw new Error(`背景画像が見つかりません: ${option}`);
     }
+
+    console.log('🤖 Gemini で背景合成を開始:', option);
     
-    // 背景画像を合成（サイズ指定）
-    return await compositeImages(base64Image, bgImageUrl, 'background', width, height);
+    // 背景画像を fetch して base64 に変換
+    const bgResponse = await fetch(bgImageUrl);
+    const bgBlob = await bgResponse.blob();
+    const bgBase64 = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(bgBlob);
+    });
+
+    console.log('📸 背景画像の取得完了');
+    
+    // Gemini API で合成
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: {
+        parts: [
+          {
+            text: `人物写真と背景画像を自然に合成してください。
+
+【要件】
+- 人物は元のサイズと位置を保持
+- 背景を人物の後ろに配置
+- 合成結果は自然で違和感がない
+- 出力形式：高品質 PNG（データURL形式）
+
+【入力】
+1番目の画像：人物写真（切り抜き済み）
+2番目の画像：背景画像`,
+          },
+          {
+            inlineData: {
+              data: cleanBase64(base64Image),
+              mimeType: 'image/png',
+            },
+          },
+          {
+            inlineData: {
+              data: cleanBase64(bgBase64),
+              mimeType: 'image/png',
+            },
+          },
+        ],
+      },
+      config: {
+        temperature: 0.0,
+      },
+    });
+
+    console.log('✅ Gemini の処理完了');
+
+    // 合成画像を抽出
+    const part = response.candidates?.[0]?.content?.parts?.find(
+      (p) => p.inlineData
+    );
+    if (!part?.inlineData) {
+      throw new Error('Gemini の応答に画像がありません');
+    }
+
+    const result = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+    console.log('📸 背景合成完了（Gemini）');
+    return result;
   } catch (error: any) {
     console.error('背景合成エラー:', error);
     throw new Error(`背景の合成に失敗しました: ${error.message}`);
