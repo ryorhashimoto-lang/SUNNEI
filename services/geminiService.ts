@@ -1,6 +1,8 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { ClothingOption, BackgroundOption } from "../types";
+import { getBackgroundImage } from '../constants/backgroundImages';
+import { getClothingImage } from '../constants/clothingImages';
 
 // Helper to remove data URL prefix
 const cleanBase64 = (dataUrl: string) => {
@@ -238,12 +240,75 @@ const generatePortrait = async (
 // EXPORTED FUNCTIONS
 // ==========================================================
 
+// 背景合成関数
 export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
-  return generatePortrait(base64Image, ClothingOption.None, option);
+  if (option === BackgroundOption.None) return base64Image;
+  
+  const bgImageUrl = getBackgroundImage(option);
+  if (!bgImageUrl) return base64Image;
+  
+  // 背景画像を合成
+  return await compositeImages(base64Image, bgImageUrl, 'background');
 };
 
+// 着せ替え合成関数
 export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
-  return generatePortrait(base64Image, option, BackgroundOption.None);
+  if (option === ClothingOption.None) return base64Image;
+  
+  const clothingImageUrl = getClothingImage(option);
+  if (!clothingImageUrl) return base64Image;
+  
+  // 着せ替え画像を合成
+  return await compositeImages(base64Image, clothingImageUrl, 'clothing');
+};
+
+// 画像合成ヘルパー関数
+const compositeImages = async (
+  baseImage: string, 
+  overlayUrl: string, 
+  type: 'background' | 'clothing'
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      reject(new Error('Canvas context not available'));
+      return;
+    }
+
+    // ベース画像を読み込み
+    const baseImg = new Image();
+    baseImg.onload = () => {
+      canvas.width = baseImg.width;
+      canvas.height = baseImg.height;
+
+      if (type === 'background') {
+        // 背景を先に描画
+        const bgImg = new Image();
+        bgImg.crossOrigin = 'anonymous';
+        bgImg.onload = () => {
+          ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+          ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        bgImg.onerror = () => reject(new Error('Failed to load background image'));
+        bgImg.src = overlayUrl;
+      } else {
+        // 着せ替えを上に描画
+        ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+        const clothingImg = new Image();
+        clothingImg.crossOrigin = 'anonymous';
+        clothingImg.onload = () => {
+          ctx.drawImage(clothingImg, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        clothingImg.onerror = () => reject(new Error('Failed to load clothing image'));
+        clothingImg.src = overlayUrl;
+      }
+    };
+    baseImg.onerror = () => reject(new Error('Failed to load base image'));
+    baseImg.src = baseImage;
+  });
 };
 
 export const repairHeicImage = async (base64Heic: string): Promise<string> => {
