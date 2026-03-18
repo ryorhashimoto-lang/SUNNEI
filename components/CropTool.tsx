@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { CropConfig, BackgroundOption } from '../types';
 import { getBackgroundImage } from '../constants/backgroundImages';
+import { getClothingImage } from '../constants/clothingImages';
 
 interface CropToolProps {
   imageSrc: string;
@@ -11,12 +12,13 @@ interface CropToolProps {
   backgroundColor?: string;  // 背景色
   backgroundImage?: string;  // 背景画像URL
   backgroundOption?: BackgroundOption;  // 
+  clothingOption?: ClothingOption;  //
 }
 
 // 遺影写真用の比率を 5:6 に設定 (3000px : 3600px)
 const ASPECT_RATIO = 5 / 6;
 
-const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm, onCancel, backgroundColor, backgroundImage, backgroundOption }) => {
+const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm, onCancel, backgroundColor, backgroundImage, backgroundOption, clothingOption }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   
@@ -62,6 +64,27 @@ const getBackgroundStyle = () => {
     backgroundColor: backgroundColor || '#000',
   };
 };
+    // 着せ替え画像を表示する関数
+  const renderClothing = () => {
+    if (clothingOption && clothingOption !== ClothingOption.None) {
+      const clothingImg = getClothingImage(clothingOption);
+      if (clothingImg) {
+        return (
+          <img
+            src={clothingImg}
+            alt="Clothing"
+            className="absolute pointer-events-none z-20"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain'
+            }}
+          />
+        );
+      }
+    }
+    return null;
+  };
   // Initialize/Restore config only after image is loaded and layout is ready
   const handleImageLoad = () => {
      if (initialConfig && containerRef.current && imageRef.current) {
@@ -281,6 +304,9 @@ const getBackgroundStyle = () => {
                 maxHeight: '100%'
               }} 
             />
+
+            {/* 着せ替え画像 */}
+            {renderClothing()}
 
             {/* Viewport Frame */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
