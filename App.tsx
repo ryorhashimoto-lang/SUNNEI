@@ -273,6 +273,7 @@ const App: React.FC = () => {
                     setAppState(originalCropped ? AppState.EDITING : AppState.UPLOAD);
                   }} 
                   backgroundOption={appliedBg}
+                  clothingOption={appliedClothing}
                 />
               )}
               
