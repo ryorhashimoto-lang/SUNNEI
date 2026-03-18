@@ -44,15 +44,19 @@ export const drawMemorialPhoto = async ({
   ctx.clearRect(0, 0, width, height);
   
   // 背景を描画する関数
-  const drawBackground = (bgOption?: BackgroundOption) => {
+const drawBackground = (bgOption?: BackgroundOption) => {
   // personImage がある場合は背景を描画しない
   // （personImage には既に背景が合成されている）
   if (personImage) {
-    return;  // ← 背景描画をスキップ
+    console.log('✅ personImage には背景が含まれているので、グラデーション背景は描画しない');
+    return;
   }
+
+  console.log('📍 背景グラデーションを描画:', bgOption);
 
   // personImage がない場合のみ背景描画
   if (!bgOption || bgOption === 'none') {
+    console.log('⚫ 黒い背景を描画');
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
     return;
@@ -77,8 +81,9 @@ export const drawMemorialPhoto = async ({
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
 };
-  // 背景を描画
-  drawBackground(backgroundOption);
+
+// 背景を描画
+drawBackground(backgroundOption);
 
   // Load Images
 // If AI image exists, that's our base. If not, we use the original.
