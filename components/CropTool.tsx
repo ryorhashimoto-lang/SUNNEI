@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { CropConfig } from '../types';
+import { CropConfig, BackgroundOption } from '../types';
+import { getBackgroundImage } from '../constants/backgroundImages';
 
 interface CropToolProps {
   imageSrc: string;
