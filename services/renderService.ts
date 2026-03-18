@@ -81,11 +81,21 @@ export const drawMemorialPhoto = async ({
   drawBackground(backgroundOption);
 
   // Load Images
-  // If AI image exists, that's our base. If not, we use the original.
-  const baseImageSrc = personImage || originalCropped;
-  if (!baseImageSrc) return;
+// If AI image exists, that's our base. If not, we use the original.
+console.log('📸 drawMemorialPhoto called with:');
+console.log('  personImage:', personImage ? '✅ あり（背景合成済み）' : '❌ なし');
+console.log('  originalCropped:', originalCropped ? '✅ あり' : '❌ なし');
 
-  const baseImg = await loadImage(baseImageSrc);
+const baseImageSrc = personImage || originalCropped;
+console.log('📍 使用する画像:', personImage ? 'personImage（背景合成済み）' : 'originalCropped（背景なし）');
+
+if (!baseImageSrc) {
+  console.error('❌ 画像がありません！');
+  return;
+}
+
+const baseImg = await loadImage(baseImageSrc);
+console.log('✅ 画像の読み込み完了:', baseImg.width, 'x', baseImg.height);
 
   // --- Helper to calculate "Cover" fit ---
   // Calculates coordinates to draw 'img' into 'targetW/H' using object-fit: cover logic
