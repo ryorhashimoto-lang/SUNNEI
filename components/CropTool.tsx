@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { CropConfig, BackgroundOption } from '../types';
+import { CropConfig, BackgroundOption, ClothingOption } from '../types';
 import { getBackgroundImage } from '../constants/backgroundImages';
 import { getClothingImage } from '../constants/clothingImages';
 
