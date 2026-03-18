@@ -14,15 +14,41 @@ const cleanBase64 = (dataUrl: string) => {
 // EXPORTED FUNCTIONS
 // ==========================================================
 
+
 // 背景合成関数
 export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
-  if (option === BackgroundOption.None) return base64Image;
-  
-  const bgImageUrl = getBackgroundImage(option);
-  if (!bgImageUrl) return base64Image;
-  
-  // 背景画像を合成
-  return await compositeImages(base64Image, bgImageUrl, 'background');
+  try {
+    if (option === BackgroundOption.None) return base64Image;
+    
+    const bgImageUrl = getBackgroundImage(option);
+    if (!bgImageUrl) {
+      throw new Error(`背景画像が見つかりません: ${option}`);
+    }
+    
+    // 背景画像を合成
+    return await compositeImages(base64Image, bgImageUrl, 'background');
+  } catch (error: any) {
+    console.error('背景合成エラー:', error);
+    throw new Error(`背景の合成に失敗しました: ${error.message}`);
+  }
+};
+
+// 着せ替え合成関数
+export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
+  try {
+    if (option === ClothingOption.None) return base64Image;
+    
+    const clothingImageUrl = getClothingImage(option);
+    if (!clothingImageUrl) {
+      throw new Error(`着せ替え画像が見つかりません: ${option}`);
+    }
+    
+    // 着せ替え画像を合成
+    return await compositeImages(base64Image, clothingImageUrl, 'clothing');
+  } catch (error: any) {
+    console.error('着せ替え合成エラー:', error);
+    throw new Error(`着せ替えの合成に失敗しました: ${error.message}`);
+  }
 };
 
 // 着せ替え合成関数
