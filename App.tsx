@@ -105,47 +105,49 @@ const App: React.FC = () => {
   };
 
   const handleBgAction = async (option: BackgroundOption) => {
-    if (!originalCropped) return;
-    if (option === BackgroundOption.None) {
-      setPersonImage(null);
-      setAppliedBg(BackgroundOption.None);
-      setAppliedClothing(ClothingOption.None);
-      return;
-    }
+  if (!originalCropped) return;
+  if (option === BackgroundOption.None) {
+    setPersonImage(null);
+    setAppliedBg(BackgroundOption.None);
+    setAppliedClothing(ClothingOption.None);
+    return;
+  }
 
-    setStatus({ isProcessing: true, message: '背景を変更中...' });
-    try {
-      const base = personImage || originalCropped;
-      const result = await applyBackgroundSynthesis(base, option);
-      setPersonImage(result);
-      setAppliedBg(option);
-    } catch (e) {
-      setErrorModal({ isOpen: true, title: '背景合成エラー', message: '背景の生成に失敗しました。時間をおいて再度お試しください。' });
-    } finally {
-      setStatus({ isProcessing: false, message: '' });
-    }
-  };
+  setStatus({ isProcessing: true, message: '背景を変更中...' });
+  try {
+    const base = personImage || originalCropped;
+    // プレビュー用サイズ：1200 x 1440
+    const result = await applyBackgroundSynthesis(base, option, 1200, 1440);
+    setPersonImage(result);
+    setAppliedBg(option);
+  } catch (e) {
+    setErrorModal({ isOpen: true, title: '背景合成エラー', message: '背景の生成に失敗しました。時間をおいて再度お試しください。' });
+  } finally {
+    setStatus({ isProcessing: false, message: '' });
+  }
+};
 
   const handleClothingAction = async (option: ClothingOption) => {
-    if (!originalCropped) return;
-    if (option === ClothingOption.None && appliedBg === BackgroundOption.None) {
-        setPersonImage(null);
-        setAppliedClothing(ClothingOption.None);
-        return;
-    }
+  if (!originalCropped) return;
+  if (option === ClothingOption.None && appliedBg === BackgroundOption.None) {
+      setPersonImage(null);
+      setAppliedClothing(ClothingOption.None);
+      return;
+  }
 
-    setStatus({ isProcessing: true, message: '服装を変更中...' });
-    try {
-      const base = personImage || originalCropped;
-      const result = await applyClothingSynthesis(base, option);
-      setPersonImage(result);
-      setAppliedClothing(option);
-    } catch (e) {
-      setErrorModal({ isOpen: true, title: '生成エラー', message: '衣装の変更に失敗しました。' });
-    } finally {
-      setStatus({ isProcessing: false, message: '' });
-    }
-  };
+  setStatus({ isProcessing: true, message: '服装を変更中...' });
+  try {
+    const base = personImage || originalCropped;
+    // プレビュー用サイズ：1200 x 1440
+    const result = await applyClothingSynthesis(base, option, 1200, 1440);
+    setPersonImage(result);
+    setAppliedClothing(option);
+  } catch (e) {
+    setErrorModal({ isOpen: true, title: '生成エラー', message: '衣装の変更に失敗しました。' });
+  } finally {
+    setStatus({ isProcessing: false, message: '' });
+  }
+};
 
   const handleStartFinalCrop = async () => {
     if (!originalCropped) return;
