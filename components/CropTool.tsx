@@ -8,15 +8,15 @@ interface CropToolProps {
   initialConfig?: CropConfig | null;
   onConfirm: (croppedImage: string, config: CropConfig) => void;
   onCancel: () => void;
-  // ✨ 新しいプロパティを追加
   backgroundColor?: string;  // 背景色
   backgroundImage?: string;  // 背景画像URL
+  backgroundOption?: BackgroundOption;  // 
 }
 
 // 遺影写真用の比率を 5:6 に設定 (3000px : 3600px)
 const ASPECT_RATIO = 5 / 6;
 
-const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm, onCancel, backgroundColor, backgroundImage }) => {
+const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm, onCancel, backgroundColor, backgroundImage, backgroundOption }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   
@@ -35,18 +35,33 @@ const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm,
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null);
 
     // 背景スタイルを動的に生成する関数
-  const getBackgroundStyle = () => {
-    if (backgroundImage) {
+const getBackgroundStyle = () => {
+  // backgroundOption が指定されている場合、そちらを優先
+  if (backgroundOption && backgroundOption !== BackgroundOption.None) {
+    const bgImage = getBackgroundImage(backgroundOption);
+    if (bgImage) {
       return {
-        backgroundImage: `url(${backgroundImage})`,
+        backgroundImage: `url(${bgImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       };
     }
+  }
+  
+  // 既存の背景画像URLが指定されている場合
+  if (backgroundImage) {
     return {
-      backgroundColor: backgroundColor || '#000',
+      backgroundImage: `url(${backgroundImage})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
     };
+  }
+  
+  // デフォルト（黒背景）
+  return {
+    backgroundColor: backgroundColor || '#000',
   };
+};
   // Initialize/Restore config only after image is loaded and layout is ready
   const handleImageLoad = () => {
      if (initialConfig && containerRef.current && imageRef.current) {
