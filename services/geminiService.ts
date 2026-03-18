@@ -51,16 +51,6 @@ export const applyClothingSynthesis = async (base64Image: string, option: Clothi
   }
 };
 
-// 着せ替え合成関数
-export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
-  if (option === ClothingOption.None) return base64Image;
-  
-  const clothingImageUrl = getClothingImage(option);
-  if (!clothingImageUrl) return base64Image;
-  
-  // 着せ替え画像を合成
-  return await compositeImages(base64Image, clothingImageUrl, 'clothing');
-};
 
 // 画像合成ヘルパー関数
 const compositeImages = async (
