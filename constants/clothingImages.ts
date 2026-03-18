@@ -6,10 +6,10 @@
 import { ClothingOption } from '../types';
 
 export const CLOTHING_IMAGES: Record<string, string> = {
-  [ClothingOption.MensSuitBlack]: '/clothing/mens_suit_black.png',
-  [ClothingOption.MensKimonoBlack]: '/clothing/mens_kimono_black.png',
-  [ClothingOption.WomensSuitBlack]: '/clothing/womens_suit_black.png',
-  [ClothingOption.WomensKimonoBlack]: '/clothing/womens_kimono_black.png',
+  [ClothingOption.MensSuitBlack]: '/clothing/mens_suit_black.jpg',
+  [ClothingOption.MensKimonoBlack]: '/clothing/mens_kimono_black.jpg',
+  [ClothingOption.WomensSuitBlack]: '/clothing/womens_suit_black.jpg',
+  [ClothingOption.WomensKimonoBlack]: '/clothing/womens_kimono_black.jpg',
 };
 
 /**
