@@ -51,7 +51,6 @@ export const applyClothingSynthesis = async (base64Image: string, option: Clothi
   }
 };
 
-
 // 画像合成ヘルパー関数
 const compositeImages = async (
   baseImage: string, 
@@ -77,11 +76,15 @@ const compositeImages = async (
         const bgImg = new Image();
         bgImg.crossOrigin = 'anonymous';
         bgImg.onload = () => {
+          console.log('✅ 背景画像を読み込み成功:', overlayUrl);
           ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
           ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
           resolve(canvas.toDataURL('image/png'));
         };
-        bgImg.onerror = () => reject(new Error('Failed to load background image'));
+        bgImg.onerror = () => {
+          console.error('❌ 背景画像の読み込み失敗:', overlayUrl);
+          reject(new Error(`Failed to load background image: ${overlayUrl}`));
+        };
         bgImg.src = overlayUrl;
       } else {
         // 着せ替えを上に描画
@@ -89,14 +92,21 @@ const compositeImages = async (
         const clothingImg = new Image();
         clothingImg.crossOrigin = 'anonymous';
         clothingImg.onload = () => {
+          console.log('✅ 着せ替え画像を読み込み成功:', overlayUrl);
           ctx.drawImage(clothingImg, 0, 0, canvas.width, canvas.height);
           resolve(canvas.toDataURL('image/png'));
         };
-        clothingImg.onerror = () => reject(new Error('Failed to load clothing image'));
+        clothingImg.onerror = () => {
+          console.error('❌ 着せ替え画像の読み込み失敗:', overlayUrl);
+          reject(new Error(`Failed to load clothing image: ${overlayUrl}`));
+        };
         clothingImg.src = overlayUrl;
       }
     };
-    baseImg.onerror = () => reject(new Error('Failed to load base image'));
+    baseImg.onerror = () => {
+      console.error('❌ ベース画像の読み込み失敗:', baseImage);
+      reject(new Error('Failed to load base image'));
+    };
     baseImg.src = baseImage;
   });
 };
