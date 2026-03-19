@@ -10,7 +10,7 @@ interface RenderOptions {
   height: number;
   isHighRes?: boolean;
   finalCropConfig?: CropConfig | null;
-  backgroundOption?: BackgroundOption;  // ✨ この行を追加
+  backgroundOption?: BackgroundOption;  
 }
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
