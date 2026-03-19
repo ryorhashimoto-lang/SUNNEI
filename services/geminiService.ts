@@ -11,7 +11,7 @@ const cleanBase64 = (dataUrl: string) => {
 /**
  * Prompt generation logic: Defines the visual style of the requested output.
  */
-const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
+const getPrompts = (clothing: ClothingOption) => {
   let clothingPrompt = "";
   
   // Enhanced descriptions for Material Physics & Cultural Accuracy
@@ -37,43 +37,7 @@ const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
       break;
   }
 
-  let backgroundPrompt = "";
-  const qualitySuffix = "clean, professional studio gradient background with distinct edge separation from the subject, sharp high-end photographic finish";
-  
-  switch (background) {
-    case BackgroundOption.None:
-      backgroundPrompt = "Keep the background exactly as it is.";
-      break;
-    case BackgroundOption.SoftBlue:
-      backgroundPrompt = `a very light, pale blue ${qualitySuffix}`;
-      break;
-    case BackgroundOption.SoftPink:
-      backgroundPrompt = `a very light, pale pink ${qualitySuffix}`;
-      break;
-    case BackgroundOption.WisteriaPurple:
-      backgroundPrompt = `a very light, pale purple ${qualitySuffix}`;
-      break;
-    case BackgroundOption.FreshGreen:
-      backgroundPrompt = `a very light, pale green ${qualitySuffix}`;
-      break;
-    case BackgroundOption.WhiteGrey:
-      backgroundPrompt = `a bright, clean white-grey ${qualitySuffix}`;
-      break;
-    case BackgroundOption.Sky:
-      backgroundPrompt = `A vast, pristine blue sky filled with soft, fluffy white cumulus clouds. Peaceful, serene, and gentle atmosphere, evoking a sense of heavenly rest and eternal peace. Soft, diffuse natural daylight, professional landscape photography, highly detailed. ${qualitySuffix}`;
-      break;
-    case BackgroundOption.Sea:
-      backgroundPrompt = `photorealistic, hyper-realistic, extremely detailed depiction of a vast, calm, and serene ocean with pristine water and gentle, diffuse daylight resembling a professional studio backdrop for portraiture. The horizon is vast and clear. The atmosphere is peaceful, comforting, and sacred, evoking a sense of heavenly rest and eternal peace. Minimalist composition focused on the water and sky, uninterrupted ${qualitySuffix}`;
-      break;
-    case BackgroundOption.CherryBlossom:
-      backgroundPrompt = `A photorealistic, high-quality portrait backdrop of pale pink cherry blossoms in soft focus. Beautiful bokeh, soft spring lighting, peaceful and sacred atmosphere ${qualitySuffix}`;
-      break;
-    case BackgroundOption.FreshNewGreen:
-      backgroundPrompt = `A photorealistic, high-quality portrait backdrop of fresh green leaves in soft focus. Beautiful bokeh with gentle sunbeams, peaceful and sacred atmosphere ${qualitySuffix}`;
-           break;
-  }
-
-  return { clothingPrompt, backgroundPrompt };
+  return { clothingPrompt };
 };
 
 // Retry helper function
@@ -115,7 +79,7 @@ const generatePortrait = async (
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const { clothingPrompt, backgroundPrompt } = getPrompts(clothing, background);
+  const { clothingPrompt } = getPrompts(clothing);
 
   // === Chain of Thought Instruction Construction ===
   const instructionList: string[] = [];
@@ -145,16 +109,8 @@ const generatePortrait = async (
     instructionList.push("  - TABOO: Never generate 'Right Over Left' (this is for the deceased).");
   }
 
-  // [Phase 4: Background (The "Stage")]
-  if (background !== BackgroundOption.None) {
-    instructionList.push(`STEP 4 [BACKGROUND]: Change background to: ${backgroundPrompt}`);
-    instructionList.push("  - SUBJECT PROTECTION: Keep the person's body, clothing, and skin details SHARP and DETAILED.");
-    instructionList.push("  - Do NOT apply smoothing, blurring, or uniform texture to the subject's body.");
-  } else {
-    instructionList.push("STEP 4 [BACKGROUND]: Keep original background.");
-  }
 
-  // [Phase 5: Identity Protection (The "Guardian")]
+  // [Phase 4: Identity Protection (The "Guardian")]
   // 共通の重要事項：顔の保護
   instructionList.push("FINAL STEP [IDENTITY PROTECTION]:");
   instructionList.push("  - FACE LOCK: Do NOT move the coordinates of eyes, nose, mouth, and eyebrows.");
@@ -238,10 +194,6 @@ const generatePortrait = async (
 // EXPORTED FUNCTIONS
 // ==========================================================
 
-export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
-  return generatePortrait(base64Image, ClothingOption.None, option);
-};
-
 export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
   return generatePortrait(base64Image, option, BackgroundOption.None);
 };
@@ -264,4 +216,193 @@ export const repairHeicImage = async (base64Heic: string): Promise<string> => {
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
     if (!part?.inlineData) throw new Error("Repair failed");
     return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+};
+
+
+// ============================================================
+// 背景ファイル + 人物を合成する関数
+// ============================================================
+
+/**
+ * public/backgrounds/ から背景ファイルを取得して Base64 に変換
+ */
+const fetchBackgroundAsBase64 = async (
+  backgroundOption: BackgroundOption
+): Promise<string> => {
+  if (backgroundOption === BackgroundOption.None) {
+    return '';
+  }
+
+  const backgroundPath = `/backgrounds/${backgroundOption}.png`;
+  try {
+    const response = await fetch(backgroundPath);
+    if (!response.ok) {
+      throw new Error(`背景ファイルが見つかりません: ${backgroundPath}`);
+    }
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('背景ファイルの読み込み失敗:', error);
+    throw error;
+  }
+};
+
+/**
+ * 背景ファイル + 人物画像を Gemini で合成
+ * 
+ * @param personBase64 - 人物画像（Base64）
+ * @param backgroundOption - 背景オプション
+ * @returns 合成済み画像（Base64）
+ */
+export const compositeBackgroundWithPerson = async (
+  personBase64: string,
+  backgroundOption: BackgroundOption
+): Promise<string> => {
+  // 背景なしの場合は人物画像をそのまま返す
+  if (backgroundOption === BackgroundOption.None) {
+    return personBase64;
+  }
+
+  if (!process.env.API_KEY) {
+    throw new Error('API Key is missing.');
+  }
+
+  try {
+    // 背景ファイルを Base64 に変換
+    const backgroundBase64 = await fetchBackgroundAsBase64(backgroundOption);
+
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    // ============================================================
+    // プロンプト（現在の generatePortrait と同じ高品質指示）
+    // ============================================================
+    const prompt = `
+      Role: You are a master professional retoucher (Compositor) specializing in Japanese memorial portraits (Iei).
+      Task: Seamlessly composite the person into the background with high-quality results.
+
+      EXECUTION PLAN:
+
+      STEP 1 [BACKGROUND INTEGRATION]:
+        - Use the provided background image as the base layer
+        - Ensure the background is preserved and clear
+
+      STEP 2 [PERSON PLACEMENT]:
+        - Seamlessly integrate the person into the background
+        - Adjust lighting to match the background's light source
+        - Blend colors and tone to match the background atmosphere
+        - Smooth the edges and boundaries naturally
+
+      STEP 3 [ADVANCED COMPOSITING]:
+        - EDGE BLENDING: Smooth hair edges, face edges, and clothing edges
+        - LIGHTING CORRECTION: Match the person's lighting with the background
+        - COLOR HARMONY: Adjust the person's color temperature to match the background
+        - SHADOW & DEPTH: Add subtle shadows to create depth and natural integration
+
+      STEP 4 [TEXTURE & DETAIL PRESERVATION]:
+        - SKIN TEXTURE: Keep the original skin texture exactly as captured
+        - HAIR DETAILS: Preserve hair texture and fine strands
+        - FABRIC TEXTURE: Keep the original clothing texture
+        - Do NOT over-smooth or artificially enhance
+
+      FINAL STEP [QUALITY ASSURANCE]:
+        - FACE LOCK: Keep facial coordinates and features intact
+        - IDENTITY MARKERS: Preserve moles, scars, and age spots
+        - NATURAL APPEARANCE: Ensure the result looks photorealistic and natural
+        - NO ARTIFACTS: Remove any blending artifacts or halos around the subject
+    `;
+
+    const response = await withRetry(async () => {
+      return await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: [
+            { text: prompt },
+            {
+              text: '[BACKGROUND IMAGE]',
+            },
+            {
+              inlineData: {
+                mimeType: 'image/png',
+                data: backgroundBase64,
+              },
+            },
+            {
+              text: '[PERSON IMAGE]',
+            },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: cleanBase64(personBase64),
+              },
+            },
+          ],
+        },
+        config: {
+          temperature: 0.0,
+        },
+      });
+    });
+
+    const candidates = response.candidates;
+    if (candidates && candidates.length > 0) {
+      const parts = candidates[0].content?.parts;
+      if (parts) {
+        for (const part of parts) {
+          if (part.inlineData && part.inlineData.data) {
+            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+          }
+        }
+      }
+    }
+
+    throw new Error('合成結果が得られませんでした。別の写真をお試しください。');
+  } catch (error: any) {
+    console.error('Composite Error:', JSON.stringify(error, null, 2));
+
+    let errorMessage = error.message || '不明なエラーが発生しました';
+    let errorCode = error.status || error.code;
+
+    if (error.error) {
+      errorMessage = error.error.message || errorMessage;
+      errorCode = error.error.code || errorCode;
+    }
+
+    if (
+      errorCode === 429 ||
+      errorMessage.includes('429') ||
+      errorMessage.includes('quota') ||
+      errorMessage.includes('RESOURCE_EXHAUSTED')
+    ) {
+      throw new Error(
+        '【利用制限】本日のAI生成回数の上限、または短時間のアクセス上限に達しました。しばらく時間を置いてから再度お試しください。'
+      );
+    }
+
+    if (
+      errorCode === 500 ||
+      errorCode === 503 ||
+      errorMessage.includes('500') ||
+      errorMessage.includes('Rpc failed')
+    ) {
+      throw new Error(
+        '【サーバー混雑】現在AIサーバーが混み合っています。数分待ってから再度お試しください。'
+      );
+    }
+
+    if (errorMessage.includes('safety') || errorMessage.includes('blocked')) {
+      throw new Error(
+        '【安全フィルター】生成された画像が安全フィルターに引っかかりました。別の写真でお試しください。'
+      );
+    }
+
+    throw new Error(`合成エラー: ${errorMessage}`);
+  }
 };
