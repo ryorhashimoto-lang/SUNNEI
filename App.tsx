@@ -6,7 +6,10 @@ import PhotoCanvas from './components/PhotoCanvas';
 import CropTool from './components/CropTool';
 import LoginScreen from './components/LoginScreen';
 import ManagementDashboard from './components/ManagementDashboard';
-import { applyBackgroundSynthesis, applyClothingSynthesis } from './services/geminiService';
+import {
+  compositeBackgroundWithPerson,
+  applyClothingSynthesis,
+} from './services/geminiService';
 import { authService, AuthSession } from './services/authService';
 import { usageService } from './services/usageService';
 import { drawMemorialPhoto } from './services/renderService';
@@ -113,15 +116,18 @@ const App: React.FC = () => {
     return;
   }
 
-  setStatus({ isProcessing: true, message: '背景を変更中...' });
+  setStatus({ isProcessing: true, message: '背景を合成中...' });
   try {
     const base = personImage || originalCropped;
-    // プレビュー用サイズ：1200 x 1440
-    const result = await applyBackgroundSynthesis(base, option, 1200, 1440);
+    const result = await compositeBackgroundWithPerson(base, option);
     setPersonImage(result);
     setAppliedBg(option);
   } catch (e) {
-    setErrorModal({ isOpen: true, title: '背景合成エラー', message: '背景の生成に失敗しました。時間をおいて再度お試しください。' });
+    setErrorModal({
+      isOpen: true,
+      title: '背景合成エラー',
+      message: '背景の合成に失敗しました。時間をおいて再度お試しください。',
+    });
   } finally {
     setStatus({ isProcessing: false, message: '' });
   }
