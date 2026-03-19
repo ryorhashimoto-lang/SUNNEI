@@ -145,7 +145,7 @@ const App: React.FC = () => {
   try {
     const base = personImage || originalCropped;
     // プレビュー用サイズ：1200 x 1440
-    const result = await applyClothingSynthesis(base, option, 1200, 1440);
+    const result = await applyClothingSynthesis(base, option);
     setPersonImage(result);
     setAppliedClothing(option);
   } catch (e) {
