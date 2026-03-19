@@ -1,4 +1,5 @@
 
+
 import { CropConfig, BackgroundOption } from '../types';
 
 interface RenderOptions {
@@ -44,63 +45,42 @@ export const drawMemorialPhoto = async ({
   ctx.clearRect(0, 0, width, height);
   
   // 背景を描画する関数
-const drawBackground = (bgOption?: BackgroundOption) => {
-  // personImage がある場合は背景を描画しない
-  // （personImage には既に背景が合成されている）
-  if (personImage) {
-    console.log('✅ personImage には背景が含まれているので、グラデーション背景は描画しない');
-    return;
-  }
+  const drawBackground = (bgOption?: BackgroundOption) => {
+    if (!bgOption || bgOption === 'none') {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+      return;
+    }
 
-  console.log('📍 背景グラデーションを描画:', bgOption);
+    const gradients: Record<string, [string, string]> = {
+      'sky': ['#87CEEB', '#E0F6FF'],
+      'sea': ['#1E90FF', '#4169E1'],
+      'cherry_blossom': ['#FFB6C1', '#FFC0CB'],
+      'fresh_new_green': ['#90EE90', '#98FB98'],
+      'soft_blue': ['#e3f2fd', '#bbdefb'],
+      'soft_pink': ['#fce4ec', '#f8bbd0'],
+      'wisteria_purple': ['#f3e5f5', '#e1bee7'],
+      'fresh_green': ['#f1f8e9', '#dcedc8'],
+      'white_grey': ['#fafafa', '#f5f5f5'],
+    };
 
-  // personImage がない場合のみ背景描画
-  if (!bgOption || bgOption === 'none') {
-    console.log('⚫ 黒い背景を描画');
-    ctx.fillStyle = '#000000';
+    const colors = gradients[bgOption] || ['#000000', '#000000'];
+    const grad = ctx.createLinearGradient(0, 0, 0, height);
+    grad.addColorStop(0, colors[0]);
+    grad.addColorStop(1, colors[1]);
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
-    return;
-  }
-
-  const gradients: Record<string, [string, string]> = {
-    'sky': ['#87CEEB', '#E0F6FF'],
-    'sea': ['#1E90FF', '#4169E1'],
-    'cherry_blossom': ['#FFB6C1', '#FFC0CB'],
-    'fresh_new_green': ['#90EE90', '#98FB98'],
-    'soft_blue': ['#e3f2fd', '#bbdefb'],
-    'soft_pink': ['#fce4ec', '#f8bbd0'],
-    'wisteria_purple': ['#f3e5f5', '#e1bee7'],
-    'fresh_green': ['#f1f8e9', '#dcedc8'],
-    'white_grey': ['#fafafa', '#f5f5f5'],
   };
 
-  const colors = gradients[bgOption] || ['#000000', '#000000'];
-  const grad = ctx.createLinearGradient(0, 0, 0, height);
-  grad.addColorStop(0, colors[0]);
-  grad.addColorStop(1, colors[1]);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, width, height);
-};
-
-// 背景を描画
-drawBackground(backgroundOption);
+  // 背景を描画
+  drawBackground(backgroundOption);
 
   // Load Images
-// If AI image exists, that's our base. If not, we use the original.
-console.log('📸 drawMemorialPhoto called with:');
-console.log('  personImage:', personImage ? '✅ あり（背景合成済み）' : '❌ なし');
-console.log('  originalCropped:', originalCropped ? '✅ あり' : '❌ なし');
+  // If AI image exists, that's our base. If not, we use the original.
+  const baseImageSrc = personImage || originalCropped;
+  if (!baseImageSrc) return;
 
-const baseImageSrc = personImage || originalCropped;
-console.log('📍 使用する画像:', personImage ? 'personImage（背景合成済み）' : 'originalCropped（背景なし）');
-
-if (!baseImageSrc) {
-  console.error('❌ 画像がありません！');
-  return;
-}
-
-const baseImg = await loadImage(baseImageSrc);
-console.log('✅ 画像の読み込み完了:', baseImg.width, 'x', baseImg.height);
+  const baseImg = await loadImage(baseImageSrc);
 
   // --- Helper to calculate "Cover" fit ---
   // Calculates coordinates to draw 'img' into 'targetW/H' using object-fit: cover logic
