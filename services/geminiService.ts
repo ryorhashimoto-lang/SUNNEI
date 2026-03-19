@@ -71,8 +71,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Pr
  */
 const generatePortrait = async (
   imageBase64: string,
-  clothing: ClothingOption,
-  background: BackgroundOption
+  clothing: ClothingOption
 ): Promise<string> => {
   if (!process.env.API_KEY) {
     throw new Error("API Key is missing.");
