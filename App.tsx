@@ -119,7 +119,7 @@ const App: React.FC = () => {
   setStatus({ isProcessing: true, message: '背景を合成中...' });
   try {
     const base = personImage || originalCropped;
-    const result = await applyBackgroundSynthesis(base, option, 1200, 1440);
+    const result = await applyBackgroundSynthesis(base, option);
     setPersonImage(result);
     setAppliedBg(option);
   } catch (e) {
