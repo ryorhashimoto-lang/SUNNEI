@@ -1,218 +1,266 @@
-
+import { GoogleGenAI } from "@google/genai";
 import { ClothingOption, BackgroundOption } from "../types";
 
-
-// 背景画像のパスを取得
-const getBackgroundImage = (option: BackgroundOption): string | null => {
-  const backgroundMap: Record<BackgroundOption, string> = {
-    [BackgroundOption.None]: '',
-    [BackgroundOption.Sky]: '/backgrounds/sky.png',
-    [BackgroundOption.Sea]: '/backgrounds/sea.png',
-    [BackgroundOption.CherryBlossom]: '/backgrounds/cherry_blossom.png',
-    [BackgroundOption.FreshNewGreen]: '/backgrounds/fresh_new_green.png',
-    [BackgroundOption.SoftBlue]: '/backgrounds/soft_blue.png',
-    [BackgroundOption.SoftPink]: '/backgrounds/soft_pink.png',
-    [BackgroundOption.WisteriaPurple]: '/backgrounds/wisteria_purple.png',
-    [BackgroundOption.FreshGreen]: '/backgrounds/fresh_green.png',
-    [BackgroundOption.WhiteGrey]: '/backgrounds/white_grey.png',
-  };
-
-  return backgroundMap[option] || null;
+// Helper to remove data URL prefix
+const cleanBase64 = (dataUrl: string) => {
+  if (!dataUrl.startsWith("data:")) return dataUrl;
+  return dataUrl.split(',')[1];
 };
 
-// 服装画像のパスを取得
-const getClothingImage = (option: ClothingOption): string | null => {
-  const clothingMap: Record<ClothingOption, string> = {
-    [ClothingOption.None]: '',
-    [ClothingOption.MensSuitBlack]: '/clothing/mens_suit_black.jpg',
-    [ClothingOption.MensKimonoBlack]: '/clothing/mens_kimono_black.jpg',
-    [ClothingOption.WomensSuitBlack]: '/clothing/womens_suit_black.jpg',
-    [ClothingOption.WomensKimonoBlack]: '/clothing/womens_kimono_black.jpg',
-  };
+/**
+ * Prompt generation logic: Defines the visual style of the requested output.
+ */
+const getPrompts = (clothing: ClothingOption, background: BackgroundOption) => {
+  let clothingPrompt = "";
+  
+  // Enhanced descriptions for Material Physics & Cultural Accuracy
+  switch (clothing) {
+    case ClothingOption.None:
+      clothingPrompt = "";
+      break;
+    
+    // Men
+    case ClothingOption.MensSuitBlack:
+      clothingPrompt = "a premium formal black mourning suit (Super Black matte wool, approx 300gsm weight). White shirt. Tie: Solid matte black silk mourning tie, plain knot (or Windsor), NO fashion dimples, strict solemn style. The lapel has a soft 'roll' indicating high-quality tailoring.";
+      break;
+    case ClothingOption.MensKimonoBlack:
+      clothingPrompt = "服装は日本の伝統的な喪服で、漆黒の無地の羽織と着物を着用している。羽織の左右の胸元にのみ、白色ではっきりと染め抜かれた家紋（紋）がそれぞれ1つずつ、合計2つある（抱き紋）。生地自体にはこの家紋以外の地紋、柄、模様、刺繍、デザインは一切なく、完全に均一な黒色である。 首元から、白い半衿（長襦袢の襟）が清潔に少し見えている。";
+      break;
 
-  return clothingMap[option] || null;
+    // Women
+    case ClothingOption.WomensSuitBlack:
+      clothingPrompt = "a women's high-quality formal black mourning ensemble (matte black jacket and dress, non-shiny deep black fabric). Accessories: A single strand of white pearls (matte luster). Modest, feminine tailored fit, high neckline.";
+      break;
+    case ClothingOption.WomensKimonoBlack:
+      clothingPrompt = "The character is wearing traditional Japanese formal mourning attire (Mofuku). It consists of a solid, jet-black kimono and a matching jet-black haori coat. There are exactly two family crests (Kamon) clearly dyed in crisp white on the front: one on each side of the haori's chest (Dakimon). Aside from these two crests, the fabric is completely void of any woven patterns, textures, embroidery, or designs—a perfectly uniform, deep matte black. A clean, white under-collar (han-eri) is neatly visible at the neckline.";
+      break;
+  }
+
+  let backgroundPrompt = "";
+  const qualitySuffix = "clean, professional studio gradient background with distinct edge separation from the subject, sharp high-end photographic finish";
+  
+  switch (background) {
+    case BackgroundOption.None:
+      backgroundPrompt = "Keep the background exactly as it is.";
+      break;
+    case BackgroundOption.SoftBlue:
+      backgroundPrompt = `a very light, pale blue ${qualitySuffix}`;
+      break;
+    case BackgroundOption.SoftPink:
+      backgroundPrompt = `a very light, pale pink ${qualitySuffix}`;
+      break;
+    case BackgroundOption.WisteriaPurple:
+      backgroundPrompt = `a very light, pale purple ${qualitySuffix}`;
+      break;
+    case BackgroundOption.FreshGreen:
+      backgroundPrompt = `a very light, pale green ${qualitySuffix}`;
+      break;
+    case BackgroundOption.WhiteGrey:
+      backgroundPrompt = `a bright, clean white-grey ${qualitySuffix}`;
+      break;
+    case BackgroundOption.Sky:
+      backgroundPrompt = `A vast, pristine blue sky filled with soft, fluffy white cumulus clouds. Peaceful, serene, and gentle atmosphere, evoking a sense of heavenly rest and eternal peace. Soft, diffuse natural daylight, professional landscape photography, highly detailed. ${qualitySuffix}`;
+      break;
+    case BackgroundOption.Sea:
+      backgroundPrompt = `photorealistic, hyper-realistic, extremely detailed depiction of a vast, calm, and serene ocean with pristine water and gentle, diffuse daylight resembling a professional studio backdrop for portraiture. The horizon is vast and clear. The atmosphere is peaceful, comforting, and sacred, evoking a sense of heavenly rest and eternal peace. Minimalist composition focused on the water and sky, uninterrupted ${qualitySuffix}`;
+      break;
+    case BackgroundOption.CherryBlossom:
+      backgroundPrompt = `A photorealistic, high-quality portrait backdrop of pale pink cherry blossoms in soft focus. Beautiful bokeh, soft spring lighting, peaceful and sacred atmosphere ${qualitySuffix}`;
+      break;
+    case BackgroundOption.FreshNewGreen:
+      backgroundPrompt = `A photorealistic, high-quality portrait backdrop of fresh green leaves in soft focus. Beautiful bokeh with gentle sunbeams, peaceful and sacred atmosphere ${qualitySuffix}`;
+      break;
+  }
+
+  return { clothingPrompt, backgroundPrompt };
 };
 
-// Blob を base64 に変換
-const blobToBase64 = (blob: Blob): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result as string;
-      resolve(result.split(',')[1]);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+// Retry helper function
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> {
+  try {
+    return await fn();
+  } catch (error: any) {
+    const isTransient = 
+      error.status === 500 || 
+      error.status === 503 ||
+      (error.error && (error.error.code === 500 || error.error.code === 503)) ||
+      (error.message && (
+        error.message.includes("500") || 
+        error.message.includes("Rpc failed") || 
+        error.message.includes("overloaded") || 
+        error.message.includes("unavailable")
+      ));
+
+    if (retries > 0 && isTransient) {
+      console.warn(`Transient error detected. Retrying in ${delay}ms... (${retries} attempts left)`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return withRetry(fn, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Core generation logic: Hybrid "Chain of Thought" strategy
+ * Combines "Restoration/Inpainting" strength with "Physics/Camera" realism.
+ */
+const generatePortrait = async (
+  imageBase64: string,
+  clothing: ClothingOption,
+  background: BackgroundOption
+): Promise<string> => {
+  if (!process.env.API_KEY) {
+    throw new Error("API Key is missing.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const { clothingPrompt, backgroundPrompt } = getPrompts(clothing, background);
+
+  // === Chain of Thought Instruction Construction ===
+  const instructionList: string[] = [];
+
+  // [Phase 1: Digital Restoration (The "Eraser" & "Builder")]
+  // 強力な除去・復元指示
+  instructionList.push("STEP 1 [DIGITAL RESTORATION]:");
+  instructionList.push("  - IDENTIFY and REMOVE all obstructions in front of the subject (e.g., other people's hands, bouquets, babies, microphones, text overlays).");
+  instructionList.push("  - INPAINTING: Do not leave empty space. Anatomically reconstruct the 'chest', 'shoulders', and 'body' that were hidden behind the objects.");
+  instructionList.push("  - TEXTURE: Keep the original skin texture exactly as captured, including natural grain and photographic characteristics. Do NOT remove or alter the natural texture patterns. Preserve authenticity over artificial enhancement.");
+
+  // [Phase 2: Clothing Simulation (The "Tailor")]
+  // 安定版の強み：生地の重さと質感
+  if (clothing !== ClothingOption.None) {
+    instructionList.push(`STEP 2 [CLOTHING GENERATION]: Change clothing to: ${clothingPrompt}`);
+    instructionList.push("  - FABRIC PHYSICS: Calculate as 300g/m² Heavy Wool/Silk. The fabric must drape with weight. Shoulders should be structured, not round like a T-shirt.");
+    instructionList.push("  - COLLAR FIT: The collar must sit with weight on the clavicles.");
+  } else {
+    instructionList.push("STEP 2 [CLOTHING]: Keep the original clothing.");
+  }
+
+  // [Phase 3: Cultural Rules (The "Master")]
+  // 安定版の強み：着付けの絶対ルール
+  if (clothing === ClothingOption.MensKimonoBlack || clothing === ClothingOption.WomensKimonoBlack) {
+    instructionList.push("STEP 3 [CULTURAL RULES - CRITICAL]:");
+    instructionList.push("  - KIMONO COLLAR: Must be 'Left Over Right' (creates a lowercase 'y' shape on chest).");
+    instructionList.push("  - TABOO: Never generate 'Right Over Left' (this is for the deceased).");
+  }
+
+  // [Phase 4: Background (The "Stage")]
+  if (background !== BackgroundOption.None) {
+    instructionList.push(`STEP 4 [BACKGROUND]: Change background to: ${backgroundPrompt}`);
+    instructionList.push("  - SUBJECT PROTECTION: Keep the person's body, clothing, and skin details SHARP and DETAILED.");
+    instructionList.push("  - Do NOT apply smoothing, blurring, or uniform texture to the subject's body.");
+  } else {
+    instructionList.push("STEP 4 [BACKGROUND]: Keep original background.");
+  }
+
+  // [Phase 5: Identity Protection (The "Guardian")]
+  // 共通の重要事項：顔の保護
+  instructionList.push("FINAL STEP [IDENTITY PROTECTION]:");
+  instructionList.push("  - FACE LOCK: Do NOT move the coordinates of eyes, nose, mouth, and eyebrows.");
+  instructionList.push("  - IDENTITY MARKERS: Preserve moles, scars, and age spots. These are the person's history. Do not over-smooth the skin.");
+
+  const prompt = `
+    Role: You are a master professional retoucher (Compositor) specializing in Japanese memorial portraits (Iei).
+    Task: Create a respectful, high-quality portrait by following this strict execution plan.
+
+    EXECUTION PLAN:
+    ${instructionList.join('\n')}
+  `;
+
+  try {
+    const response = await withRetry(async () => {
+      return await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: cleanBase64(imageBase64),
+              },
+            },
+          ],
+        },
+        config: {
+          temperature: 0.0,
+          imageConfig: {
+             aspectRatio: "3:4" 
+          }
+        }
+      });
+    });
+
+    const candidates = response.candidates;
+    if (candidates && candidates.length > 0) {
+      // Fix: Add optional chaining and null check to prevent "Object is possibly undefined" error
+      const parts = candidates[0].content?.parts;
+      if (parts) {
+        for (const part of parts) {
+          if (part.inlineData && part.inlineData.data) {
+            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+          }
+        }
+      }
+    }
+
+    throw new Error("画像が生成されませんでした。別の写真をお試しください。");
+
+  } catch (error: any) {
+    console.error("Gemini API Error:", JSON.stringify(error, null, 2));
+
+    let errorMessage = error.message || "不明なエラーが発生しました";
+    let errorCode = error.status || error.code;
+    
+    if (error.error) {
+      errorMessage = error.error.message || errorMessage;
+      errorCode = error.error.code || errorCode;
+    }
+
+    if (errorCode === 429 || errorMessage.includes("429") || errorMessage.includes("quota") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
+      throw new Error("【利用制限】本日のAI生成回数の上限、または短時間のアクセス上限に達しました。しばらく時間を置いてから再度お試しください。");
+    }
+
+    if (errorCode === 500 || errorCode === 503 || errorMessage.includes("500") || errorMessage.includes("Rpc failed")) {
+      throw new Error("【サーバー混雑】現在AIサーバーが混み合っています。数分待ってから再度お試しください。");
+    }
+    
+    if (errorMessage.includes("safety") || errorMessage.includes("blocked")) {
+      throw new Error("【安全フィルター】生成された画像が安全フィルターに引っかかりました。別の写真でお試しください。");
+    }
+
+    throw new Error(`AI生成エラー: ${errorMessage}`);
+  }
 };
-
-
 
 // ==========================================================
 // EXPORTED FUNCTIONS
 // ==========================================================
 
-
-// 背景合成（サーバー経由）
-export const applyBackgroundSynthesis = async (
-  base64Image: string, 
-  option: BackgroundOption,
-): Promise<string> => {
-  try {
-    if (option === BackgroundOption.None) return base64Image;
-
-    console.log('🤖 背景合成を開始:', option);
-
-    // パブリック背景画像を取得
-    const bgImageUrl = getBackgroundImage(option);
-    if (!bgImageUrl) {
-      throw new Error(`背景画像が見つかりません: ${option}`);
-    }
-
-    console.log('📸 背景画像を読み込み中:', bgImageUrl);
-
-    // 背景画像を fetch して base64 に変換
-    const bgResponse = await fetch(bgImageUrl);
-    if (!bgResponse.ok) {
-      throw new Error(`背景画像の読み込みに失敗: ${bgResponse.statusText}`);
-    }
-    const bgBlob = await bgResponse.blob();
-    const bgBase64 = await blobToBase64(bgBlob);
-
-    console.log('✅ 背景画像を base64 に変換完了');
-    console.log('🔄 サーバーに合成を依頼中...');
-
-    // サーバーの新しいエンドポイントを呼び出す
-    const response = await fetch('/api/synthesis/background', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        portraitBase64: base64Image,
-        backgroundOption: bgBase64
-      })
-    });
-
-    if (!response.ok) {
-  const errorData = await response.json();
-  console.error('[ERROR] Backend API Error Response:', errorData);
-  throw new Error(`サーバーエラー: ${errorData.message || response.statusText}`);
-　　}
-
-    const result = await response.json();
-    
-    // Gemini の応答から画像を抽出
-    const part = result.candidates?.[0]?.content?.parts?.find(
-      (p: any) => p.inlineData
-    );
-
-    if (!part?.inlineData) {
-      console.error('❌ 画像データが見つかりません');
-      console.error('📋 返ってきた内容:', JSON.stringify(result, null, 2));
-      throw new Error('Gemini の応答に画像がありません');
-    }
-
-    const imageUrl = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
-    console.log('✅ 背景合成完了（Gemini）');
-    return imageUrl;
-
-  } catch (error: any) {
-    console.error('背景合成エラー:', error);
-    throw new Error(`背景の合成に失敗しました: ${error.message}`);
-  }
+export const applyBackgroundSynthesis = async (base64Image: string, option: BackgroundOption): Promise<string> => {
+  return generatePortrait(base64Image, ClothingOption.None, option);
 };
 
-// 服装合成（サーバー経由）
-export const applyClothingSynthesis = async (
-  base64Image: string, 
-  option: ClothingOption,
-): Promise<string> => {
-  try {
-    if (option === ClothingOption.None) return base64Image;
-
-    console.log('🤖 服装合成を開始:', option);
-
-    // パブリック服装画像を取得
-    const clothingImageUrl = getClothingImage(option);
-    if (!clothingImageUrl) {
-      throw new Error(`服装画像が見つかりません: ${option}`);
-    }
-
-    console.log('📸 服装画像を読み込み中:', clothingImageUrl);
-
-    // 服装画像を fetch して base64 に変換
-    const clothingResponse = await fetch(clothingImageUrl);
-    if (!clothingResponse.ok) {
-      throw new Error(`服装画像の読み込みに失敗: ${clothingResponse.statusText}`);
-    }
-    const clothingBlob = await clothingResponse.blob();
-    const clothingBase64 = await blobToBase64(clothingBlob);
-
-    console.log('✅ 服装画像を base64 に変換完了');
-    console.log('🔄 サーバーに合成を依頼中...');
-
-    // サーバーの新しいエンドポイントを呼び出す
-    const response = await fetch('/api/synthesis/clothing', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        portraitBase64: base64Image,
-        clothingOption: clothingBase64
-      })
-    });
-
-   if (!response.ok) {
-  const errorData = await response.json();
-  console.error('[ERROR] Backend API Error Response:', errorData);
-  throw new Error(`サーバーエラー: ${errorData.message || response.statusText}`);
-　　}
-
-    const result = await response.json();
-    
-    // Gemini の応答から画像を抽出
-    const part = result.candidates?.[0]?.content?.parts?.find(
-      (p: any) => p.inlineData
-    );
-
-    if (!part?.inlineData) {
-      console.error('❌ 画像データが見つかりません');
-      console.error('📋 返ってきた内容:', JSON.stringify(result, null, 2));
-      throw new Error('Gemini の応答に画像がありません');
-    }
-
-    const imageUrl = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
-    console.log('✅ 服装合成完了（Gemini）');
-    return imageUrl;
-
-  } catch (error: any) {
-    console.error('服装合成エラー:', error);
-    throw new Error(`服装の合成に失敗しました: ${error.message}`);
-  }
+export const applyClothingSynthesis = async (base64Image: string, option: ClothingOption): Promise<string> => {
+  return generatePortrait(base64Image, option, BackgroundOption.None);
 };
 
 export const repairHeicImage = async (base64Heic: string): Promise<string> => {
-    const response = await fetch('/api/repair/heic', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        base64Heic: base64Heic
-      })
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: { 
+          parts: [
+            { text: "[ROLE: RESTORATION EXPERT] Convert this HEIC image to a high-quality JPEG. ELIMINATE all noise/grain. Sharpen details." }, 
+            { inlineData: { data: cleanBase64(base64Heic), mimeType: "image/heic" } }
+          ] 
+        },
+        config: { 
+          temperature: 0.0,
+        }
     });
-
-    if (!response.ok) {
-      throw new Error(`サーバーエラー: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    
-    if (!result.data) {
-      throw new Error("Repair failed");
-    }
-    
-    return `data:${result.mimeType};base64,${result.data}`;
+    // Safe access for repair function as well
+    const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+    if (!part?.inlineData) throw new Error("Repair failed");
+    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
 };
