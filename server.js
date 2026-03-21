@@ -170,36 +170,77 @@ app.post('/api/synthesis/background', async (req, res) => {
   try {
     const { portraitBase64, backgroundOption } = req.body;
     
-    if (!portraitBase64 || !backgroundOption) {
-      return res.status(400).json({ message: '必須パラメータが不足しています' });
+    // ✅ 修正1: パラメータの詳細なバリデーション
+    if (!portraitBase64) {
+      return res.status(400).json({ 
+        message: 'portraitBase64が不足しています',
+        errorCode: 'MISSING_PORTRAIT' 
+      });
+    }
+    
+    if (!backgroundOption) {
+      return res.status(400).json({ 
+        message: 'backgroundOptionが不足しています',
+        errorCode: 'MISSING_BACKGROUND' 
+      });
     }
 
-    // 環境変数から Gemini API キーを取得
+    // ✅ 修正2: Gemini API キーの確認
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ message: 'Gemini API キーが設定されていません' });
+      console.error('[ERROR] GEMINI_API_KEY is not set in environment variables');
+      return res.status(500).json({ 
+        message: 'Gemini API キーが設定されていません',
+        errorCode: 'API_KEY_NOT_SET'
+      });
     }
 
-    // Gemini に合成を依頼（Node.js のバージョンに合わせた実装）
+    // ✅ 修正3: Base64 データの検証
+    let portraitData;
+    try {
+      portraitData = portraitBase64.includes(',') 
+        ? portraitBase64.split(',')[1] 
+        : portraitBase64;
+      
+      if (!portraitData || portraitData.length === 0) {
+        throw new Error('Invalid portrait data');
+      }
+    } catch (err) {
+      console.error('[ERROR] Invalid portraitBase64 format:', err.message);
+      return res.status(400).json({ 
+        message: 'portraitBase64のフォーマットが無効です',
+        errorCode: 'INVALID_PORTRAIT_FORMAT'
+      });
+    }
+
+    // ✅ 修正4: Gemini API リクエス��にタイムアウトを設定
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30秒のタイムアウト
+
+    console.log('[INFO] Calling Gemini API for background synthesis...');
+    
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: controller.signal, // ✅ タイムアウト制御
       body: JSON.stringify({
         contents: [{
           parts: [
-            { text: 'You are a professional image compositor. Replace the background of the portrait with the provided background image. Keep the person unchanged. Blend naturally. Output as PNG.' },
+            { 
+              text: 'You are a professional image compositor. Replace the background of the portrait with the provided background image. Keep the person unchanged. Blend naturally. Output as PNG.' 
+            },
             {
               inlineData: {
                 mimeType: 'image/jpeg',
-                data: portraitBase64.split(',')[1] // data:image/... の部分を削除
+                data: portraitData
               }
             },
             {
               inlineData: {
                 mimeType: 'image/png',
-                data: backgroundOption // すでに base64 形式
+                data: backgroundOption
               }
             }
           ]
@@ -210,15 +251,41 @@ app.post('/api/synthesis/background', async (req, res) => {
       })
     });
 
+    clearTimeout(timeout); // ✅ タイムアウトをクリア
+
+    // ✅ 修正5: Gemini API の詳細なエラーログ
+    console.log('[INFO] Gemini API Response Status:', response.status);
+    
     const result = await response.json();
     
+    console.log('[DEBUG] Gemini API Response:', JSON.stringify(result).substring(0, 500));
+    
     if (!response.ok) {
-      return res.status(500).json({ message: 'Gemini API エラー', error: result });
+      console.error('[ERROR] Gemini API Error:', JSON.stringify(result));
+      return res.status(500).json({ 
+        message: 'Gemini API エラー',
+        errorCode: 'GEMINI_API_ERROR',
+        details: result.error ? result.error.message : 'Unknown error'
+      });
     }
 
     res.json(result);
   } catch (err) {
-    res.status(500).json({ message: 'サーバーエラー', error: err.message });
+    // ✅ 修正6: エラーの種類に応じた処理
+    if (err.name === 'AbortError') {
+      console.error('[ERROR] Request timeout: Gemini API took too long');
+      return res.status(504).json({ 
+        message: 'リクエストがタイムアウトしました（Gemini APIが応答しません）',
+        errorCode: 'REQUEST_TIMEOUT'
+      });
+    }
+    
+    console.error('[ERROR] Background Synthesis Error:', err);
+    res.status(500).json({ 
+      message: 'サーバーエラー',
+      errorCode: 'SERVER_ERROR',
+      error: err.message 
+    });
   }
 });
 
