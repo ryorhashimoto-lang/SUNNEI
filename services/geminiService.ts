@@ -116,12 +116,15 @@ export const applyBackgroundSynthesis = async (
 
     const prompt = `
       You are a professional image compositor.
-      Combine the user's portrait with the provided background image.
+      Replace only the background while keeping the person's portrait EXACTLY the same.
       
-      Requirements:
+      CRITICAL Requirements:
+      - Do NOT resize, scale, or move the person
+      - Keep the person's SIZE, POSITION, and SCALE 100% identical
+      - Only replace the background area
       - Keep the person's body, face, and clothing SHARP and DETAILED
-      - Seamlessly blend the person with the background
-      - Maintain natural lighting and shadows
+      - Seamlessly blend the person with the new background
+      - Maintain natural lighting around the person
       - Do NOT blur or smooth the subject
       - Preserve the person's facial features and identity
     `;
@@ -214,12 +217,15 @@ export const applyClothingSynthesis = async (
 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-    const prompt = `
+  　const prompt = `
       You are a professional image compositor specializing in clothing synthesis.
-      Replace the user's clothing with the clothing from the provided image.
+      Replace only the person's clothing while keeping the person EXACTLY the same.
       
-      Requirements:
-      - Keep the person's face, head, and body shape intact
+      CRITICAL Requirements:
+      - Do NOT resize, scale, move, or change the person's body position
+      - Keep the person's SIZE, POSITION, and SCALE 100% identical
+      - Keep the person's face, head, and body shape intact and unchanged
+      - Only replace the clothing area
       - Seamlessly blend the new clothing with the person's body
       - Maintain natural lighting and shadows
       - Preserve facial features and identity
