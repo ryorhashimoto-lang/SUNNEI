@@ -58,7 +58,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 
   const landscapeBgItems = [
    { id: BackgroundOption.Sky, label: '空', imageUrl: '/backgrounds/sky.png', text: 'text-gray-900' },
-   { id: BackgroundOption.Sea, label: '海', imageUrl: '/backgrounds/sea.png', text: 'text-white' },
+   { id: BackgroundOption.Sea, label: '海', imageUrl: '/backgrounds/sea.png', text: 'text-gray-900' },
    { id: BackgroundOption.CherryBlossom, label: '桜', imageUrl: '/backgrounds/cherry_blossom.png', text: 'text-gray-900' },
    { id: BackgroundOption.FreshNewGreen, label: '新緑', imageUrl: '/backgrounds/fresh_new_green.png', text: 'text-gray-900' },
   ];
@@ -159,7 +159,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                  }}
                >
                  <span className="text-[18px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
-                 ...
                </button>
              ))}
 
@@ -176,7 +175,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                 }}
               >
                 <span className="text-[18px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
-                ...
               </button>
             ))}
           </div>
