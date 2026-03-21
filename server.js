@@ -164,6 +164,117 @@ app.post('/api/usage/increment', async (req, res) => {
     res.status(500).json({ message: '更新失敗' });
   }
 });
+// 背景合成API
+app.post('/api/synthesis/background', async (req, res) => {
+  try {
+    const { portraitBase64, backgroundOption } = req.body;
+    
+    if (!portraitBase64 || !backgroundOption) {
+      return res.status(400).json({ message: '必須パラメータが不足しています' });
+    }
+
+    // 環境変数から Gemini API キーを取得
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ message: 'Gemini API キーが設定されていません' });
+    }
+
+    // Gemini に合成を依頼（Node.js のバージョンに合わせた実装）
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: 'You are a professional image compositor. Replace the background of the portrait with the provided background image. Keep the person unchanged. Blend naturally. Output as PNG.' },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: portraitBase64.split(',')[1] // data:image/... の部分を削除
+              }
+            },
+            {
+              inlineData: {
+                mimeType: 'image/png',
+                data: backgroundOption // すでに base64 形式
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.0,
+        }
+      })
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      return res.status(500).json({ message: 'Gemini API エラー', error: result });
+    }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'サーバーエラー', error: err.message });
+  }
+});
+
+// 服装合成API
+app.post('/api/synthesis/clothing', async (req, res) => {
+  try {
+    const { portraitBase64, clothingOption } = req.body;
+    
+    if (!portraitBase64 || !clothingOption) {
+      return res.status(400).json({ message: '必須パラメータが不足しています' });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ message: 'Gemini API キーが設定されていません' });
+    }
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: 'You are a professional image compositor specializing in portrait clothing. Replace the clothing with the provided image. Keep the face and background unchanged. Blend naturally. Output as PNG.' },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: portraitBase64.split(',')[1]
+              }
+            },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: clothingOption
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.0,
+        }
+      })
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      return res.status(500).json({ message: 'Gemini API エラー', error: result });
+    }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'サーバーエラー', error: err.message });
+  }
+});
 
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use(express.static(path.join(__dirname, 'public')));
