@@ -7,7 +7,7 @@ import CropTool from './components/CropTool';
 import LoginScreen from './components/LoginScreen';
 import ManagementDashboard from './components/ManagementDashboard';
 import {
-  compositeBackgroundWithPerson,
+  applyBackgroundSynthesis,
   applyClothingSynthesis,
 } from './services/geminiService';
 import { authService, AuthSession } from './services/authService';
@@ -119,7 +119,7 @@ const App: React.FC = () => {
   setStatus({ isProcessing: true, message: '背景を合成中...' });
   try {
     const base = personImage || originalCropped;
-    const result = await compositeBackgroundWithPerson(base, option);
+    const result = await applyBackgroundSynthesis(base, option, 1200, 1440);
     setPersonImage(result);
     setAppliedBg(option);
   } catch (e) {
