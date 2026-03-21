@@ -1,12 +1,6 @@
 
-import { GoogleGenAI } from "@google/genai";
 import { ClothingOption, BackgroundOption } from "../types";
 
-// Helper to remove data URL prefix
-const cleanBase64 = (dataUrl: string) => {
-  if (!dataUrl.startsWith("data:")) return dataUrl;
-  return dataUrl.split(',')[1];
-};
 
 // 背景画像のパスを取得
 const getBackgroundImage = (option: BackgroundOption): string | null => {
@@ -52,30 +46,7 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
   });
 };
 
-// Retry helper function
-async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> {
-  try {
-    return await fn();
-  } catch (error: any) {
-    const isTransient = 
-      error.status === 500 || 
-      error.status === 503 ||
-      (error.error && (error.error.code === 500 || error.error.code === 503)) ||
-      (error.message && (
-        error.message.includes("500") || 
-        error.message.includes("Rpc failed") || 
-        error.message.includes("overloaded") || 
-        error.message.includes("unavailable")
-      ));
 
-    if (retries > 0 && isTransient) {
-      console.warn(`Transient error detected. Retrying in ${delay}ms... (${retries} attempts left)`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return withRetry(fn, retries - 1, delay * 2);
-    }
-    throw error;
-  }
-}
 
 // ==========================================================
 // EXPORTED FUNCTIONS
