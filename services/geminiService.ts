@@ -218,20 +218,27 @@ export const applyClothingSynthesis = async (
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   　const prompt = `
-      You are a professional image compositor specializing in clothing synthesis.
-      Replace only the person's clothing while keeping the person EXACTLY the same.
-      
-      CRITICAL Requirements:
-      - Do NOT resize, scale, move, or change the person's body position
-      - Keep the person's SIZE, POSITION, and SCALE 100% identical
-      - Keep the person's face, head, and body shape intact and unchanged
-      - Only replace the clothing area
-      - Seamlessly blend the new clothing with the person's body
-      - Maintain natural lighting and shadows
-      - Preserve facial features and identity
-      - Do NOT blur or alter the subject's face
-      - Make the clothing look natural on the person's body
-    `;
+  You are a professional image compositor specializing in clothing synthesis.
+  Replace only the person's clothing while keeping the person EXACTLY the same.
+  
+  CRITICAL Requirements:
+  - Do NOT resize, scale, move, or change the person's body position
+  - Keep the person's SIZE, POSITION, and SCALE 100% identical
+  - Keep the person's face, head, and body shape intact and unchanged
+  - Only replace the clothing area
+  - PRESERVE ALL DETAILS from the clothing image:
+    * All textures, patterns, and surface details
+    * White areas, light colors, and their subtle details
+    * Seams, stitches, embroidery, decorative elements
+    * Cultural clothing elements (kimono family crests, collar details)
+    * Fabric sheen and material characteristics
+  - Seamlessly blend the new clothing with the person's body
+  - Maintain natural lighting and shadows
+  - Preserve facial features and identity
+  - Do NOT blur or alter the subject's face
+  - Make the clothing look natural on the person's body
+  - PRESERVE CONTRAST in white/light areas - do not wash out or oversmoothify
+`;
 
     const response = await withRetry(async () => {
       return await ai.models.generateContent({
@@ -247,7 +254,7 @@ export const applyClothingSynthesis = async (
             },
             {
               inlineData: {
-                mimeType: 'image/jpeg',
+                mimeType: 'image/png',
                 data: clothingBase64,
               },
             },
