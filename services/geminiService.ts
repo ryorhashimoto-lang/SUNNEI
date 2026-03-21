@@ -84,8 +84,6 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Pr
 export const applyBackgroundSynthesis = async (
   base64Image: string, 
   option: BackgroundOption,
-  width?: number,
-  height?: number
 ): Promise<string> => {
   try {
     if (option === BackgroundOption.None) return base64Image;
@@ -171,8 +169,6 @@ REQUIREMENTS:
 export const applyClothingSynthesis = async (
   base64Image: string, 
   option: ClothingOption,
-  width?: number,
-  height?: number
 ): Promise<string> => {
   try {
     if (option === ClothingOption.None) return base64Image;
