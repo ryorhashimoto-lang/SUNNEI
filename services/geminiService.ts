@@ -95,8 +95,10 @@ export const applyBackgroundSynthesis = async (
     });
 
     if (!response.ok) {
-      throw new Error(`サーバーエラー: ${response.statusText}`);
-    }
+  const errorData = await response.json();
+  console.error('[ERROR] Backend API Error Response:', errorData);
+  throw new Error(`サーバーエラー: ${errorData.message || response.statusText}`);
+　　}
 
     const result = await response.json();
     
@@ -162,9 +164,11 @@ export const applyClothingSynthesis = async (
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`サーバーエラー: ${response.statusText}`);
-    }
+   if (!response.ok) {
+  const errorData = await response.json();
+  console.error('[ERROR] Backend API Error Response:', errorData);
+  throw new Error(`サーバーエラー: ${errorData.message || response.statusText}`);
+　　}
 
     const result = await response.json();
     
