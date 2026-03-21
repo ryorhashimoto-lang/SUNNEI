@@ -48,20 +48,20 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 
   const currentClothingOptions = gender === 'men' ? menOptions : womenOptions;
 
- const solidBgItems = [
-  { id: BackgroundOption.SoftBlue, label: 'ブルー', color: 'bg-[#e3f2fd]', text: 'text-gray-900' },
-  { id: BackgroundOption.SoftPink, label: 'ピンク', color: 'bg-[#fce4ec]', text: 'text-gray-900' },
-  { id: BackgroundOption.WisteriaPurple, label: 'パープル', color: 'bg-[#f3e5f5]', text: 'text-gray-900' },
-  { id: BackgroundOption.FreshGreen, label: 'グリーン', color: 'bg-[#f1f8e9]', text: 'text-gray-900' },
-  { id: BackgroundOption.WhiteGrey, label: 'ホワイト', color: 'bg-[#fafafa]', text: 'text-gray-900' },
- ];
+  const solidBgItems = [
+   { id: BackgroundOption.SoftBlue, label: 'ブルー', imageUrl: '/backgrounds/soft_blue.png', text: 'text-gray-900' },
+   { id: BackgroundOption.SoftPink, label: 'ピンク', imageUrl: '/backgrounds/soft_pink.png', text: 'text-gray-900' },
+   { id: BackgroundOption.WisteriaPurple, label: 'パープル', imageUrl: '/backgrounds/wisteria_purple.png', text: 'text-gray-900' },
+   { id: BackgroundOption.FreshGreen, label: 'グリーン', imageUrl: '/backgrounds/fresh_green.png', text: 'text-gray-900' },
+   { id: BackgroundOption.WhiteGrey, label: 'ホワイト', imageUrl: '/backgrounds/white_grey.png', text: 'text-gray-900' },
+  ];
 
- const landscapeBgItems = [
-  { id: BackgroundOption.Sky, label: '空', color: 'bg-blue-100', text: 'text-gray-900' },
-  { id: BackgroundOption.Sea, label: '海', color: 'bg-blue-500', text: 'text-white' },
-  { id: BackgroundOption.CherryBlossom, label: '桜', color: 'bg-pink-100', text: 'text-gray-900' },
-  { id: BackgroundOption.FreshNewGreen, label: '新緑', color: 'bg-green-100', text: 'text-gray-900' },
- ];
+  const landscapeBgItems = [
+   { id: BackgroundOption.Sky, label: '空', imageUrl: '/backgrounds/sky.png', text: 'text-gray-900' },
+   { id: BackgroundOption.Sea, label: '海', imageUrl: '/backgrounds/sea.png', text: 'text-white' },
+   { id: BackgroundOption.CherryBlossom, label: '桜', imageUrl: '/backgrounds/cherry_blossom.png', text: 'text-gray-900' },
+   { id: BackgroundOption.FreshNewGreen, label: '新緑', imageUrl: '/backgrounds/fresh_new_green.png', text: 'text-gray-900' },
+  ];
 
   const StepBadge = ({ num, text }: { num: string, text: string }) => (
     <div className="flex items-center gap-3.5 mb-6 group">
@@ -147,40 +147,38 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               )}
             </button>
             {bgTab === 'solid' && solidBgItems.map((opt) => (
+               <button
+                 key={opt.id}
+                 onClick={() => onBgAction(opt.id)}
+                 disabled={disabled}
+                 className={`flex items-center justify-center p-5 rounded-2xl border-2 transition-all min-h-[85px] relative group active:scale-[0.98] ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
+                 style={{
+                   backgroundImage: `url(${opt.imageUrl})`,
+                   backgroundSize: 'cover',
+                   backgroundPosition: 'center'
+                 }}
+               >
+                 <span className="text-[18px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
+                 ...
+               </button>
+             ))}
+
+            {bgTab === 'landscape' && landscapeBgItems.map((opt) => (
               <button
                 key={opt.id}
                 onClick={() => onBgAction(opt.id)}
                 disabled={disabled}
-                className={`flex items-center justify-center p-5 rounded-2xl border-2 transition-all min-h-[85px] relative group active:scale-[0.98] ${opt.color} ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
+                className={`flex items-center justify-center p-5 rounded-2xl border-2 transition-all min-h-[85px] relative group active:scale-[0.98] ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
+                style={{
+                  backgroundImage: `url(${opt.imageUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
               >
                 <span className="text-[18px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
-                {appliedBg === opt.id && (
-                  <div className="absolute top-2 right-2 bg-white rounded-full p-0.5 shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-900">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
-                   </svg>
-                 </div>
-               )}
-             </button>
-           ))}
-
-           {bgTab === 'landscape' && landscapeBgItems.map((opt) => (
-             <button
-               key={opt.id}
-               onClick={() => onBgAction(opt.id)}
-               disabled={disabled}
-               className={`flex items-center justify-center p-5 rounded-2xl border-2 transition-all min-h-[85px] relative group active:scale-[0.98] ${opt.color} ${opt.text} ${appliedBg === opt.id ? 'border-gray-900 shadow-xl scale-[1.03] z-10 ring-4 ring-gray-900/5' : 'border-transparent hover:scale-105 shadow-sm opacity-90 hover:opacity-100'}`}
-             >
-               <span className="text-[18px] font-bold tracking-tight text-center px-1 leading-tight">{opt.label}</span>
-               {appliedBg === opt.id && (
-                 <div className="absolute top-2 right-2 bg-white rounded-full p-0.5 shadow-sm">
-                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-900">
-                     <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
-                   </svg>
-                 </div>
-               )}
-           </button>
-         ))}
+                ...
+              </button>
+            ))}
           </div>
         </section>
 
