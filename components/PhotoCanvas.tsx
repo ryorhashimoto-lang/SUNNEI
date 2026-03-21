@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 import { drawMemorialPhoto } from '../services/renderService';
-import { CropConfig } from '../types';
+import { CropConfig, BackgroundOption } from '../types';
 
 interface PhotoCanvasProps {
   originalCropped: string | null;
@@ -10,6 +10,7 @@ interface PhotoCanvasProps {
   isLoading: boolean;
   loadingMessage: string;
   finalCropConfig?: CropConfig | null;
+  backgroundOption?: BackgroundOption;
 }
 
 const PhotoCanvas: React.FC<PhotoCanvasProps> = ({ 
@@ -17,7 +18,8 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
   personImage,
   isLoading, 
   loadingMessage,
-  finalCropConfig
+  finalCropConfig,
+  backgroundOption
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -36,12 +38,13 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
         width,
         height,
         isHighRes: false,
-        finalCropConfig
+        finalCropConfig,
+        backgroundOption
       });
     };
 
     render();
-  }, [originalCropped, personImage, finalCropConfig]);
+  }, [originalCropped, personImage, finalCropConfig, backgroundOption]);
 
   if (!originalCropped) return null;
 
