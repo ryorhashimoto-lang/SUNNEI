@@ -207,40 +207,46 @@ REQUIREMENTS:
 - Use the provided clothing image as the new clothing
 - Blend naturally at the edges where clothing meets skin
 - Maintain photorealistic quality
-- Output as high-quality PNG`;
+- Output ONLY as an image. Do not include any text response.
+- Return the image data directly.`;
 
-    const response = await withRetry(async () => {
-      return await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: {
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: 'image/jpeg',
-                data: cleanBase64(base64Image),
-              },
-            },
-            {
-              inlineData: {
-                mimeType: 'image/jpeg',
-                data: clothingBase64,
-              },
-            },
-          ],
+const response = await withRetry(async () => {
+  return await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: {
+      parts: [
+        { text: prompt },
+        {
+          inlineData: {
+            mimeType: 'image/jpeg',
+            data: cleanBase64(base64Image),
+          },
         },
-        config: {
-          temperature: 0.0,
-        }
-      });
-    });
-
-    const part = response.candidates?.[0]?.content?.parts?.find(
-      (p) => p.inlineData
-    );
-    if (!part?.inlineData) {
-      throw new Error('Gemini の応答に画像がありません');
+        {
+          inlineData: {
+            mimeType: 'image/jpeg',
+            data: clothingBase64,
+          },
+        },
+      ],
+    },
+    config: {
+      temperature: 0.0,
     }
+  });
+});
+
+// 📋 デバッグ出力
+const allParts = response.candidates?.[0]?.content?.parts || [];
+console.log('📋 服装合成の返答:', allParts.map((p: any) => ({ text: !!p.text, image: !!p.inlineData })));
+
+const part = allParts.find((p: any) => p.inlineData);
+
+if (!part?.inlineData) {
+  console.error('❌ 画像データが見つかりません');
+  console.error('📋 返ってきた parts:', JSON.stringify(allParts.slice(0, 2)));
+  throw new Error(`Gemini の応答に画像がありません。返答: ${allParts.map((p: any) => p.text ? 'テキスト' : '画像').join(', ')}`);
+}
 
     const result = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
     console.log('✅ 服装合成完了（Gemini）');
