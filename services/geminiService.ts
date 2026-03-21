@@ -126,7 +126,7 @@ REQUIREMENTS:
 
     const response = await withRetry(async () => {
       return await ai.models.generateContent({
-　　　  model: 'gemini-2.5-flash',
+　　　  model: 'gemini-2.0-flash-exp',
         contents: {
           parts: [
             { text: prompt },
@@ -233,7 +233,7 @@ REQUIREMENTS:
 
 const response = await withRetry(async () => {
   return await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.0-flash-exp',
     contents: {
       parts: [
         { text: prompt },
