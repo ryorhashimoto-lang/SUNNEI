@@ -150,16 +150,37 @@ REQUIREMENTS:
       });
     });
 
-    const part = response.candidates?.[0]?.content?.parts?.find(
-      (p) => p.inlineData
-    );
-    if (!part?.inlineData) {
-      throw new Error('Gemini の応答に画像がありません');
-    }
+    // 何が返ってきたのか詳しく見る
+console.log('🔍 返ってきた内容:', response.candidates?.[0]?.content?.parts);
 
-    const result = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
-    console.log('✅ 背景合成完了（Gemini）');
-    return result;
+const allParts = response.candidates?.[0]?.content?.parts || [];
+console.log('📋 部品の数:', allParts.length);
+console.log('📋 部品の詳細:', allParts.map((p: any, i: number) => ({
+  番号: i,
+  テキストあり: !!p.text,
+  画像あり: !!p.inlineData,
+  テキスト内容: p.text ? p.text.substring(0, 50) : 'なし'
+})));
+
+// 画像データを探す
+const part = allParts.find((p: any) => p.inlineData);
+
+if (!part?.inlineData) {
+  console.error('❌ エラー：画像データが見つかりません');
+  console.error('📋 返ってきた内容:', JSON.stringify(allParts, null, 2));
+  
+  // テキストで返ってきた場合
+  const textPart = allParts.find((p: any) => p.text);
+  if (textPart?.text) {
+    console.error('📝 Gemini の返答（テキスト）:', textPart.text);
+  }
+  
+  throw new Error(`画像がありません。返ってきた形式: ${allParts.map((p: any) => p.text ? 'テキスト' : '画像').join(', ')}`);
+}
+
+const result = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+console.log('✅ 背景合成完了（Gemini）');
+return result;
   } catch (error: any) {
     console.error('背景合成エラー:', error);
     throw new Error(`背景の合成に失敗しました: ${error.message}`);
@@ -237,20 +258,37 @@ const response = await withRetry(async () => {
 });
 
 // 📋 デバッグ出力
-const allParts = response.candidates?.[0]?.content?.parts || [];
-console.log('📋 服装合成の返答:', allParts.map((p: any) => ({ text: !!p.text, image: !!p.inlineData })));
+// 何が返ってきたのか詳しく見る
+console.log('🔍 返ってきた内容:', response.candidates?.[0]?.content?.parts);
 
+const allParts = response.candidates?.[0]?.content?.parts || [];
+console.log('📋 部品の数:', allParts.length);
+console.log('📋 部品の詳細:', allParts.map((p: any, i: number) => ({
+  番号: i,
+  テキストあり: !!p.text,
+  画像あり: !!p.inlineData,
+  テキスト内容: p.text ? p.text.substring(0, 50) : 'なし'
+})));
+
+// 画像データを探す
 const part = allParts.find((p: any) => p.inlineData);
 
 if (!part?.inlineData) {
-  console.error('❌ 画像データが見つかりません');
-  console.error('📋 返ってきた parts:', JSON.stringify(allParts.slice(0, 2)));
-  throw new Error(`Gemini の応答に画像がありません。返答: ${allParts.map((p: any) => p.text ? 'テキスト' : '画像').join(', ')}`);
+  console.error('❌ エラー：画像データが見つかりません');
+  console.error('📋 返ってきた内容:', JSON.stringify(allParts, null, 2));
+  
+  // テキストで返ってきた場合
+  const textPart = allParts.find((p: any) => p.text);
+  if (textPart?.text) {
+    console.error('📝 Gemini の返答（テキスト）:', textPart.text);
+  }
+  
+  throw new Error(`画像がありません。返ってきた形式: ${allParts.map((p: any) => p.text ? 'テキスト' : '画像').join(', ')}`);
 }
 
-    const result = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
-    console.log('✅ 服装合成完了（Gemini）');
-    return result;
+const result = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+console.log('✅ 服装合成完了（Gemini）');
+return result;
   } catch (error: any) {
     console.error('服装合成エラー:', error);
     throw new Error(`服装の合成に失敗しました: ${error.message}`);
