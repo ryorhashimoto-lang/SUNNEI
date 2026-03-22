@@ -272,13 +272,16 @@ const App: React.FC = () => {
               )}
               
               {appState === AppState.CROPPING && uploadedImage && (
-                <CropTool 
+ 　　　　　　　　  <CropTool 
                   imageSrc={isFinalCropping ? compositePreview! : uploadedImage} 
                   initialConfig={isFinalCropping ? finalCropConfig : cropConfig}
                   onConfirm={handleCropConfirm} 
-                  onCancel={() => { ... }} 
+                  onCancel={() => {
+                    setIsFinalCropping(false);
+                    setAppState(originalCropped ? AppState.EDITING : AppState.UPLOAD);
+                  }}
                   backgroundOption={appliedBg}
-                  clothingOption={isFinalCropping ? ClothingOption.None : appliedClothing}  // ← ここを修正
+                  clothingOption={isFinalCropping ? ClothingOption.None : appliedClothing}
                 />
               )}
               
