@@ -27,7 +27,7 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
     const render = async () => {
       if (!canvasRef.current || !originalCropped) return;
       
-      // アスペクト比 3:4 (ダウンロード用調整)
+      // アスペクト比 3:4 (プレビュー用調整)
 　　　 const width = 800;
       const height = 1067; // 3:4の比率（800 × 4/3）
       
@@ -73,7 +73,7 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
           Studio Preview
         </p>
         <p className="text-[10px] text-gray-300 font-sans">
-          ※ 実際の保存データは四つ切りサイズ（3000x3600px）で生成されます
+          ※ 実際の保存データは3:4サイズ（3000x4000px）で生成されます
         </p>
       </div>
     </div>
