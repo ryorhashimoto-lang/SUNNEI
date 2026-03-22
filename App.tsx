@@ -276,12 +276,9 @@ const App: React.FC = () => {
                   imageSrc={isFinalCropping ? compositePreview! : uploadedImage} 
                   initialConfig={isFinalCropping ? finalCropConfig : cropConfig}
                   onConfirm={handleCropConfirm} 
-                  onCancel={() => {
-                    setIsFinalCropping(false);
-                    setAppState(originalCropped ? AppState.EDITING : AppState.UPLOAD);
-                  }} 
+                  onCancel={() => { ... }} 
                   backgroundOption={appliedBg}
-                  clothingOption={appliedClothing}
+                  clothingOption={isFinalCropping ? ClothingOption.None : appliedClothing}  // ← ここを修正
                 />
               )}
               
