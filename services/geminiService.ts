@@ -686,7 +686,7 @@ Proceed with absolute precision. The person's position and size are sacred - the
             },
             {
               inlineData: {
-                mimeType: 'image/png',
+                mimeType: 'image/jpg',
                 data: clothingBase64,
               },
             },
