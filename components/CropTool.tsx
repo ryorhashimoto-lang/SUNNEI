@@ -208,9 +208,9 @@ const getBackgroundStyle = () => {
     if (!imageRef.current || !containerRef.current) return;
     const img = imageRef.current;
     const canvas = document.createElement('canvas');
-    // 出力解像度の基準幅。高さはアスペクト比(5:6)に合わせて計算
-    const outWidth = 1200; 
-    const outHeight = outWidth / ASPECT_RATIO; // 1200 / (5/6) = 1440
+    // 出力解像度の基準幅。高さはアスペクト比(3:4)に合わせて計算
+    const outWidth = 1200;
+　　 const outHeight = 1200 / (3/4) = 1600  // 3:4 の比率
     
     canvas.width = outWidth;
     canvas.height = outHeight;
