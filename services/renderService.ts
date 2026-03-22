@@ -88,7 +88,6 @@ export const drawMemorialPhoto = async ({
     }
     return { drawX, drawY, drawW, drawH };
   };
-
  // 1. Draw the Base Image (AI Body or Original)
 // CropTool で設定された位置情報を尊重するため、自動フィットではなく固定配置
 // originalCropped は既に正しい寸法で切り取られているため、そのまま中央に配置
