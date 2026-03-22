@@ -752,7 +752,7 @@ Only the background changes. This is non-negotiable.
             {
               inlineData: {
                 mimeType: 'image/jpeg',
-                data: cleanBase64(base64Image),
+                data: cleanBase64(cleanedImage),
               },
             },
             {
@@ -1064,7 +1064,7 @@ Proceed with absolute precision. The person's position and size are sacred - the
             {
               inlineData: {
                 mimeType: 'image/jpeg',
-                data: cleanBase64(base64Image),
+                data: cleanBase64(cleanedImage),
               },
             },
             {
