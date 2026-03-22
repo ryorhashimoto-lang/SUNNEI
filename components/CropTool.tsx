@@ -15,8 +15,8 @@ interface CropToolProps {
   clothingOption?: ClothingOption;  //
 }
 
-// 遺影写真用の比率を 5:6 に設定 (3000px : 3600px)
-const ASPECT_RATIO = 5 / 6;
+// 遺影写真用の比率を 3:4 に設定 (3000px : 4000px)
+const ASPECT_RATIO = 3 / 4;
 
 const CropTool: React.FC<CropToolProps> = ({ imageSrc, initialConfig, onConfirm, onCancel, backgroundColor, backgroundImage, backgroundOption, clothingOption }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -312,7 +312,7 @@ const getBackgroundStyle = () => {
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                <div 
                   className="aperture-window relative border border-white/40 shadow-[0_0_0_9999px_rgba(0,0,0,0.8)]" 
-                  style={{ aspectRatio: '5/6', height: '80%', maxWidth: '90%' }}
+                  style={{ aspectRatio: '3/4', height: '80%', maxWidth: '90%' }}
                >
                   {/* Corner marks for aesthetic and guidance */}
                   <div className="absolute -top-[1px] -left-[1px] w-4 h-4 border-t-2 border-l-2 border-white shadow-sm"></div>
