@@ -89,12 +89,18 @@ export const drawMemorialPhoto = async ({
     return { drawX, drawY, drawW, drawH };
   };
 
-  // 1. Draw the Base Image (AI Body or Original)
-  const baseCoords = getCoverCoords(baseImg.width, baseImg.height, width, height);
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(baseImg, baseCoords.drawX, baseCoords.drawY, baseCoords.drawW, baseCoords.drawH);
+ // 1. Draw the Base Image (AI Body or Original)
+// CropTool で設定された位置情報を尊重するため、自動フィットではなく固定配置
+// originalCropped は既に正しい寸法で切り取られているため、そのまま中央に配置
+const drawW = baseImg.width;
+const drawH = baseImg.height;
+const drawX = (width - drawW) / 2;
+const drawY = (height - drawH) / 2;
 
+ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingQuality = 'high';
+ctx.drawImage(baseImg, drawX, drawY, drawW, drawH);
+  
   // 2. Final Crop (if applied via CropTool for output)
   if (finalCropConfig) {
     // We need to re-process the whole canvas content through the crop config.
