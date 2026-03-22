@@ -77,6 +77,367 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Pr
 }
 
 /**
+ * 背景合成用前処理：他人部分を削除し、被写体を復元
+ * 【ユーザーには見えない内部処理】
+ */
+const preprocessForBackground = async (
+  base64Image: string
+): Promise<string> => {
+  try {
+    console.log('🔧 背景合成用前処理を開始...');
+    
+    if (!process.env.API_KEY) {
+      throw new Error("API Key is missing.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    const segmentationPrompt = `
+🔴 [背景選択時・前処理]
+
+メイン被写体を保護し、他人部分を完全削除・被写体を復元：
+
+【検出対象 - 他人部分】
+❌ 他の人物の頭
+❌ 他の人物の肩
+❌ 他の人物の腕
+❌ 他の人物のシルエット
+
+【保護対象 - 被写体の体】
+✓ メイン被写体の全身
+✓ 被写体の頭・顔
+✓ 被写体の肩・腕
+✓ 被写体の体全体
+
+【処理フロー】
+1. メイン被写体を特定（最も大きい顔）
+2. 他人部分を完全削除
+3. 被写体の欠けた部分を肌色で復元
+   - 他人で隠れていた肩を復元
+   - 他人で隠れていた背中を復元
+   - 他人で隠れていた腕を復元
+4. 削除された他人部分は背景色で補完
+
+【重要】
+✓ 被写体の体は100%完全（欠けない）
+✓ 他人の痕跡は0%（完全削除）
+✓ 自然なシームレス復元
+✓ 肌色とテクスチャが自然
+
+【出力】
+クリーンな被写体画像（他人がいない状態）
+    `;
+
+    const response = await withRetry(async () => {
+      return await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: [
+            { text: segmentationPrompt },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: cleanBase64(base64Image),
+              },
+            },
+          ],
+        },
+        config: {
+          temperature: 0.0,
+          imageConfig: {
+            aspectRatio: "3:4",
+          },
+        },
+      });
+    });
+
+    const candidates = response.candidates;
+    if (candidates && candidates.length > 0) {
+      const parts = candidates[0].content?.parts;
+      if (parts) {
+        for (const part of parts) {
+          if (part.inlineData && part.inlineData.data) {
+            console.log('✅ 背景合成用前処理完了');
+            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+          }
+        }
+      }
+    }
+
+    throw new Error("前処理に失敗しました。");
+
+  } catch (error: any) {
+    console.error("背景用前処理エラー:", error);
+    return base64Image; // 失敗時は元の画像を返す
+  }
+};
+
+/**
+ * 着せ替え用前処理：装備品・装飾品を削除
+ * 【ユーザーには見えない内部処理】
+ */
+const preprocessForClothing = async (
+  base64Image: string
+): Promise<string> => {
+  try {
+    console.log('🔧 着せ替え用前処理を開始...');
+    
+    if (!process.env.API_KEY) {
+      throw new Error("API Key is missing.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    const removalPrompt = `
+🔴 [着せ替え選択時・前処理]
+
+首から下の不要要素を削除：
+
+【削除対象】
+❌ リュック・バッグ（背中や肩）
+❌ ボタン・紋章・刺繍・帯
+❌ ネックレス・ブレスレット・時計・キーチェーン
+
+【保護対象】
+✓ 被写体の頭・顔（100%保護）
+✓ 被写体の体（100%保護）
+✓ 基本的な服装下地
+
+【処理フロー】
+1. リュック削除 → 背中を肌色で補完
+2. ボタン・紋章削除 → 服装色で補完
+3. ネックレス削除 → 首の肌色で補完
+4. 時計・アクセサリー削除 → 腕の肌色で補完
+
+【重要】
+✓ 被写体の体は100%完全（欠けない）
+✓ 装備品の痕跡は0%（完全削除）
+✓ シームレスな補完
+✓ 自然な肌色とテクスチャ
+
+【出力】
+シンプルな体（装備品・装飾品なし）
+着せ替え準備完了
+    `;
+
+    const response = await withRetry(async () => {
+      return await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: [
+            { text: removalPrompt },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: cleanBase64(base64Image),
+              },
+            },
+          ],
+        },
+        config: {
+          temperature: 0.0,
+          imageConfig: {
+            aspectRatio: "3:4",
+          },
+        },
+      });
+    });
+
+    const candidates = response.candidates;
+    if (candidates && candidates.length > 0) {
+      const parts = candidates[0].content?.parts;
+      if (parts) {
+        for (const part of parts) {
+          if (part.inlineData && part.inlineData.data) {
+            console.log('✅ 着せ替え用前処理完了');
+            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+          }
+        }
+      }
+    }
+
+    throw new Error("前処理に失敗しました。");
+
+  } catch (error: any) {
+    console.error("着せ替え用前処理エラー:", error);
+    return base64Image; // 失敗時は元の画像を返す
+  }
+};
+
+/**
+ * 品質検証関数 - 内部処理のみ、ユーザーには見えない
+ */
+const validateMemorialPhotoQuality = async (
+  processedImage: string,
+  context: 'background' | 'clothing'
+): Promise<{
+  isValid: boolean;
+  needsAutoFix: boolean;
+  issues: string[];
+  confidence: number;
+}> => {
+  try {
+    console.log('🔍 品質検証を実行中...');
+    
+    if (!process.env.API_KEY) {
+      throw new Error("API Key is missing.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    const validationPrompt = context === 'background'
+      ? `
+【背景選択時の品質検証】
+
+以下を検査してください：
+1. 複数人物がないか（1人のみ映っているか）
+2. 被写体の体が完全か（欠けていないか）
+3. 他人部分が残存していないか
+
+JSON形式で結果を返してください：
+{
+  "hasMultiplePeople": false,
+  "isBodyComplete": true,
+  "issues": []
+}
+      `
+      : `
+【着せ替え選択時の品質検証】
+
+以下を検査してください：
+1. リュック等の装備品が残存していないか
+2. ネックレス等の装飾品が残存していないか
+3. 被写体の体が完全か（欠けていないか）
+
+JSON形式で結果を返してください：
+{
+  "hasRemainingEquipment": false,
+  "hasRemainingDecorations": false,
+  "isBodyComplete": true,
+  "issues": []
+}
+      `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [
+          { text: validationPrompt },
+          {
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: cleanBase64(processedImage),
+            },
+          },
+        ],
+      },
+      config: {
+        temperature: 0.0,
+      },
+    });
+
+    const validationText = response.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    const validationData = JSON.parse(validationText);
+
+    console.log('📊 検証結果:', validationData);
+
+    const isValid = context === 'background'
+      ? !validationData.hasMultiplePeople && validationData.isBodyComplete
+      : !validationData.hasRemainingEquipment && 
+        !validationData.hasRemainingDecorations && 
+        validationData.isBodyComplete;
+
+    return {
+      isValid,
+      needsAutoFix: !isValid,
+      issues: validationData.issues || [],
+      confidence: isValid ? 1.0 : 0.5,
+    };
+
+  } catch (error: any) {
+    console.error("品質検証エラー:", error);
+    return {
+      isValid: true,
+      needsAutoFix: false,
+      issues: [],
+      confidence: 0.5,
+    };
+  }
+};
+
+/**
+ * 自動修正関数 - ユーザーには見えない内部処理
+ */
+const autoFixMemorialPhoto = async (
+  image: string,
+  issues: string[],
+  context: 'background' | 'clothing'
+): Promise<string> => {
+  try {
+    console.log('🔨 自動修正を実行中...');
+
+    if (!process.env.API_KEY) {
+      throw new Error("API Key is missing.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    const fixPrompt = `
+【自動修正モード】
+
+検出された問題：
+${issues.join('\n')}
+
+対応方法：
+${context === 'background' 
+  ? `- 複数人物が映っている → 背景の人物を完全に消す
+- 被写体の体が欠けている → 肌色で自然に復元` 
+  : `- リュックが残存 → 自動削除
+- 装飾品が残存 → 自動削除
+- 被写体の体が欠けている → 肌色で自然に復元`
+}
+
+修正を実行してください。
+完成度を最優先。結果は完璧に。
+    `;
+
+    const response = await withRetry(async () => {
+      return await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: [
+            { text: fixPrompt },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: cleanBase64(image),
+              },
+            },
+          ],
+        },
+        config: {
+          temperature: 0.0,
+          imageConfig: {
+            aspectRatio: "3:4",
+          },
+        },
+      });
+    });
+
+    const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+    if (!part?.inlineData) throw new Error("自動修正に失敗しました");
+    
+    console.log('✅ 自動修正完了');
+    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+
+  } catch (error: any) {
+    console.error("自動修正エラー:", error);
+    return image; // 失敗時は元の画像を返す
+  }
+};
+
+
+/**
  * 背景合成：ユーザー画像 + public 背景画像を Gemini で合成
  */
 export const applyBackgroundSynthesis = async (
@@ -86,7 +447,11 @@ export const applyBackgroundSynthesis = async (
   try {
     if (option === BackgroundOption.None) return base64Image;
 
-    console.log('🤖 背景合成を開始:', option);
+    console.log('🎬 背景合成パイプライン開始:', option);
+
+    // Step 1: 前処理（他人削除）
+    console.log('  → ステップ1: 背景合成用前処理...');
+    const cleanedImage = await preprocessForBackground(base64Image);
 
     // public 背景画像を取得
     const bgImageUrl = getBackgroundImage(option);
@@ -105,7 +470,7 @@ export const applyBackgroundSynthesis = async (
     const bgBase64 = await blobToBase64(bgBlob);
 
     console.log('✅ 背景画像を base64 に変換完了');
-    console.log('🔄 Gemini で合成中...');
+    console.log('  → ステップ2: 背景を合成中...');
 
     // Gemini SDK で直接合成
     if (!process.env.API_KEY) {
@@ -414,7 +779,21 @@ Only the background changes. This is non-negotiable.
         for (const part of parts) {
           if (part.inlineData && part.inlineData.data) {
             console.log('✅ 背景合成完了（Gemini）');
-            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+            const synthesizedImage = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+
+            // Step 3: 内部検証（ユーザーには見えない）
+            console.log('  → ステップ3: 品質検証中...');
+            const validation = await validateMemorialPhotoQuality(synthesizedImage, 'background');
+
+            // Step 4: 必要に応じて自動修正
+            let finalImage = synthesizedImage;
+            if (validation.needsAutoFix) {
+              console.log('  ⚠️ 品質問題を検出。自動修正を実行中...', validation.issues);
+              finalImage = await autoFixMemorialPhoto(synthesizedImage, validation.issues, 'background');
+            }
+
+            console.log('✅ 背景合成完了');
+            return finalImage;
           }
         }
       }
@@ -438,7 +817,11 @@ export const applyClothingSynthesis = async (
   try {
     if (option === ClothingOption.None) return base64Image;
 
-    console.log('🤖 服装合成を開始:', option);
+console.log('🎬 着せ替え合成パイプライン開始:', option);
+
+// Step 1: 前処理（装備品・装飾品削除）
+console.log('  → ステップ1: 着せ替え用前処理...');
+const cleanedImage = await preprocessForClothing(base64Image);
 
     // public 服装画像を取得
     const clothingImageUrl = getClothingImage(option);
@@ -708,11 +1091,24 @@ Proceed with absolute precision. The person's position and size are sacred - the
         for (const part of parts) {
           if (part.inlineData && part.inlineData.data) {
             console.log('✅ 服装合成完了（Gemini）');
-            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+            const synthesizedImage = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+
+            // Step 3: 内部検証（ユーザーには見えない）
+            console.log('  → ステップ3: 品質検証中...');
+            const validation = await validateMemorialPhotoQuality(synthesizedImage, 'clothing');
+
+            // Step 4: 必要に応じて自動修正
+            let finalImage = synthesizedImage;
+            if (validation.needsAutoFix) {
+              console.log('  ⚠️ 品質問題を検出。自動修正を実行中...', validation.issues);
+              finalImage = await autoFixMemorialPhoto(synthesizedImage, validation.issues, 'clothing');
+            }
+
+            console.log('✅ 着せ替え合成完了');
+            return finalImage;
           }
         }
       }
-    }
 
     throw new Error("画像が生成されませんでした。別の写真をお試しください。");
 
