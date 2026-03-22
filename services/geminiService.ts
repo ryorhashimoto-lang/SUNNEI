@@ -217,28 +217,211 @@ export const applyClothingSynthesis = async (
 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  　const prompt = `
-  You are a professional image compositor specializing in clothing synthesis.
-  Replace only the person's clothing while keeping the person EXACTLY the same.
-  
-  CRITICAL Requirements:
-  - Do NOT resize, scale, move, or change the person's body position
-  - Keep the person's SIZE, POSITION, and SCALE 100% identical
-  - Keep the person's face, head, and body shape intact and unchanged
-  - Only replace the clothing area
-  - PRESERVE ALL DETAILS from the clothing image:
-    * All textures, patterns, and surface details
-    * White areas, light colors, and their subtle details
-    * Seams, stitches, embroidery, decorative elements
-    * Cultural clothing elements (kimono family crests, collar details)
-    * Fabric sheen and material characteristics
-  - Seamlessly blend the new clothing with the person's body
-  - Maintain natural lighting and shadows
-  - Preserve facial features and identity
-  - Do NOT blur or alter the subject's face
-  - Make the clothing look natural on the person's body
-  - PRESERVE CONTRAST in white/light areas - do not wash out or oversmoothify
+
+const prompt = `
+🔴 [最重要：人物は絶対に動かさない・大きさを変えない]
+
+You are a world-class professional image composition engineer specializing in photorealistic clothing synthesis.
+
+MOST CRITICAL INSTRUCTION:
+The person's position and size must remain 100% IDENTICAL to the original image.
+- Face position: LOCKED (pixel-perfect same location)
+- Body position: LOCKED
+- Limbs position: LOCKED (arms, legs all stay in place)
+- Overall person size: LOCKED (no zoom in/out)
+- Horizontal position: LOCKED (no left/right shift)
+- Vertical position: LOCKED (no up/down shift)
+
+════════════════════════════════════════════════════════════════
+
+🎯 OBJECTIVE:
+Replace only the person's clothing while keeping the person 100% unchanged and locked in position.
+
+════════════════════════════════════════════════════════════════
+
+📥 INPUT ANALYSIS:
+- Image 1: Person's portrait (with current clothing - will be replaced)
+- Image 2: Target clothing design (reference image for the new outfit)
+
+════════════════════════════════════════════════════════════════
+
+🔒 PROTECTED ELEMENTS (ABSOLUTELY DO NOT CHANGE):
+
+FACE & HEAD:
+✓ Face position in frame
+✓ Face size and proportions
+✓ Facial features (eyes, nose, mouth, cheeks)
+✓ Facial expression
+✓ Head position and angle
+✓ Hair (color, style, position, length)
+✓ Skin tone
+
+BODY:
+✓ Torso position in frame
+✓ Torso size
+✓ Body angle and rotation
+✓ Spine alignment
+✓ Shoulder position and width
+✓ Chest and waist size
+✓ Body contours
+
+LIMBS:
+✓ Left arm position, size, angle
+✓ Right arm position, size, angle
+✓ Left leg position, size, angle
+✓ Right leg position, size, angle
+✓ All joint positions
+
+FRAME & COMPOSITION:
+✓ Person's distance from camera (no zoom in/out)
+✓ Person's position in frame (left/right/up/down)
+✓ Aspect ratio (keep 3:4 portrait format)
+✓ Overall person size as % of frame
+
+════════════════════════════════════════════════════════════════
+
+⚙️ EXECUTION PROCESS (5 STEPS):
+
+[STEP 1] ANALYSIS OF CLOTHING REFERENCE:
+Extract all details from the reference clothing image:
+  - Primary colors and secondary colors (RGB accuracy)
+  - Material type (silk = lustrous, cotton = matte, etc.)
+  - Texture and surface properties
+  - All patterns, prints, designs
+  - All structural elements (collar style, sleeve type, closure type)
+  - All decorative elements (buttons, seams, embroidery, crests, trim)
+  - Overall fit and style
+  - Fabric sheen and light reflection properties
+
+[STEP 2] PERSON ANALYSIS & POSITIONING:
+Lock the person's position and identify key anatomical points:
+  - Bounding box: head to toe, left shoulder to right shoulder
+  - Face center location in pixel coordinates
+  - Body center of mass position
+  - Limb positions and angles
+  - Clothing area to be replaced
+  This bounding box and all positions will NOT change.
+
+[STEP 3] CLOTHING REMOVAL:
+Remove the existing clothing completely:
+  - Erase all garment areas
+  - Maintain underlying body contours under removed clothing
+  - Preserve anatomically correct skin tone where clothing was
+  - Keep the person in the EXACT same position (no shift, no zoom)
+  - Do NOT move the person to create space for new clothing
+
+[STEP 4] NEW CLOTHING APPLICATION:
+Apply the new clothing design:
+  - Use the person's LOCKED position as the anchor point
+  - Apply reference clothing design to fit the person's body (NOT vice versa)
+  - Match all extracted colors exactly (use reference RGB values)
+  - Render all extracted textures and patterns
+  - Include all structural elements (collar, sleeves, closures)
+  - Include all decorative elements (buttons, seams, embroidery)
+  - Add natural wrinkles and fabric folds following body contours
+  - Ensure clothing looks naturally fitted (not loose, not tight)
+  - Add appropriate sheen based on fabric type
+
+[STEP 5] INTEGRATION & QUALITY ASSURANCE:
+Finalize and verify the composition:
+  - Blend clothing seamlessly at all boundaries:
+    * Neck area to clothing collar
+    * Sleeves to arms/wrists
+    * Bottom edge to legs/torso
+    * All edges must look natural
+  - Match lighting and shadows from original portrait
+  - Ensure consistent lighting direction
+  - Create realistic shadows where clothing meets body
+  - Verify body contours are visible through clothing shading
+  - Eliminate all artifacts, glitches, or unnatural elements
+
+════════════════════════════════════════════════════════════════
+
+✅ QUALITY CHECKLIST (MUST VERIFY BEFORE OUTPUT):
+
+☑ PERSON INTEGRITY:
+  ☑ Face is 100% identical to original (same features, expression)
+  ☑ Body is 100% identical to original (same proportions, shape)
+  ☑ Hair is 100% identical (same color, style, position)
+  ☑ Limbs are 100% identical (same position, length, angle)
+  ☑ Person's position in frame is 100% identical
+  ☑ Person's size in frame is 100% identical
+  ☑ NO shifting left/right/up/down
+  ☑ NO zooming in/out
+  ☑ NO rotating or tilting
+
+☑ CLOTHING ACCURACY:
+  ☑ All colors from reference image are matched exactly
+  ☑ All textures from reference are preserved
+  ☑ All patterns from reference are rendered
+  ☑ All buttons are visible and accurately placed
+  ☑ All seams are visible and sharp
+  ☑ All decorative elements from reference are included
+  ☑ White and light colors maintain full contrast (no washing out)
+  ☑ Fabric type properties are reflected (matte vs glossy)
+  ☑ Embroidery and detailed stitching are rendered
+  ☑ Cultural elements (for kimono: crests, collar details) are preserved
+
+☑ NATURAL APPEARANCE:
+  ☑ Clothing fits the person's body naturally
+  ☑ Wrinkles and folds follow body contours
+  ☑ No floating fabric or unnatural positioning
+  ☑ Blending at all boundaries is seamless
+  ☑ Lighting is consistent with original
+  ☑ Shadows are realistic
+  ☑ No artifacts, glitches, or visual errors
+  ☑ Result looks photorealistic and professional
+
+════════════════════════════════════════════════════════════════
+
+❌ ABSOLUTE PROHIBITIONS (NEVER DO THESE):
+
+  ❌ Do NOT change the person's face in any way
+  ❌ Do NOT alter the person's body structure
+  ❌ Do NOT modify the person's pose or position
+  ❌ Do NOT move the person left, right, up, or down
+  ❌ Do NOT zoom in or out on the person
+  ❌ Do NOT rotate or tilt the person
+  ❌ Do NOT resize the person (make bigger or smaller)
+  ❌ Do NOT shift the person horizontally or vertically
+  ❌ Do NOT change the aspect ratio
+  ❌ Do NOT preserve any old clothing
+  ❌ Do NOT leave old clothing visible
+  ❌ Do NOT blend old and new clothing together
+  ❌ Do NOT reduce quality of clothing details
+  ❌ Do NOT blur or soften the clothing textures
+  ❌ Do NOT wash out colors, especially white/light areas
+  ❌ Do NOT create color shifts or color degradation
+  ❌ Do NOT reduce contrast in the reference clothing
+  ❌ Do NOT eliminate patterns or textures
+  ❌ Do NOT remove buttons, seams, or structural details
+  ❌ Do NOT create unnatural fitting or floating clothing
+  ❌ Do NOT change the material appearance
+  ❌ Do NOT add artificial effects or distortions
+  ❌ Do NOT reduce resolution or sharpness
+  ❌ Do NOT over-smooth details
+  ❌ Do NOT create inconsistent lighting
+  ❌ Do NOT remove decorative elements or embroidery
+  ❌ Do NOT enlarge clothing to show more details
+  ❌ Do NOT make clothing loose or oversized to fit
+
+════════════════════════════════════════════════════════════════
+
+📤 OUTPUT REQUIREMENTS:
+
+- Format: High-resolution image
+- Aspect ratio: 3:4 (portrait orientation) - KEEP IDENTICAL TO ORIGINAL
+- Quality: Photorealistic, studio-level professional
+- Person position: IDENTICAL to original (pixel-perfect)
+- Person size: IDENTICAL to original
+- All details: Sharp, clear, visible
+- Result: Looks like a professional studio photo with a wardrobe change
+
+════════════════════════════════════════════════════════════════
+
+Proceed with absolute precision. The person's position and size are sacred - they must not change.
 `;
+
 
     const response = await withRetry(async () => {
       return await ai.models.generateContent({
