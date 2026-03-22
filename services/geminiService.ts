@@ -1109,6 +1109,7 @@ Proceed with absolute precision. The person's position and size are sacred - the
           }
         }
      }
+  }   
 
      throw new Error("画像が生成されませんでした。別の写真をお試しください。");
 
