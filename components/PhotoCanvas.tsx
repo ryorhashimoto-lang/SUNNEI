@@ -27,9 +27,9 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
     const render = async () => {
       if (!canvasRef.current || !originalCropped) return;
       
-      // アスペクト比 5:6 (四つ切り)
-      const width = 800;
-      const height = 960;
+      // アスペクト比 3:4 (ダウンロード用調整)
+　　　 const width = 800;
+      const height = 1067; // 3:4の比率（800 × 4/3）
       
       await drawMemorialPhoto({
         canvas: canvasRef.current,
@@ -54,8 +54,8 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
         {/* Decorative frame shadow */}
         <div className="absolute -inset-1 bg-gradient-to-tr from-gray-300 to-gray-100 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
         
-        {/* アスペクト比 5:6 を強制 */}
-        <div className="relative aspect-[5/6] overflow-hidden rounded-lg border-[12px] border-white shadow-[0_20px_50px_rgba(0,0,0,0.15)] bg-gray-50">
+        {/* アスペクト比 3:4 を強制 */}
+        <div className="relative aspect-[3/4] overflow-hidden rounded-lg border-[12px] border-white shadow-[0_20px_50px_rgba(0,0,0,0.15)] bg-gray-50">
           {isLoading && <LoadingSpinner message={loadingMessage} />}
           <canvas 
             ref={canvasRef} 
