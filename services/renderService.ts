@@ -66,28 +66,6 @@ export const drawMemorialPhoto = async ({
 
   const baseImg = await loadImage(baseImageSrc);
 
-  // --- Helper to calculate "Cover" fit ---
-  // Calculates coordinates to draw 'img' into 'targetW/H' using object-fit: cover logic
-  const getCoverCoords = (imgW: number, imgH: number, targetW: number, targetH: number) => {
-    const imgAspect = imgW / imgH;
-    const canvasAspect = targetW / targetH;
-    let drawX, drawY, drawW, drawH;
-
-    if (imgAspect < canvasAspect) {
-      // Image is taller/thinner -> Match Width, Crop Height
-      drawW = targetW;
-      drawH = targetW / imgAspect;
-      drawX = 0;
-      drawY = (targetH - drawH) / 2; 
-    } else {
-      // Image is wider -> Match Height, Crop Width
-      drawH = targetH;
-      drawW = targetH * imgAspect;
-      drawX = (targetW - drawW) / 2;
-      drawY = 0;
-    }
-    return { drawX, drawY, drawW, drawH };
-  };
  // 1. Draw the Base Image (AI Body or Original)
 // CropTool で設定された位置情報を尊重するため、自動フィットではなく固定配置
 // originalCropped は既に正しい寸法で切り取られているため、そのまま中央に配置
