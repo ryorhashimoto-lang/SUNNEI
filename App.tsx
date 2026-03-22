@@ -38,8 +38,9 @@ const App: React.FC = () => {
   const [finalCropConfig, setFinalCropConfig] = useState<CropConfig | null>(null);
   const [isFinalCropping, setIsFinalCropping] = useState(false);
   const [compositePreview, setCompositePreview] = useState<string | null>(null);
+  const [personImageBeforeClothing, setPersonImageBeforeClothing] = useState<string | null>(null);
 
-  const [deceasedName, setDeceasedName] = useState<string>('');
+　const [deceasedName, setDeceasedName] = useState<string>('');
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [usageCount, setUsageCount] = useState<number>(0);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
@@ -89,6 +90,9 @@ const App: React.FC = () => {
     setAppliedBg(BackgroundOption.None);
     setAppliedClothing(ClothingOption.None);
     setDeceasedName('');
+    setAppliedClothing(ClothingOption.None);
+    setPersonImageBeforeClothing(null);
+    setDeceasedName('');
     setAppState(AppState.UPLOAD);
   };
 
@@ -135,16 +139,20 @@ const App: React.FC = () => {
 
   const handleClothingAction = async (option: ClothingOption) => {
   if (!originalCropped) return;
-  if (option === ClothingOption.None && appliedBg === BackgroundOption.None) {
-      setPersonImage(null);
-      setAppliedClothing(ClothingOption.None);
-      return;
+  
+  // 着せ替え解除時：背景の有無に関わらず戻す
+  if (option === ClothingOption.None) {
+    setPersonImage(personImageBeforeClothing || originalCropped);
+    setAppliedClothing(ClothingOption.None);
+    return;
   }
 
   setStatus({ isProcessing: true, message: '服装を変更中...' });
   try {
+    // 着せ替え実行前に現在の personImage を保存
+    setPersonImageBeforeClothing(personImage);
+    
     const base = personImage || originalCropped;
-    // プレビュー用サイズ：1200 x 1440
     const result = await applyClothingSynthesis(base, option);
     setPersonImage(result);
     setAppliedClothing(option);
