@@ -115,19 +115,268 @@ export const applyBackgroundSynthesis = async (
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     const prompt = `
-      You are a professional image compositor.
-      Replace only the background while keeping the person's portrait EXACTLY the same.
-      
-      CRITICAL Requirements:
-      - Do NOT resize, scale, or move the person
-      - Keep the person's SIZE, POSITION, and SCALE 100% identical
-      - Only replace the background area
-      - Keep the person's body, face, and clothing SHARP and DETAILED
-      - Seamlessly blend the person with the new background
-      - Maintain natural lighting around the person
-      - Do NOT blur or smooth the subject
-      - Preserve the person's facial features and identity
-    `;
+🔴 [最重要：人物は絶対に動かさない・大きさを変えない・位置を変えない]
+
+You are a world-class professional image composition engineer specializing in photorealistic background replacement.
+
+MOST CRITICAL INSTRUCTION:
+The person's position, size, and appearance must remain 100% IDENTICAL to the original image.
+Nothing about the person changes - ONLY the background changes.
+- Face position: LOCKED (pixel-perfect same location)
+- Face size: LOCKED
+- Body position: LOCKED
+- Body size: LOCKED
+- Limbs position: LOCKED (arms, legs all stay in place)
+- Overall person size: LOCKED (no zoom in/out)
+- Horizontal position: LOCKED (no left/right shift)
+- Vertical position: LOCKED (no up/down shift)
+- Person's appearance: LOCKED (no changes whatsoever)
+
+════════════════════════════════════════════════════════════════
+
+🎯 OBJECTIVE:
+Replace ONLY the background while keeping the person 100% unchanged and locked in position.
+The person must look like they are in a different location, but the person themselves must be pixel-perfect identical.
+
+════════════════════════════════════════════════════════════════
+
+📥 INPUT ANALYSIS:
+- Image 1: Person's portrait with original background (person will stay EXACTLY as-is)
+- Image 2: Target background design (reference image for the new background)
+
+════════════════════════════════════════════════════════════════
+
+🔒 PROTECTED ELEMENTS - ABSOLUTELY DO NOT CHANGE:
+
+PERSON - COMPLETE LOCK (ALL ASPECTS):
+✓ Face position in frame (pixel-perfect)
+✓ Face size (exact)
+✓ All facial features (eyes, nose, mouth, cheeks, lips)
+✓ Facial expression (exact same)
+✓ Head position and angle (exact)
+✓ Hair (color, style, position, length - unchanged)
+✓ Skin tone (exact)
+✓ Eyes (color, shine, expression)
+✓ Eyebrows (shape, position)
+✓ Lips (color, position, shape)
+
+✓ Body position in frame (pixel-perfect)
+✓ Body size (exact)
+✓ Body angle and rotation
+✓ Spine alignment
+✓ Shoulder position and width
+✓ Chest size
+✓ Waist size
+✓ Clothing (color, fit, details - exact)
+✓ All fabric textures and patterns
+✓ All buttons, seams, and embellishments
+
+✓ Left arm position, size, angle (exact)
+✓ Right arm position, size, angle (exact)
+✓ Left hand position and details
+✓ Right hand position and details
+✓ Left leg position, size, angle
+✓ Right leg position, size, angle
+✓ Feet position and details
+
+LIGHTING & APPEARANCE:
+✓ Lighting direction on the person
+✓ Shadows on the person
+✓ Highlights on the person
+✓ All facial shadows and light
+✓ All body shadows and highlights
+
+FRAMING & COMPOSITION:
+✓ Aspect ratio (keep 3:4 portrait format)
+✓ Person's distance from camera
+✓ Person's position in frame (left/right)
+✓ Person's position in frame (up/down)
+✓ Overall person size as % of frame
+
+═══════════════════��════════════════════════════════════════════
+
+🎨 BACKGROUND ELEMENTS - WILL CHANGE:
+
+✓ Everything BEHIND the person (background area)
+✓ Everything OUTSIDE the person's silhouette
+✓ Sky, ground, trees, buildings, etc. (background only)
+✓ Background colors
+✓ Background lighting
+✓ Background textures and details
+
+IMPORTANT: The background must be seamlessly blended where it meets the person's outline.
+
+════════════════════════════════════════════════════════════════
+
+⚙️ EXECUTION PROCESS (6 STEPS):
+
+[STEP 1] ANALYSIS OF BACKGROUND REFERENCE:
+Extract all details from the reference background image:
+  - Primary colors and color palette
+  - Overall mood and lighting (bright, dark, warm, cool)
+  - Lighting direction and angle
+  - Types of elements (sky, ground, trees, water, architecture, etc.)
+  - Texture and surface properties
+  - Depth and perspective
+  - Lighting quality and shadows in the background
+  - Atmosphere (time of day, weather, season)
+  - Composition and focal points
+
+[STEP 2] PERSON ANALYSIS & POSITIONING:
+Lock the person's position - they will NOT move:
+  - Face center location in pixel coordinates
+  - Body center of mass position
+  - Silhouette outline (the boundary between person and background)
+  - Limb positions and angles
+  - Lighting on the person (this will be preserved)
+  This bounding box and all positions will NOT change whatsoever.
+
+[STEP 3] BACKGROUND SEGMENTATION:
+Identify what is background to replace:
+  - Everything BEHIND the person (identify the background area)
+  - Everything OUTSIDE the person's silhouette
+  - Keep the person's outline precise
+  - Mark all areas that will be replaced with new background
+
+[STEP 4] BACKGROUND APPLICATION:
+Apply the new background design:
+  - Use the person's LOCKED position as the anchor
+  - Apply reference background to fill the area behind/around the person
+  - Match all extracted background colors
+  - Render all background textures and details
+  - Match the extracted lighting direction
+  - Create appropriate shadows in the background
+  - Match the atmosphere and mood from reference
+
+[STEP 5] SEAMLESS BLENDING AT PERSON EDGES:
+Blend the background naturally where it meets the person:
+  - Background must blend smoothly at the person's silhouette edge
+  - Hair edges: background must blend naturally with hair
+  - Face edges: background must blend naturally with face
+  - Body edges: background must blend naturally with body
+  - Arm edges: background must blend with arms
+  - Leg edges: background must blend with legs
+  - Hands and feet edges: background must blend smoothly
+  - No hard edges or visible seams at person boundary
+  - Lighting on person must look consistent with background lighting direction
+
+[STEP 6] FINAL INTEGRATION & QUALITY ASSURANCE:
+Finalize and verify the composition:
+  - Person is in exact same position (no shift, no zoom, no rotation)
+  - Background blends naturally at all edges
+  - Lighting is consistent (person's lighting matches background lighting direction)
+  - Shadows are realistic and consistent
+  - Person's appearance is 100% identical
+  - Background is fully rendered with all details
+  - Eliminate all artifacts, glitches, or unnatural elements
+  - Result looks like a professional studio photo with background compositing
+
+════════════════════════════════════════════════════════════════
+
+✅ QUALITY CHECKLIST (MUST VERIFY BEFORE OUTPUT):
+
+☑ PERSON INTEGRITY (MOST CRITICAL):
+  ☑ Face is 100% identical to original (same features, expression, position)
+  ☑ Body is 100% identical to original (same size, shape, position)
+  ☑ Hair is 100% identical (same color, style, position, texture)
+  ☑ Clothing is 100% identical (same color, fit, details, position)
+  ☑ Limbs are 100% identical (same position, length, angle, posture)
+  ☑ Person's position in frame is 100% identical (pixel-perfect)
+  ☑ Person's size in frame is 100% identical
+  ☑ Person's distance from camera is 100% identical
+  ☑ NO shifting left/right/up/down
+  ☑ NO zooming in/out
+  ☑ NO rotating or tilting
+  ☑ NO changing facial features or expression
+  ☑ NO changing body shape or proportions
+  ☑ All facial details are preserved (eyes, nose, mouth, skin texture)
+  ☑ All body details are preserved (clothing, texture, color)
+
+☑ BACKGROUND ACCURACY:
+  ☑ All colors from reference background image are matched
+  ☑ All textures from reference are preserved
+  ☑ All background elements are rendered (sky, ground, objects, etc.)
+  ☑ Lighting direction matches the reference background
+  ☑ Shadows in background are realistic
+  ☑ Atmosphere and mood match the reference
+  ☑ Depth and perspective look natural
+  ☑ All details from reference are visible and clear
+
+☑ SEAMLESS BLENDING:
+  ☑ Background blends smoothly where it meets the person's silhouette
+  ☑ Hair-to-background transition is seamless
+  ☑ Face-to-background transition is seamless
+  ☑ Body-to-background transition is seamless
+  ☑ Arms-to-background transition is seamless
+  ☑ Legs-to-background transition is seamless
+  ☑ Hands/feet-to-background transition is seamless
+  ☑ No visible seams or hard edges at person boundary
+  ☑ No halos or artifacts around the person
+  ☑ Person's lighting is consistent with background
+
+☑ NATURAL APPEARANCE:
+  ☑ Result looks photorealistic and professional
+  ☑ Person looks like they belong in the new background
+  ☑ Lighting on person is consistent with background lighting
+  ☑ Shadows are realistic and consistent
+  ☑ No visual artifacts or glitches
+  ☑ No color shifts or color bleeding
+  ☑ Result looks like a professionally composited image
+
+═══════════════════════════════════════════��════════════════════
+
+❌ ABSOLUTE PROHIBITIONS (NEVER DO THESE):
+
+PERSON CHANGES - STRICTLY FORBIDDEN:
+  ❌ Do NOT change the person's face in any way
+  ❌ Do NOT alter any facial features (eyes, nose, mouth, cheeks)
+  ❌ Do NOT change facial expression or emotion
+  ❌ Do NOT alter the person's head position or angle
+  ❌ Do NOT change hair color, style, or position
+  ❌ Do NOT change skin tone or texture
+  ❌ Do NOT alter the person's body structure or shape
+  ❌ Do NOT change the person's pose or posture
+  ❌ Do NOT modify clothing color, fit, or details
+  ❌ Do NOT change limb positions or angles
+  ❌ Do NOT change hand or feet positions
+
+POSITION CHANGES - STRICTLY FORBIDDEN:
+  ❌ Do NOT move the person left, right, up, or down
+  ❌ Do NOT zoom in or out on the person
+  ❌ Do NOT rotate or tilt the person
+  ❌ Do NOT shift the person's distance from camera
+  ❌ Do NOT change the aspect ratio
+  ❌ Do NOT crop the person differently
+
+QUALITY ISSUES - STRICTLY FORBIDDEN:
+  ❌ Do NOT reduce quality of person's appearance
+  ❌ Do NOT blur or soften the person
+  ❌ Do NOT reduce resolution or sharpness of the person
+  ❌ Do NOT wash out colors on the person
+  ❌ Do NOT create color shifts on the person
+  ❌ Do NOT add artificial effects to the person
+  ❌ Do NOT create halos or glows around the person
+  ❌ Do NOT create hard edges around the person
+  ❌ Do NOT leave seams or visible transitions at person boundary
+
+════════════════════════════════════════════════════════════════
+
+📤 OUTPUT REQUIREMENTS:
+
+- Format: High-resolution image
+- Aspect ratio: 3:4 (portrait orientation) - KEEP IDENTICAL TO ORIGINAL
+- Quality: Photorealistic, studio-level professional
+- Person position: IDENTICAL to original (pixel-perfect)
+- Person appearance: IDENTICAL to original (100%)
+- Background: Complete replacement with reference design
+- Blending: Seamless at all person edges
+- Result: Looks like a professional studio photo with background replacement
+
+════════════════════════════════════════════════════════════════
+
+Proceed with absolute precision. The person must remain unchanged in every way.
+Only the background changes. This is non-negotiable.
+`;
 
     const response = await withRetry(async () => {
       return await ai.models.generateContent({
