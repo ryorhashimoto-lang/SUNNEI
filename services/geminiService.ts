@@ -1108,11 +1108,11 @@ Proceed with absolute precision. The person's position and size are sacred - the
             return finalImage;
           }
         }
-      }
+     }
 
-    throw new Error("画像が生成されませんでした。別の写真をお試しください。");
+     throw new Error("画像が生成されませんでした。別の写真をお試しください。");
 
-  } catch (error: any) {
+   } catch (error: any) {
     console.error("服装合成エラー:", error);
     throw new Error(`服装の合成に失敗しました: ${error.message}`);
   }
