@@ -319,8 +319,6 @@ const App: React.FC = () => {
                     usageCount={usageCount} 
                     deceasedName={deceasedName} 
                     onDeceasedNameChange={setDeceasedName}
-                    cropConfig={cropConfig}
-                    backgroundOption={appliedBg}
                   />
                 </div>
               )}
