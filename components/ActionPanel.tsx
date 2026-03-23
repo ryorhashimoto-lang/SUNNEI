@@ -28,8 +28,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   userPlan,
   usageCount,
   deceasedName,
-  onDeceasedNameChange,
-  cropConfig,
   backgroundOption
 }) => {
   const [gender, setGender] = useState<'men' | 'women'>('men');
