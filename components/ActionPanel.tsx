@@ -14,8 +14,6 @@ interface ActionPanelProps {
   usageCount: number;
   deceasedName: string;
   onDeceasedNameChange: (name: string) => void;
-  cropConfig?: CropConfig | null;          
-  backgroundOption?: BackgroundOption; 
 }
 
 const ActionPanel: React.FC<ActionPanelProps> = ({ 
