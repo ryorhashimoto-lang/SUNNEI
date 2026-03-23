@@ -307,21 +307,21 @@ const App: React.FC = () => {
                     />
                   </div>
                   <ActionPanel 
-  　　　　　　　　　　　onBgAction={handleBgAction}
-　　　　　　　　　　　  onClothingAction={handleClothingAction}
-　　　　　　　　　　　  appliedBg={appliedBg}
-　　　　　　　　　　　  appliedClothing={appliedClothing}
-　　　　　　　　　　　  disabled={status.isProcessing} 
-  　　　　　　　　　　　onDownload={handleDownload} 
-  　　　　　　　　　　　onReset={handleReset} 
-  　　　　　　　　　　　onStartCrop={handleStartFinalCrop}
-　　　　　　　　　　　  userPlan={companyInfo!.plan} 
-　　　　　　　　　　　  usageCount={usageCount} 
-　　　　　　　　　　　  deceasedName={deceasedName} 
-　　　　　　　　　　　  onDeceasedNameChange={setDeceasedName}
-　　　　　　　　　　　  cropConfig={cropConfig}
-　　　　　　　　　　　  backgroundOption={appliedBg}
-　　　　　　　　　　　/>
+                    onBgAction={handleBgAction}
+                    onClothingAction={handleClothingAction}
+                    appliedBg={appliedBg}
+                    appliedClothing={appliedClothing}
+                    disabled={status.isProcessing} 
+                    onDownload={handleDownload} 
+                    onReset={handleReset} 
+                    onStartCrop={handleStartFinalCrop}
+                    userPlan={companyInfo!.plan} 
+                    usageCount={usageCount} 
+                    deceasedName={deceasedName} 
+                    onDeceasedNameChange={setDeceasedName}
+                    cropConfig={cropConfig}
+                    backgroundOption={appliedBg}
+                  />
                 </div>
               )}
             </div>
