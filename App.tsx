@@ -303,6 +303,7 @@ const App: React.FC = () => {
                       isLoading={status.isProcessing} 
                       loadingMessage={status.message}
                       finalCropConfig={finalCropConfig}
+                      backgroundOption={appliedBg}
                     />
                   </div>
                   <ActionPanel 
@@ -318,6 +319,8 @@ const App: React.FC = () => {
                     usageCount={usageCount} 
                     deceasedName={deceasedName} 
                     onDeceasedNameChange={setDeceasedName}
+                    cropConfig={cropConfig}  
+  　　　　　　　　　　　backgroundOption={appliedBg} 
                   />
                 </div>
               )}
