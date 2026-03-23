@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ClothingOption, BackgroundOption, UserPlan, PLAN_LIMITS, CropConfig } from '../types';
+import { ClothingOption, BackgroundOption, UserPlan, PLAN_LIMITS } from '../types';
 
 interface ActionPanelProps {
   onBgAction: (option: BackgroundOption) => void;
@@ -28,7 +28,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   userPlan,
   usageCount,
   deceasedName,
-  backgroundOption
+  onDeceasedNameChange
 }) => {
   const [gender, setGender] = useState<'men' | 'women'>('men');
   const [bgTab, setBgTab] = useState<'solid' | 'landscape'>('solid');
