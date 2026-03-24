@@ -28,8 +28,8 @@ const PhotoCanvas: React.FC<PhotoCanvasProps> = ({
       if (!canvasRef.current || !originalCropped) return;
       
       // アスペクト比 3:4 (プレビュー用調整)
-      const width = 800;
-      const height = 1067; // 3:4の比率（800 × 4/3）
+      const width = 1200;
+      const height = 1600;
       
       await drawMemorialPhoto({
         canvas: canvasRef.current,
